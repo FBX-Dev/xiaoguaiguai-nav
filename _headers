@@ -1,0 +1,24 @@
+# ── 全站基础安全头 ─────────────────────────────
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
+
+# ── 页面不缓存，保证内容与后台即时生效 ─────────
+/
+  Cache-Control: max-age=0, must-revalidate
+
+/admin/
+  Cache-Control: max-age=0, must-revalidate
+
+/admin
+  Cache-Control: max-age=0, must-revalidate
+
+# ── 数据源与图标：短缓存但强制校验 ─────────────
+/nav.json
+  Cache-Control: max-age=0, must-revalidate
+  Content-Type: application/json; charset=utf-8
+
+/favicon.svg
+  Cache-Control: max-age=86400, must-revalidate
