@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>小乖乖 · 家庭资源导航</title>
+<meta name="description" content="面向妈妈与家庭的极简资源索引导航，收录婴幼儿养育、儿童教育、女性成长、家庭关系与两性亲密成长五个方向的优质外部资源。" />
+<style>
+  :root {
+    --bg: #fdfbf7;
+    --panel: #ffffff;
+    --ink: #3d3833;
+    --ink-soft: #7d756c;
+    --line: #ece6dd;
+    --accent: #d98b6a;
+    --accent-soft: #fbf1ec;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+                 "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+  header.hero { padding: 56px 0 28px; text-align: center; }
+  header.hero h1 {
+    margin: 0 0 10px; font-size: 30px; font-weight: 600; letter-spacing: .04em;
+  }
+  header.hero p {
+    margin: 0; color: var(--ink-soft); font-size: 14.5px;
+  }
+
+  nav.cats {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    margin: 22px 0 8px;
+  }
+  nav.cats a {
+    display: inline-block; padding: 6px 14px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    font-size: 13.5px; text-decoration: none; border: 1px solid transparent;
+  }
+  nav.cats a:hover { border-color: var(--accent); }
+
+  section.cat { margin: 40px 0 0; scroll-margin-top: 20px; }
+  section.cat > h2 {
+    font-size: 19px; font-weight: 600; margin: 0 0 4px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  }
+  section.cat > .count { color: var(--ink-soft); font-size: 12.5px; margin: 6px 0 16px; }
+
+  .grid {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+  }
+
+  a.card {
+    display: block; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px 18px; text-decoration: none;
+    color: inherit; transition: border-color .18s ease, box-shadow .18s ease;
+  }
+  a.card:hover {
+    border-color: #e2d5c8;
+    box-shadow: 0 6px 18px rgba(180, 150, 120, .09);
+  }
+  a.card .thumb {
+    width: 100%; aspect-ratio: 16 / 9; object-fit: cover;
+    border-radius: 9px; margin-bottom: 12px; display: block; background: var(--accent-soft);
+  }
+  a.card .row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  a.card .badge {
+    flex: none; font-size: 11px; padding: 2px 8px; border-radius: 6px;
+    background: var(--accent-soft); color: var(--accent); letter-spacing: .02em;
+  }
+  a.card .badge.tool { background: #eef4ef; color: #5d8a6c; }
+  a.card .title { font-size: 15.5px; font-weight: 600; }
+  a.card .desc {
+    margin: 0; color: var(--ink-soft); font-size: 13.5px; line-height: 1.68;
+  }
+  a.card .tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  a.card .tags span {
+    font-size: 11.5px; color: #a09689; background: #faf7f2;
+    padding: 1px 8px; border-radius: 5px;
+  }
+
+  .disclaimer {
+    margin-top: 4rem;
+    padding: 1rem;
+    font-size: 0.8rem;
+    color: #777;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .disclaimer .rule { max-width: 720px; margin: 0 auto 8px; height: 1px; background: var(--line); }
+
+  footer.meta {
+    text-align: center; color: #a8a096; font-size: 12px; padding: 0 0 40px;
+  }
+  footer.meta a { color: #a8a096; text-decoration: none; border-bottom: 1px dotted #d8d0c4; }
+
+  @media (max-width: 560px) {
+    header.hero { padding: 40px 0 20px; }
+    header.hero h1 { font-size: 25px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1 id="site-title">小乖乖 · 家庭资源导航</h1>
+    <p id="site-sub">温和收录，慢慢挑。只做优质资源的索引与跳转，不承载长篇正文。</p>
+    <nav class="cats" id="cat-nav" aria-label="分类导航"></nav>
+  </header>
+
+  <main id="content" aria-live="polite"></main>
+
+  <div class="disclaimer">
+    <div class="rule"></div>
+    <p id="disclaimer-text"></p>
+  </div>
+
+  <footer class="meta">
+    <p>共收录 <span id="stat">…</span> 条资源 ｜ 后台入口 <a href="/admin" target="_blank" rel="noopener noreferrer">/admin</a></p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var FALLBACK_DISCLAIMER =
+    "本站点仅做优质资源索引跳转，不提供医疗诊断、诊疗建议。" +
+    "第三方内容由原平台负责，请理性甄别。所有内容仅供学习参考。";
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) { n.className = cls; }
+    if (text != null) { n.textContent = text; }
+    return n;
+  }
+
+  // 链接统一走第三方跳转：新开标签 + 安全 rel
+  function card(item) {
+    var a = document.createElement("a");
+    a.className = "card";
+    a.href = item.url || "#";
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    if (!item.url) { a.setAttribute("aria-disabled", "true"); }
+
+    // cover 空值判断：为空字符串 / null / undefined 时不渲染图片，避免破损图
+    var cover = item.cover == null ? "" : String(item.cover).trim();
+    if (cover) {
+      var img = document.createElement("img");
+      img.className = "thumb";
+      img.loading = "lazy";
+      img.alt = item.title || "";
+      img.src = cover;
+      img.addEventListener("error", function () { img.remove(); });
+      a.appendChild(img);
+    }
+
+    var row = el("div", "row");
+    var isTool = item.type === "tool";
+    row.appendChild(el("span", "badge" + (isTool ? " tool" : ""), isTool ? "工具" : "内容"));
+    row.appendChild(el("span", "title", item.title || ""));
+    a.appendChild(row);
+
+    if (item.desc) { a.appendChild(el("p", "desc", item.desc)); }
+
+    if (item.tags && item.tags.length) {
+      var tags = el("div", "tags");
+      for (var i = 0; i < item.tags.length; i++) {
+        tags.appendChild(el("span", null, item.tags[i]));
+      }
+      a.appendChild(tags);
+    }
+    return a;
+  }
+
+  function section(cat, index) {
+    var s = el("section", "cat");
+    s.id = "cat-" + index;
+    s.appendChild(el("h2", null, cat.name));
+
+    var items = cat.items || [];
+    var nc = 0, nt = 0;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type === "tool") { nt++; } else { nc++; }
+    }
+    s.appendChild(el("div", "count", "内容 " + nc + " 条 ｜ 工具 " + nt + " 款"));
+
+    var grid = el("div", "grid");
+    for (var j = 0; j < items.length; j++) { grid.appendChild(card(items[j])); }
+    s.appendChild(grid);
+    return s;
+  }
+
+  function render(data) {
+    var cats = (data && data.categories) || [];
+    var site = (data && data.site) || {};
+
+    if (site.title) { document.getElementById("site-title").textContent = site.title + " · 家庭资源导航"; }
+    if (site.subtitle) { document.getElementById("site-sub").textContent = site.subtitle; }
+    document.getElementById("disclaimer-text").textContent =
+      site.disclaimer || FALLBACK_DISCLAIMER;
+    if (site.title) { document.title = site.title + " · 家庭资源导航"; }
+
+    var nav = document.getElementById("cat-nav");
+    var main = document.getElementById("content");
+    nav.innerHTML = "";
+    main.innerHTML = "";
+
+    var total = 0;
+    for (var i = 0; i < cats.length; i++) {
+      var a = el("a", null, cats[i].name);
+      a.href = "#cat-" + i;
+      nav.appendChild(a);
+      main.appendChild(section(cats[i], i));
+      total += (cats[i].items || []).length;
+    }
+    document.getElementById("stat").textContent = String(total);
+  }
+
+  fetch("nav.json", { cache: "no-cache" })
+    .then(function (r) {
+      if (!r.ok) { throw new Error("HTTP " + r.status); }
+      return r.json();
+    })
+    .then(render)
+    .catch(function (err) {
+      var main = document.getElementById("content");
+      main.innerHTML = "";
+      var box = el("p", "desc", "资源数据加载失败（" + err.message + "）。请刷新页面重试。");
+      box.style.textAlign = "center";
+      box.style.padding = "40px 0";
+      main.appendChild(box);
+    });
+})();
+</script>
+</body>
+</html>
