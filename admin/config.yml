@@ -1,0 +1,99 @@
+# ============================================================
+# Sveltia CMS 配置 · xiaoguaiguai.cn 家庭资源导航
+# 仓库：FBX-Dev/xiaoguaiguai-nav  分支：main
+# 后台入口：https://xiaoguaiguai.cn/admin
+# OAuth 代理：https://xiaoguaiguai.cn/oauth/*（Cloudflare Worker，绑定主域名）
+# 资源图片：Cloudflare R2 桶 xiaoguaiguai-media，cover 仅填 R2 公开 URL
+# ============================================================
+
+backend:
+  name: github
+  repo: FBX-Dev/xiaoguaiguai-nav
+  branch: main
+  # OAuth 代理走主域名，不使用任何子域名
+  base_url: https://xiaoguaiguai.cn
+  auth_endpoint: oauth/authorize
+
+# 不配置 media_folder / public_folder：配图统一存放 Cloudflare R2，
+# 不上传 Git 仓库，cover 字段直接填 R2 公开地址。
+
+site_url: https://xiaoguaiguai.cn
+display_url: https://xiaoguaiguai.cn
+logo_url: https://xiaoguaiguai.cn/favicon.ico
+
+locale: zh_Hans
+
+# 关闭首期不需要的编辑器功能，保持极简
+publish_mode: simple
+slug:
+  encoding: unicode
+  clean_accents: false
+
+collections:
+  - name: nav
+    label: 导航数据
+    label_singular: 导航数据
+    description: >-
+      首页五个固定一级分类的内容与工具条目。分类名称（含 emoji 与空格）不可修改，
+      每个分类需保持 内容条目 ≥ 5 条、工具条目 ≥ 2 款。
+    files:
+      - name: nav_data
+        label: 导航条目（nav.json）
+        file: nav.json
+        description: >-
+          分类固定 5 个：🧸 婴幼儿养育 / 📖 儿童教育 / 🌷 女性成长 /
+          🏠 家庭关系 / 💞 两性亲密成长。
+        fields:
+          - name: site
+            label: 站点信息
+            widget: object
+            fields:
+              - { name: title, label: 站点名称, widget: string }
+              - { name: subtitle, label: 副标题, widget: string }
+              - { name: disclaimer, label: 免责声明, widget: text }
+
+          - name: categories
+            label: 一级分类
+            label_singular: 分类
+            widget: list
+            summary: "{{fields.name}}"
+            fields:
+              - name: name
+                label: 分类名称（固定，不可改）
+                widget: string
+                hint: 含 emoji 与空格，请勿修改
+              - name: items
+                label: 条目列表
+                label_singular: 条目
+                widget: list
+                summary: "[{{fields.type}}] {{fields.title}}"
+                fields:
+                  - name: title
+                    label: 标题
+                    widget: string
+                    hint: 12 字以内优先，温和抓人
+                  - name: desc
+                    label: 摘要
+                    widget: text
+                    hint: 30～60 字，说明能帮用户解决什么问题，共情调性
+                  - name: url
+                    label: 跳转链接
+                    widget: string
+                    hint: 第三方平台链接，页面会以新标签打开
+                  - name: cover
+                    label: 封面（R2 公开地址）
+                    widget: string
+                    required: false
+                    hint: 留空则不渲染图片；有图时填 R2 公开 URL
+                  - name: type
+                    label: 类型
+                    widget: select
+                    options:
+                      - { label: 内容 content, value: content }
+                      - { label: 工具 tool, value: tool }
+                    default: content
+                  - name: tags
+                    label: 标签
+                    widget: list
+                    required: false
+                    field: { name: tag, label: 标签, widget: string }
