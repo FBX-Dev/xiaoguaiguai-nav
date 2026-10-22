@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>内容管理 · 小乖乖家庭资源导航</title>
+  <link rel="stylesheet" href="https://unpkg.com/@sveltia/cms/dist/sveltia-cms.css" />
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; }
+    #nc-root { min-height: 100vh; }
+    .boot {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; color: #7d756c; font-size: 14px; text-align: center;
+      flex-direction: column; gap: 10px; padding: 0 24px; line-height: 1.8;
+    }
+    .boot code { background: #f6f2ec; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div id="nc-root">
+    <div class="boot" id="boot">
+      <div>正在加载内容管理后台…</div>
+      <div>若长时间停留在本页，请检查网络后刷新；登录使用 GitHub 账号授权。</div>
+    </div>
+  </div>
+
+  <script>
+    // Sveltia CMS 通过 /oauth/* 代理完成 GitHub 授权（绑定主域名，不使用 Worker 自带域名）
+    window.CMS_MANUAL_INIT = false;
+  </script>
+  <script src="https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js" type="module"></script>
+</body>
+</html>
