@@ -1,0 +1,474 @@
+{
+  "site": {
+    "title": "小乖乖",
+    "subtitle": "家庭资源导航",
+    "disclaimer": "本站点仅做优质资源索引跳转，不提供医疗诊断、诊疗建议。第三方内容由原平台负责，请理性甄别。所有内容仅供学习参考。"
+  },
+  "categories": [
+    {
+      "name": "🧸 婴幼儿养育",
+      "items": [
+        {
+          "title": "生长曲线怎么读",
+          "desc": "世界卫生组织的儿童生长标准，按月龄查看身高体重参考区间。看懂曲线趋势，比盯单个数字更值得关注。",
+          "url": "https://www.who.int/tools/child-growth-standards",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "生长曲线",
+            "发育参考"
+          ]
+        },
+        {
+          "title": "母乳喂养基础科普",
+          "desc": "世界卫生组织的中文健康专题，把母乳喂养的常见疑问讲得比较清楚，孕晚期和哺乳期先做功课都来得及。",
+          "url": "https://www.who.int/zh/health-topics/breastfeeding",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "母乳喂养",
+            "新生儿"
+          ]
+        },
+        {
+          "title": "婴幼儿喂养指南",
+          "desc": "中国营养学会的婴幼儿喂养科普栏目，辅食添加与膳食搭配讲得比较系统，可以按月龄对照着慢慢看。",
+          "url": "https://www.cnsoc.org/learncons/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "辅食",
+            "营养"
+          ]
+        },
+        {
+          "title": "疫苗记录与提醒",
+          "desc": "按接种程序整理宝宝疫苗时间表，支持记录与提醒。各地程序略有差异，以当地接种点的安排为准。",
+          "url": "https://www.xiaodoumiao.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "疫苗",
+            "健康记录"
+          ]
+        },
+        {
+          "title": "成长记录与同龄交流",
+          "desc": "记录身高体重、喂养与睡眠，也能看到同龄宝宝的日常分享。把它当参考而不是标准答案，会轻松很多。",
+          "url": "https://www.babytree.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "成长记录",
+            "同龄交流"
+          ]
+        },
+        {
+          "title": "儿童疾病预防科普",
+          "desc": "中国疾控中心的健康科普入口，以季节性传染病预防和日常卫生提示为主。身体不舒服请及时就医。",
+          "url": "https://www.chinacdc.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "疾病预防",
+            "健康科普"
+          ]
+        },
+        {
+          "title": "亲宝宝",
+          "desc": "家庭共同记录宝宝成长的工具，可以邀请家人一起上传照片、身高体重和喂养记录，适合多成员协作。",
+          "url": "https://www.qbb6.com/",
+          "cover": "",
+          "type": "tool",
+          "tags": [
+            "成长记录",
+            "家庭协作"
+          ]
+        },
+        {
+          "title": "小步在家早教",
+          "desc": "按月龄给亲子互动建议和在家就能玩的游戏方案，适合想陪玩却不知道从哪儿开始的家长。",
+          "url": "https://www.xiaobu.com/",
+          "cover": "",
+          "type": "tool",
+          "tags": [
+            "早教",
+            "亲子游戏"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📖 儿童教育",
+      "items": [
+        {
+          "title": "国家中小学智慧教育平台",
+          "desc": "教育部官方平台的免费课程与学习资源，覆盖各学段各学科，教材同步内容比较全，打开就能看。",
+          "url": "https://basic.smartedu.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "免费课程",
+            "教材同步"
+          ]
+        },
+        {
+          "title": "科普中国",
+          "desc": "中国科协的科普内容平台，自然科学与生活常识类文章视频较多，适合给孩子做兴趣启蒙的素材库。",
+          "url": "https://www.kepuchina.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "科普",
+            "兴趣启蒙"
+          ]
+        },
+        {
+          "title": "人教社教材资源",
+          "desc": "人民教育出版社官网，电子教材与配套教学资源可查阅，适合家长先了解孩子课本的内容结构。",
+          "url": "https://www.pep.com.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "教材",
+            "同步资源"
+          ]
+        },
+        {
+          "title": "英文亲子观影参考",
+          "desc": "按年龄给出影视、App 与游戏的分级建议和内容说明，给孩子挑动画片前看一眼适龄度，省心不少。",
+          "url": "https://www.commonsensemedia.org/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "适龄内容",
+            "英文资源"
+          ]
+        },
+        {
+          "title": "凯叔讲故事",
+          "desc": "把经典故事与国学内容做成音频，适合通勤或睡前播放，孩子听着就能积累词汇和语感。",
+          "url": "https://www.kaishu.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "听故事",
+            "国学启蒙"
+          ]
+        },
+        {
+          "title": "洋葱学园",
+          "desc": "用短视频讲解数理化知识点，节奏偏轻快，适合高年级孩子自己先看一遍，再回课堂听讲。",
+          "url": "https://yangcongxueyuan.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "学科辅导",
+            "视频讲解"
+          ]
+        },
+        {
+          "title": "洪恩识字",
+          "desc": "把汉字做成互动小游戏，适合学龄前识字起步，孩子在玩里认字，家长也能看到学习进度。",
+          "url": "https://www.ihuman.com/",
+          "cover": "",
+          "type": "tool",
+          "tags": [
+            "识字",
+            "学龄前"
+          ]
+        },
+        {
+          "title": "作业帮",
+          "desc": "拍照搜题与错题整理工具，适合家长辅导作业时快速核对思路，重点还是让孩子自己弄懂。",
+          "url": "https://www.zuoyebang.com/",
+          "cover": "",
+          "type": "tool",
+          "tags": [
+            "作业辅导",
+            "错题整理"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🌷 女性成长",
+      "items": [
+        {
+          "title": "简单心理",
+          "desc": "心理咨询科普与专业服务对接平台，情绪管理、亲密关系等主题文章质量不错，可以先读再决定。",
+          "url": "https://www.jiandanxinli.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "心理科普",
+            "情绪管理"
+          ]
+        },
+        {
+          "title": "壹心理",
+          "desc": "心理学科普社区，测试、专栏与课程都有，产后情绪与自我成长话题覆盖较多，按需取用就好。",
+          "url": "https://www.xinli001.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "心理科普",
+            "产后情绪"
+          ]
+        },
+        {
+          "title": "中国妇女网",
+          "desc": "全国妇联主管的官方媒体，女性权益、职场与家庭教育类内容为主，政策信息相对权威。",
+          "url": "https://www.cnwomen.com.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "女性权益",
+            "官方媒体"
+          ]
+        },
+        {
+          "title": "声动活泼",
+          "desc": "关注商业、科技与个人成长的中文播客厂牌，通勤或做家务时听着不累，也能换换思路。",
+          "url": "https://tide.fm/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "播客",
+            "个人成长"
+          ]
+        },
+        {
+          "title": "果壳",
+          "desc": "把科学讲得好读的内容平台，女性健康与生活常识类话题有不少靠谱解释，适合闲时翻翻。",
+          "url": "https://www.guokr.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "生活科普",
+            "女性健康"
+          ]
+        },
+        {
+          "title": "澎湃新闻",
+          "desc": "以深度报道见长的新闻平台，社会与家庭议题的报道比较扎实，想多角度看事情的时候可以看看。",
+          "url": "https://www.thepaper.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "深度报道",
+            "社会议题"
+          ]
+        },
+        {
+          "title": "Keep",
+          "desc": "居家健身与拉伸课程 App，产后恢复期可以选低强度课程循序渐进。运动前建议先咨询专业医生。",
+          "url": "https://www.gotokeep.com/",
+          "cover": "",
+          "type": "tool",
+          "tags": [
+            "居家运动",
+            "产后恢复"
+          ]
+        },
+        {
+          "title": "微信读书",
+          "desc": "电子书阅读 App，心理学、育儿与女性成长类书目较全，支持划线笔记，碎片时间读几页也行。",
+          "url": "https://weread.qq.com/",
+          "cover": "",
+          "type": "tool",
+          "tags": [
+            "阅读",
+            "电子书"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🏠 家庭关系",
+      "items": [
+        {
+          "title": "得到 · 家庭沟通课",
+          "desc": "知识付费平台上的家庭沟通与亲子教育类课程较多，适合想系统听一套方法、再回家试着用的时候。",
+          "url": "https://www.dedao.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "课程",
+            "家庭沟通"
+          ]
+        },
+        {
+          "title": "知乎 · 家庭话题",
+          "desc": "问答社区，家庭分工、代际沟通等话题讨论较多，能看到不同立场，观点自行甄别就好。",
+          "url": "https://www.zhihu.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "问答",
+            "经验交流"
+          ]
+        },
+        {
+          "title": "豆瓣 · 关系书影单",
+          "desc": "书影音评分与小组社区，家庭与亲密关系主题的书单影单不少，挑内容前先看评分挺省事。",
+          "url": "https://www.douban.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "书影音",
+            "书单"
+          ]
+        },
+        {
+          "title": "喜马拉雅 · 家庭教育",
+          "desc": "音频内容平台，家庭教育与情感类专辑丰富，做家务、开车时听很方便，挑口碑好的专辑即可。",
+          "url": "https://www.ximalaya.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "音频",
+            "家庭教育"
+          ]
+        },
+        {
+          "title": "荔枝FM",
+          "desc": "以声音为主的播客平台，情感与生活类节目偏多，适合睡前放松，或者想听点真实故事的时候。",
+          "url": "https://www.lizhi.fm/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "播客",
+            "情感"
+          ]
+        },
+        {
+          "title": "蜻蜓FM · 婚姻家庭",
+          "desc": "聚合电台与有声书的音频平台，婚姻家庭类节目能搜到，通勤路上听一段，也当给自己留点空间。",
+          "url": "https://www.qtfm.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "音频",
+            "婚姻家庭"
+          ]
+        },
+        {
+          "title": "滴答清单",
+          "desc": "待办与日程管理工具，家务分工、接送安排可以建共享清单，谁做什么一眼看得见，少些扯皮。",
+          "url": "https://dida365.com/",
+          "cover": "",
+          "type": "tool",
+          "tags": [
+            "家务清单",
+            "任务管理"
+          ]
+        },
+        {
+          "title": "随手记",
+          "desc": "家庭记账 App，支持多人共同记账与分类统计，把日常开支摊开看，家庭财务沟通会顺畅很多。",
+          "url": "https://www.sui.com/",
+          "cover": "",
+          "type": "tool",
+          "tags": [
+            "家庭记账",
+            "财务沟通"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "💞 两性亲密成长",
+      "items": [
+        {
+          "title": "亲密关系沟通课",
+          "desc": "得到平台上的亲密关系与沟通类课程，讲边界、表达与冲突处理，适合两个人各自听完再聊。",
+          "url": "https://www.dedao.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "亲密关系",
+            "沟通"
+          ]
+        },
+        {
+          "title": "婚姻与伴侣咨询",
+          "desc": "简单心理的伴侣关系科普与咨询服务入口，讲怎么把话说清楚、怎么设边界，不做道德评判。",
+          "url": "https://www.jiandanxinli.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "伴侣沟通",
+            "心理科普"
+          ]
+        },
+        {
+          "title": "亲密关系科普",
+          "desc": "壹心理的亲密关系专栏，围绕依恋、表达与需求差异展开，读完更容易理解对方在意的点。",
+          "url": "https://www.xinli001.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "依恋",
+            "需求差异"
+          ]
+        },
+        {
+          "title": "婚姻家庭权益科普",
+          "desc": "官方媒体关于婚姻家庭权益与政策的内容，涉及财产、抚养等实际问题时，先看权威说法。",
+          "url": "https://www.cnwomen.com.cn/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "婚姻家庭",
+            "权益"
+          ]
+        },
+        {
+          "title": "亲密关系话题讨论",
+          "desc": "知乎上关于相处模式与边界感的讨论，能看到不同人的真实经验，当参考、不当标准答案。",
+          "url": "https://www.zhihu.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "讨论",
+            "边界感"
+          ]
+        },
+        {
+          "title": "亲密关系书单",
+          "desc": "豆瓣上亲密关系主题的高分书目与读者书评，想系统了解婚姻经营，从一本好书开始就够了。",
+          "url": "https://www.douban.com/",
+          "cover": "",
+          "type": "content",
+          "tags": [
+            "书单",
+            "婚姻经营"
+          ]
+        },
+        {
+          "title": "得到 App",
+          "desc": "知识类音频与课程 App，亲密关系、沟通表达类内容可以随时听，适合把碎片时间用来补认知。",
+          "url": "https://www.igetget.com/",
+          "cover": "",
+          "type": "tool",
+          "tags": [
+            "课程",
+            "沟通表达"
+          ]
+        },
+        {
+          "title": "蜻蜓FM",
+          "desc": "音频平台，情感与婚姻经营类节目可搜索收听，睡前听一段，比刷手机更容易平静下来。",
+          "url": "https://www.qtfm.cn/",
+          "cover": "",
+          "type": "tool",
+          "tags": [
+            "音频",
+            "婚姻经营"
+          ]
+        }
+      ]
+    }
+  ]
+}
