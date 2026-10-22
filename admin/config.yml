@@ -10,9 +10,19 @@ backend:
   name: github
   repo: FBX-Dev/xiaoguaiguai-nav
   branch: main
+  # 登录方式：
+  #   token → 粘贴 GitHub Personal Access Token（需 repo 权限），无需 OAuth App，可立即使用
+  #   oauth → 走 /oauth/* 代理的 GitHub 授权（需人工创建 OAuth App 并写入 Worker 环境变量）
+  auth_methods: [token, oauth]
   # OAuth 代理走主域名，不使用任何子域名
   base_url: https://xiaoguaiguai.cn
   auth_endpoint: oauth/authorize
+  commit_messages:
+    create: 'content: 新增 {{collection}} "{{slug}}"'
+    update: 'content: 更新 {{collection}} "{{slug}}"'
+    delete: 'content: 删除 {{collection}} "{{slug}}"'
+    uploadMedia: 'content: 上传媒体 "{{path}}"'
+    deleteMedia: 'content: 删除媒体 "{{path}}"'
 
 # 配图统一存放 Cloudflare R2，不上传 Git 仓库。
 # 下面两项仅为消除 CMS 的「未定义媒体文件夹」报错、保证后台表单正常加载；
