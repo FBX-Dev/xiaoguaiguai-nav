@@ -14,8 +14,11 @@ backend:
   base_url: https://xiaoguaiguai.cn
   auth_endpoint: oauth/authorize
 
-# 不配置 media_folder / public_folder：配图统一存放 Cloudflare R2，
-# 不上传 Git 仓库，cover 字段直接填 R2 公开地址。
+# 配图统一存放 Cloudflare R2，不上传 Git 仓库。
+# 下面两项仅为消除 CMS 的「未定义媒体文件夹」报错、保证后台表单正常加载；
+# 实际配图请人工上传 R2 后，把公开地址直接粘贴到 cover 字段，不要走媒体库上传。
+media_folder: media
+public_folder: /media
 
 site_url: https://xiaoguaiguai.cn
 display_url: https://xiaoguaiguai.cn
