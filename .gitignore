@@ -1,0 +1,15 @@
+# 凭证与密钥（绝不提交）
+_secrets/
+*.secret
+.env
+.env.*
+
+# 本地构建产物
+_dist/
+node_modules/
+
+# 临时/一次性脚本（_push.mjs 是推送工具，需保留跟踪）
+_selfcheck.py
+_gen.py
+_*.log
+_*.png
