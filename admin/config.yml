@@ -24,9 +24,12 @@ backend:
     uploadMedia: 'content: 上传媒体 "{{path}}"'
     deleteMedia: 'content: 删除媒体 "{{path}}"'
 
-# 配图统一存放 Cloudflare R2，不上传 Git 仓库。
+# 配图统一存放 Cloudflare R2 桶 xiaoguaiguai-media，通过 Worker 反代到主域名 /media/* 对外提供。
+# 上传方式：wrangler r2 object put（详见 _deliverables/R2配图上传指引.md）
+# 公开地址格式：https://xiaoguaiguai.cn/media/<分类>/<序号>-<语义>.webp
+# 说明：不用子域名（规范约束），也不用 r2.dev（国内被墙），故走主域名子路径反代。
 # 下面两项仅为消除 CMS 的「未定义媒体文件夹」报错、保证后台表单正常加载；
-# 实际配图请人工上传 R2 后，把公开地址直接粘贴到 cover 字段，不要走媒体库上传。
+# 配图请走 R2 上传后把公开地址直接粘贴到 cover 字段，不要走媒体库上传。
 media_folder: media
 public_folder: /media
 
@@ -97,7 +100,7 @@ collections:
                     label: 封面（R2 公开地址）
                     widget: string
                     required: false
-                    hint: 留空则不渲染图片；有图时填 R2 公开 URL
+                    hint: 留空则不渲染图片；有图时填 https://xiaoguaiguai.cn/media/分类/序号-语义.webp
                   - name: type
                     label: 类型
                     widget: select
