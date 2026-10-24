@@ -38,12 +38,14 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const SRC_POSTS = path.join(ROOT, "posts");
 const SRC_TOOLS = path.join(ROOT, "tools");
+const SRC_PAGES = path.join(ROOT, "pages");
 const OUT = path.join(ROOT, "_dist");
 
 const SITE = {
   title: "小乖乖",
   subtitle: "家庭与成长",
   origin: "https://xiaoguaiguai.cn",
+  email: "contact@xiaoguaiguai.cn",
   desc: "面向妈妈与家庭的内容站，原创文章覆盖婴幼儿养育、儿童教育、女性成长、家庭关系与两性亲密成长五个方向，并提供本站自研的实用小工具。",
   disclaimer:
     "本站内容仅为经验分享与知识科普，不提供医疗诊断、诊疗建议。" +
@@ -289,9 +291,13 @@ function parseFrontmatter(raw) {
 
 const BASE_CSS = `
   :root {
-    --bg: #fdfbf7; --panel: #ffffff; --ink: #3d3833; --ink-soft: #7d756c;
-    --line: #ece6dd; --accent: #d98b6a; --accent-soft: #fbf1ec;
-    --radius: 14px;
+    --bg: #fbfaf8; --panel: #ffffff; --ink: #2f2b27; --ink-2: #4a443d;
+    --ink-soft: #7c746b; --ink-mute: #a39a8f;
+    --line: #e9e4dc; --line-soft: #f2eee8;
+    --accent: #c96f4a; --accent-deep: #a95636; --accent-soft: #fdf3ee;
+    --radius: 10px; --radius-lg: 14px;
+    --shadow: 0 1px 2px rgba(90,70,50,.04), 0 4px 14px rgba(90,70,50,.05);
+    --shadow-hover: 0 2px 4px rgba(90,70,50,.05), 0 10px 26px rgba(90,70,50,.09);
   }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
@@ -300,27 +306,49 @@ const BASE_CSS = `
     font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
                  "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
     line-height: 1.75; font-size: 15px;
+    -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-  .narrow { max-width: 760px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 22px; }
+  .narrow { max-width: 720px; }
 
   a { color: var(--accent); }
-  .crumb { margin: 26px 0 0; font-size: 13px; color: var(--ink-soft); }
-  .crumb a { color: var(--ink-soft); text-decoration: none; }
+  .crumb { margin: 22px 0 0; font-size: 12.5px; color: var(--ink-mute); }
+  .crumb a { color: var(--ink-mute); text-decoration: none; }
   .crumb a:hover { color: var(--accent); }
-  .crumb span { margin: 0 6px; color: #cbc2b6; }
+  .crumb span { margin: 0 6px; color: #cfc7bb; }
+  .crumb strong { font-weight: 500; color: var(--ink-soft); }
 
-  header.page { padding: 26px 0 22px; border-bottom: 1px solid var(--line); }
-  header.page h1 { margin: 0 0 10px; font-size: 27px; font-weight: 600; line-height: 1.45; letter-spacing: .01em; }
-  header.page .meta { color: var(--ink-soft); font-size: 13px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  /* ── 页面标题区：门户式「主标题 + 副标题 + 右对齐统计」── */
+  header.page {
+    padding: 30px 0 20px; border-bottom: 2px solid var(--line);
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 20px; flex-wrap: wrap;
+  }
+  header.page .hd-main { min-width: 0; }
+  header.page h1 {
+    margin: 0; font-size: 30px; font-weight: 700; line-height: 1.32;
+    letter-spacing: -.01em; color: var(--ink);
+  }
+  header.page .sub {
+    margin: 9px 0 0; font-size: 14px; color: var(--ink-soft); line-height: 1.7;
+    max-width: 640px;
+  }
+  header.page .meta {
+    color: var(--ink-mute); font-size: 12.5px; display: flex; flex-wrap: wrap;
+    gap: 12px; align-items: center; flex: none;
+  }
   header.page .meta .pill {
     background: var(--accent-soft); color: var(--accent);
-    padding: 2px 10px; border-radius: 999px; font-size: 12.5px;
+    padding: 3px 11px; border-radius: 6px; font-size: 12.5px; font-weight: 500;
   }
+  header.page .meta .stat b { color: var(--accent); font-size: 15px; font-weight: 600; }
 
   article.body { padding: 30px 0 10px; }
-  article.body h2 { font-size: 20px; font-weight: 600; margin: 34px 0 12px; padding-left: 11px; border-left: 3px solid var(--accent); }
-  article.body h3 { font-size: 17px; font-weight: 600; margin: 26px 0 10px; }
+  article.body h2 {
+    font-size: 19.5px; font-weight: 700; margin: 36px 0 13px;
+    padding-left: 12px; border-left: 3px solid var(--accent); color: var(--ink);
+  }
+  article.body h3 { font-size: 16.5px; font-weight: 600; margin: 27px 0 10px; color: var(--ink-2); }
   article.body h4 { font-size: 15.5px; font-weight: 600; margin: 20px 0 8px; color: #554e46; }
   article.body p { margin: 0 0 16px; }
   article.body ul, article.body ol { margin: 0 0 16px; padding-left: 22px; }
@@ -346,33 +374,98 @@ const BASE_CSS = `
   .tags { display: flex; flex-wrap: wrap; gap: 7px; margin: 26px 0 0; }
   .tags span { font-size: 12px; color: #a09689; background: #faf7f2; padding: 2px 9px; border-radius: 5px; }
 
+  /* ══════════════════════════════════════════════════════════
+   * 索引列表（纯文字）—— 首页最新内容 / 全部内容 / 分类页共用
+   * 参照母婴门户与品牌站的索引结构：左侧分类色条 + 标题 + 摘要
+   * + 底部元信息，行间细线分隔，扫读优先，不使用配图。
+   * ══════════════════════════════════════════════════════════ */
+  ul.index { list-style: none; margin: 0; padding: 0; }
+  ul.index > li { border-bottom: 1px solid var(--line-soft); }
+  ul.index > li:last-child { border-bottom: 0; }
+  a.item {
+    display: block; padding: 17px 4px 17px 16px; text-decoration: none;
+    color: inherit; position: relative; border-radius: 0 var(--radius) var(--radius) 0;
+    transition: background .16s ease, padding-left .16s ease;
+  }
+  a.item::before {
+    content: ""; position: absolute; left: 0; top: 20px; bottom: 20px; width: 3px;
+    background: var(--accent); border-radius: 2px; opacity: 0;
+    transition: opacity .16s ease;
+  }
+  a.item:hover { background: var(--panel); padding-left: 22px; }
+  a.item:hover::before { opacity: 1; }
+  a.item .ttl {
+    font-size: 16.5px; font-weight: 600; line-height: 1.5; color: var(--ink);
+    margin: 0 0 6px; transition: color .16s ease;
+  }
+  a.item:hover .ttl { color: var(--accent-deep); }
+  a.item .sm {
+    margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.72;
+  }
+  a.item .mt {
+    margin-top: 9px; display: flex; flex-wrap: wrap; align-items: center;
+    gap: 9px; font-size: 12px; color: var(--ink-mute);
+  }
+  a.item .mt .tag {
+    background: var(--accent-soft); color: var(--accent); font-weight: 500;
+    padding: 2px 9px; border-radius: 5px; font-size: 11.5px; letter-spacing: .02em;
+  }
+  a.item .mt .dot { color: #ddd5c9; }
+
+  /* 双栏索引（分类页用，宽屏下两列，窄屏回落单列）*/
+  ul.index.two { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); column-gap: 34px; }
+  ul.index.two > li { break-inside: avoid; }
+
+  /* 索引为空时的占位 */
+  .empty-note {
+    padding: 34px 20px; text-align: center; color: var(--ink-mute); font-size: 14px;
+    background: var(--panel); border: 1px dashed var(--line); border-radius: var(--radius-lg);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+   * 卡片网格（仅用于「小工具」，以及文章页的同类内容推荐）
+   * ══════════════════════════════════════════════════════════ */
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); }
   a.card {
     display: block; background: var(--panel); border: 1px solid var(--line);
-    border-radius: var(--radius); padding: 16px 18px; text-decoration: none;
-    color: inherit; transition: border-color .18s ease, box-shadow .18s ease;
+    border-radius: var(--radius-lg); padding: 16px 18px; text-decoration: none;
+    color: inherit; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
   }
-  a.card:hover { border-color: #e2d5c8; box-shadow: 0 6px 18px rgba(180,150,120,.09); }
+  a.card:hover { border-color: #e0d4c6; box-shadow: var(--shadow-hover); transform: translateY(-2px); }
   a.card .thumb {
     width: 100%; aspect-ratio: 16 / 9; object-fit: cover;
     border-radius: 9px; margin-bottom: 12px; display: block; background: var(--accent-soft);
   }
-  a.card .row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  a.card .row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
   a.card .badge {
     flex: none; font-size: 11px; padding: 2px 8px; border-radius: 6px;
     background: var(--accent-soft); color: var(--accent); letter-spacing: .02em;
   }
   a.card .badge.tool { background: #eef4ef; color: #5d8a6c; }
-  a.card .title { font-size: 15.5px; font-weight: 600; }
+  a.card .title { font-size: 15.5px; font-weight: 600; line-height: 1.5; }
   a.card .desc { margin: 0; color: var(--ink-soft); font-size: 13.5px; line-height: 1.68; }
   a.card .date { margin-top: 9px; font-size: 12px; color: #b3aa9e; }
 
+  /* ══════════════════════════════════════════════════════════
+   * 区块标题：门户式「左侧竖条 + 主标题 + 右侧查看全部」
+   * ══════════════════════════════════════════════════════════ */
   section.block { margin: 38px 0 0; }
-  section.block > h2 {
-    font-size: 19px; font-weight: 600; margin: 0 0 4px;
-    padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  section.block > h2, section.home > h2 {
+    font-size: 18px; font-weight: 700; margin: 0 0 6px; color: var(--ink);
+    padding: 0 0 0 12px; border-left: 3px solid var(--accent);
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; line-height: 1.5;
   }
-  section.block > .lead { color: var(--ink-soft); font-size: 13px; margin: 8px 0 16px; }
+  section.block > h2 .more, section.home > h2 .more {
+    flex: none; font-size: 12.5px; font-weight: 400;
+    color: var(--accent); text-decoration: none; white-space: nowrap;
+  }
+  section.block > h2 .more:hover, section.home > h2 .more:hover { text-decoration: underline; }
+  section.block > .lead, section.home > .lead {
+    color: var(--ink-mute); font-size: 12.5px; margin: 0 0 4px; padding-left: 12px;
+  }
+  section.block > .lead + ul.index, section.home > .lead + ul.index { margin-top: 6px; }
+  section.block > ul.index, section.home > ul.index { margin-top: 6px; }
 
   .disclaimer {
     margin-top: 4rem; padding: 1rem; font-size: .8rem; color: #777;
@@ -381,88 +474,88 @@ const BASE_CSS = `
   .disclaimer .rule { max-width: 720px; margin: 0 auto 8px; height: 1px; background: var(--line); }
   footer.meta { text-align: center; color: #a8a096; font-size: 12px; padding: 0 0 40px; }
   footer.meta a { color: #a8a096; text-decoration: none; border-bottom: 1px dotted #d8d0c4; }
+  footer.meta .fnav { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; margin: 0 0 12px; }
   .backlink { display: inline-block; margin: 30px 0 0; font-size: 13.5px; }
 
   /* ── 顶部站头 + 导航栏（全站统一，所有页面共用）── */
   header.site {
-    background: rgba(253,251,247,.92); border-bottom: 1px solid var(--line);
-    position: sticky; top: 0; z-index: 20; backdrop-filter: saturate(180%) blur(8px);
+    background: rgba(251,250,248,.94); border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 20; backdrop-filter: saturate(180%) blur(10px);
   }
   header.site .bar {
-    max-width: 1080px; margin: 0 auto; padding: 13px 20px;
-    display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+    max-width: 1120px; margin: 0 auto; padding: 12px 22px;
+    display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
   }
   header.site .brand { display: flex; align-items: baseline; gap: 9px; text-decoration: none; color: inherit; flex: none; }
-  header.site .brand .nm { font-size: 19px; font-weight: 600; letter-spacing: .03em; }
-  header.site .brand .sub { font-size: 12.5px; color: var(--ink-soft); letter-spacing: .02em; }
-  header.site nav.top { display: flex; flex-wrap: wrap; gap: 4px; margin-left: auto; }
+  header.site .brand .nm { font-size: 20px; font-weight: 700; letter-spacing: .02em; }
+  header.site .brand .sub {
+    font-size: 12px; color: var(--ink-mute); letter-spacing: .06em;
+    padding-left: 9px; border-left: 1px solid var(--line);
+  }
+  header.site nav.top { display: flex; flex-wrap: wrap; gap: 2px; margin-left: auto; }
   header.site nav.top a {
-    padding: 6px 12px; border-radius: 8px; font-size: 14px;
-    color: #5c554d; text-decoration: none; white-space: nowrap;
+    padding: 6px 11px; border-radius: 7px; font-size: 13.5px;
+    color: var(--ink-2); text-decoration: none; white-space: nowrap;
     transition: background .15s ease, color .15s ease;
   }
   header.site nav.top a:hover { background: var(--accent-soft); color: var(--accent); }
-  header.site nav.top a.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  header.site nav.top a.on { background: var(--accent); color: #fff; font-weight: 500; }
 
-  /* ── 首页：置顶精选 ── */
-  .hero-pick { display: block; margin: 30px 0 0; text-decoration: none; color: inherit; }
+  /* ── 首页焦点区（全站唯一使用大图的位置）── */
+  .hero-pick { display: block; margin: 26px 0 0; text-decoration: none; color: inherit; }
   .hero-pick .inner {
-    display: grid; grid-template-columns: 1.15fr 1fr; gap: 0;
+    display: grid; grid-template-columns: 1.08fr 1fr; gap: 0;
     background: var(--panel); border: 1px solid var(--line);
-    border-radius: var(--radius); overflow: hidden;
-    transition: border-color .18s ease, box-shadow .18s ease;
+    border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow);
+    transition: box-shadow .2s ease;
   }
-  .hero-pick:hover .inner { border-color: #e2d5c8; box-shadow: 0 10px 30px rgba(180,150,120,.13); }
-  .hero-pick .cover { width: 100%; height: 100%; min-height: 250px; object-fit: cover; display: block; background: var(--accent-soft); }
-  .hero-pick .txt { padding: 26px 30px; display: flex; flex-direction: column; justify-content: center; }
+  .hero-pick:hover .inner { box-shadow: var(--shadow-hover); }
+  .hero-pick .cover { width: 100%; height: 100%; min-height: 268px; object-fit: cover; display: block; background: var(--accent-soft); }
+  .hero-pick .txt { padding: 30px 34px; display: flex; flex-direction: column; justify-content: center; }
   .hero-pick .kicker {
-    font-size: 11.5px; letter-spacing: .1em; color: var(--accent);
-    text-transform: uppercase; margin-bottom: 10px;
+    font-size: 11px; letter-spacing: .14em; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 12px; font-weight: 600;
   }
-  .hero-pick h2 { margin: 0 0 12px; font-size: 24px; font-weight: 600; line-height: 1.42; }
-  .hero-pick p { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.75; }
-  .hero-pick .meta { margin-top: 16px; font-size: 12.5px; color: #b3aa9e; display: flex; gap: 10px; align-items: center; }
+  .hero-pick h2 { margin: 0 0 13px; font-size: 25px; font-weight: 700; line-height: 1.4; letter-spacing: -.01em; }
+  .hero-pick p { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.78; }
+  .hero-pick .meta { margin-top: 18px; font-size: 12.5px; color: var(--ink-mute); display: flex; gap: 10px; align-items: center; }
 
-  /* ── 首页：分类入口卡 ── */
-  .cat-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(196px, 1fr)); }
+  /* ── 首页：分类入口卡（门户式紧凑导航块）── */
+  .cat-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
   a.cat-card {
     display: block; padding: 16px 18px; text-decoration: none; color: inherit;
-    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
     transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    border-top: 3px solid var(--accent);
   }
-  a.cat-card:hover { border-color: #e2d5c8; box-shadow: 0 6px 18px rgba(180,150,120,.1); transform: translateY(-2px); }
+  a.cat-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
   a.cat-card .nm { font-size: 15.5px; font-weight: 600; margin-bottom: 5px; }
-  a.cat-card .br { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
-  a.cat-card .ct { margin-top: 11px; font-size: 12px; color: var(--accent); }
+  a.cat-card .br { font-size: 12.5px; color: var(--ink-soft); line-height: 1.62; }
+  a.cat-card .ct { margin-top: 12px; font-size: 12px; color: var(--accent); font-weight: 500; }
 
-  /* ── 首页：区块标题（带「查看全部」）── */
-  section.home { margin: 46px 0 0; }
-  section.home > h2 {
-    font-size: 19px; font-weight: 600; margin: 0 0 4px;
-    padding-bottom: 12px; border-bottom: 1px solid var(--line);
-    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  }
-  section.home > h2 .more {
-    flex: none; font-size: 13px; font-weight: 400;
-    color: var(--accent); text-decoration: none; white-space: nowrap;
-  }
-  section.home > h2 .more:hover { text-decoration: underline; }
-  section.home > .lead { color: var(--ink-soft); font-size: 13px; margin: 8px 0 16px; }
+  /* ── 首页区块 ── */
+  section.home { margin: 44px 0 0; }
 
-  @media (max-width: 760px) {
+  @media (max-width: 860px) {
     .hero-pick .inner { grid-template-columns: 1fr; }
-    .hero-pick .cover { min-height: 180px; aspect-ratio: 16/9; }
-    .hero-pick .txt { padding: 20px 22px; }
-    .hero-pick h2 { font-size: 20px; }
+    .hero-pick .cover { min-height: 190px; aspect-ratio: 16/9; }
+    .hero-pick .txt { padding: 22px 24px; }
+    .hero-pick h2 { font-size: 21px; }
+    ul.index.two { grid-template-columns: 1fr; column-gap: 0; }
   }
 
   @media (max-width: 560px) {
-    header.page h1 { font-size: 22px; }
+    header.page { padding: 24px 0 16px; }
+    header.page h1 { font-size: 24px; }
+    header.page .meta { font-size: 12px; gap: 9px; }
     .grid { grid-template-columns: 1fr; }
     .wrap { padding: 0 16px; }
-    header.site .bar { padding: 11px 16px; gap: 12px; }
+    a.item { padding: 15px 2px 15px 13px; }
+    a.item:hover { padding-left: 17px; }
+    a.item .ttl { font-size: 15.5px; }
+    header.site .bar { padding: 10px 16px; gap: 12px; }
     header.site .brand .sub { display: none; }
-    header.site nav.top { margin-left: 0; width: 100%; gap: 2px; }
+    header.site nav.top { margin-left: 0; width: 100%; gap: 1px; overflow-x: auto; }
     header.site nav.top a { padding: 5px 9px; font-size: 13px; }
   }
 
@@ -554,6 +647,7 @@ function topbar(active) {
     { key: "home", text: "首页", href: "/" },
     ...CATS.map((c) => ({ key: c.slug, text: c.name.replace(/^\S+\s*/, ""), href: `/category/${c.slug}/` })),
     { key: "tools", text: "小工具", href: "/tools/" },
+    { key: "about", text: "关于", href: "/about/" },
   ];
   return `<header class="site">
   <div class="bar">
@@ -568,7 +662,21 @@ ${items.map((i) => `      <a href="${i.href}"${i.key === active ? ' class="on" a
 </header>`;
 }
 
-function shell({ title, desc, body, canonical, active, noindex }) {
+/**
+ * 页脚导航。合规页面（隐私 / 免责 / 条款 / 联系）必须全站可达 ——
+ * Google AdSense 审核与搜索质量评估都会检查这些页面能否从站内找到。
+ */
+const FOOT_LINKS = [
+  { text: "关于我们", href: "/about/" },
+  { text: "联系我们", href: "/contact/" },
+  { text: "隐私政策", href: "/privacy/" },
+  { text: "免责声明", href: "/disclaimer/" },
+  { text: "使用条款", href: "/terms/" },
+  { text: "全部内容", href: "/posts/" },
+  { text: "小工具", href: "/tools/" },
+];
+
+function shell({ title, desc, body, canonical, active, noindex, updated }) {
   const full = title === SITE.title ? `${SITE.title} · ${SITE.subtitle}` : `${title} ｜ ${SITE.title} · ${SITE.subtitle}`;
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -577,9 +685,17 @@ function shell({ title, desc, body, canonical, active, noindex }) {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${escapeHtml(full)}</title>
 <meta name="description" content="${escapeHtml(desc || SITE.desc)}" />
-${noindex ? `<meta name="robots" content="noindex" />` : ""}
+${noindex ? `<meta name="robots" content="noindex" />` : `<meta name="robots" content="index, follow, max-image-preview:large" />`}
 ${canonical ? `<link rel="canonical" href="${SITE.origin}${canonical}" />` : ""}
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="${escapeHtml(SITE.title)}" />
+<meta property="og:title" content="${escapeHtml(title === SITE.title ? SITE.title : title)}" />
+<meta property="og:description" content="${escapeHtml(desc || SITE.desc)}" />
+${canonical ? `<meta property="og:url" content="${SITE.origin}${canonical}" />` : ""}
+<meta name="twitter:card" content="summary" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+${updated ? `<meta name="last-modified" content="${escapeHtml(updated)}" />` : ""}
 <style>${BASE_CSS}</style>
 </head>
 <body>
@@ -591,7 +707,11 @@ ${body}
     <p>${escapeHtml(SITE.disclaimer)}</p>
   </div>
   <footer class="meta">
-    <p>${escapeHtml(SITE.title)} · ${escapeHtml(SITE.subtitle)} ｜ <a href="/">首页</a> ｜ <a href="/posts/">全部内容</a> ｜ <a href="/tools/">小工具</a> ｜ <a href="/admin" target="_blank" rel="noopener noreferrer">后台</a></p>
+    <nav class="fnav" aria-label="页脚导航">
+${FOOT_LINKS.map((l) => `      <a href="${l.href}">${escapeHtml(l.text)}</a>`).join("\n")}
+    </nav>
+    <p>${escapeHtml(SITE.title)} · ${escapeHtml(SITE.subtitle)} ｜ 联系邮箱：${escapeHtml(SITE.email)}</p>
+    <p style="margin:6px 0 0">© ${new Date().getFullYear()} ${escapeHtml(SITE.title)} ｜ 本站内容仅供学习参考</p>
   </footer>
 </div>
 </body>
@@ -649,14 +769,68 @@ function readTools() {
 }
 
 /* ============================================================
+ * 五之二、静态合规页面（关于 / 隐私 / 免责 / 条款 / 联系）
+ * ------------------------------------------------------------
+ * 这些页面是 Google AdSense 审核与搜索质量评估的必需项：
+ * 必须有清晰可读的隐私政策（说明第三方广告 Cookie）、免责声明、
+ * 联系方式与关于说明，且都要能从站内任意页面到达。
+ * 源文件放 pages/*.md，按 order 排序，走同一套 markdown 渲染器。
+ * ========================================================== */
+
+function readPages() {
+  if (!fs.existsSync(SRC_PAGES)) return [];
+  const out = [];
+  for (const f of fs.readdirSync(SRC_PAGES)) {
+    if (!f.endsWith(".md")) continue;
+    const raw = fs.readFileSync(path.join(SRC_PAGES, f), "utf8");
+    const { data, body } = parseFrontmatter(raw);
+    if (data.draft === true) continue;
+    out.push({
+      slug: data.slug || f.replace(/\.md$/, ""),
+      title: data.title || f.replace(/\.md$/, ""),
+      desc: data.desc || "",
+      updated: fmtDate(data.updated),
+      order: Number(data.order) || 99,
+      pri: Number(data.pri) || 0.3,
+      body,
+    });
+  }
+  out.sort((a, b) => a.order - b.order || a.slug.localeCompare(b.slug));
+  return out;
+}
+
+/* ============================================================
  * 六、构建
  * ========================================================== */
+
+/**
+ * 纯文字索引条目（首页最新内容 / 全部内容 / 分类页共用）。
+ * 刻意不放配图：列表页的价值在于「快速扫读标题与摘要」，
+ * 大图会挤压信息密度、拖慢首屏，且缩略图在窄屏下排版容易失衡。
+ * @param {object} p 文章对象
+ * @param {{withCat?:boolean, tagText?:string}} [opt]
+ */
+function itemRow(p, opt = {}) {
+  const tag = opt.tagText || (opt.withCat ? p.category.replace(/^\S+\s*/, "") : "");
+  return `    <li>
+      <a class="item" href="/posts/${encodeURIComponent(p.slug)}/">
+        <p class="ttl">${escapeHtml(p.title)}</p>
+        ${p.excerpt ? `<p class="sm">${escapeHtml(p.excerpt)}</p>` : ""}
+        <div class="mt">
+          ${tag ? `<span class="tag">${escapeHtml(tag)}</span>` : ""}
+          <span>${escapeHtml(p.date)}</span>
+          ${p.tags && p.tags.length ? `<span class="dot">·</span><span>${escapeHtml(p.tags.slice(0, 3).join(" / "))}</span>` : ""}
+        </div>
+      </a>
+    </li>`;
+}
 
 function build() {
   log("→ 读取源文件");
   const posts = readPosts();
   const tools = readTools();
-  log(`  文章 ${posts.length} 篇，工具 ${tools.length} 个`);
+  const pages = readPages();
+  log(`  文章 ${posts.length} 篇，工具 ${tools.length} 个，静态页 ${pages.length} 个`);
 
   rmrf(OUT);
   ensure(OUT);
@@ -692,8 +866,10 @@ function build() {
   log(`  posts.json（${index.length} 条）`);
 
   /* ---- 首页（构建时静态生成，利于 SEO，且无运行时 fetch 失败路径）---- */
-  const pick = posts[0]; // 置顶精选 = 最新一篇
-  const latest9 = posts.slice(pick ? 1 : 0, pick ? 10 : 9);
+  // 排版取舍：首页只在「焦点区」保留一张大图（全站唯一），
+  // 其余列表一律用纯文字索引 —— 大图压文字在列表里既不好看也伤扫读效率。
+  const pick = posts[0]; // 焦点文章 = 最新一篇
+  const latest = posts.slice(pick ? 1 : 0, pick ? 13 : 12); // 焦点区占 1 篇，合计首页呈现 13 篇
   const homeBody = `
 <main>
 ${
@@ -702,7 +878,7 @@ ${
   <div class="inner">
     ${pick.cover ? `<img class="cover" src="${escapeHtml(pick.cover)}" alt="${escapeHtml(pick.title)}" />` : ""}
     <div class="txt">
-      <div class="kicker">置顶精选</div>
+      <div class="kicker">最新推荐</div>
       <h2>${escapeHtml(pick.title)}</h2>
       <p>${escapeHtml(pick.excerpt)}</p>
       <div class="meta"><span>${escapeHtml(pick.category)}</span><span>·</span><span>${escapeHtml(pick.date)}</span></div>
@@ -713,35 +889,27 @@ ${
 }
 
 <section class="home">
-  <h2><span>最新文章</span><a class="more" href="/posts/">查看全部 ${posts.length} 篇 →</a></h2>
+  <h2><span>最新内容</span><a class="more" href="/posts/">查看全部 ${posts.length} 篇 →</a></h2>
   <div class="lead">按发布时间倒序</div>
   ${
-    latest9.length
-      ? `<div class="grid">
-${latest9
-  .map(
-    (p) => `    <a class="card" href="/posts/${encodeURIComponent(p.slug)}/">
-      ${p.cover ? `<img class="thumb" src="${escapeHtml(p.cover)}" alt="${escapeHtml(p.title)}" loading="lazy" />` : ""}
-      <div class="row"><span class="badge">${escapeHtml(p.category.replace(/^\S+\s*/, ""))}</span><span class="title">${escapeHtml(p.title)}</span></div>
-      <p class="desc">${escapeHtml(p.excerpt)}</p>
-      <div class="date">${escapeHtml(p.date)}</div>
-    </a>`
-  )
-  .join("\n")}
-  </div>`
-      : `<p class="lead">内容正在整理中，敬请期待。</p>`
+    latest.length
+      ? `<ul class="index">
+${latest.map((p) => itemRow(p, { withCat: true })).join("\n")}
+  </ul>`
+      : `<div class="empty-note">内容正在整理中，敬请期待。</div>`
   }
 </section>
 
 <section class="home">
   <h2><span>按分类浏览</span></h2>
-  <div class="cat-cards">
+  <div class="lead">五个固定方向，每个方向持续更新</div>
+  <div class="cat-cards" style="margin-top:16px">
 ${CATS.map((c) => {
   const n = posts.filter((p) => p.catSlug === c.slug).length;
   return `    <a class="cat-card" href="/category/${c.slug}/">
       <div class="nm">${escapeHtml(c.name)}</div>
       <div class="br">${escapeHtml(c.brief)}</div>
-      <div class="ct">${n} 篇文章 →</div>
+      <div class="ct">${n} 篇内容 →</div>
     </a>`;
 }).join("\n")}
   </div>
@@ -752,7 +920,7 @@ ${CATS.map((c) => {
   <div class="lead">纯前端运行，数据不上传，全部在本站内使用</div>
   ${
     tools.length
-      ? `<div class="grid">
+      ? `<div class="grid" style="margin-top:16px">
 ${tools
   .map(
     (t) => `    <a class="card" href="/tools/${t.slug}/">
@@ -762,7 +930,7 @@ ${tools
   )
   .join("\n")}
   </div>`
-      : `<p class="lead">工具正在开发中。</p>`
+      : `<div class="empty-note">工具正在开发中。</div>`
   }
 </section>
 </main>`;
@@ -779,9 +947,12 @@ ${tools
     ensure(dir);
     const related = posts.filter((x) => x.slug !== p.slug && x.catSlug === p.catSlug).slice(0, 3);
     const body = `
-${crumb([{ text: "首页", href: "/" }, { text: "内容", href: "/posts/" }, { text: p.category || "内容" }])}
+${crumb([{ text: "首页", href: "/" }, { text: "全部内容", href: "/posts/" }, { text: p.category || "内容" }])}
 <header class="page">
-  <h1>${escapeHtml(p.title)}</h1>
+  <div class="hd-main">
+    <h1>${escapeHtml(p.title)}</h1>
+    ${p.excerpt ? `<p class="sub">${escapeHtml(p.excerpt)}</p>` : ""}
+  </div>
   <div class="meta">
     ${p.category ? `<span class="pill">${escapeHtml(p.category)}</span>` : ""}
     <span>${escapeHtml(p.date)}</span>
@@ -794,17 +965,10 @@ ${p.tags.length ? `<div class="tags">${p.tags.map((t) => `<span>${escapeHtml(t)}
 ${
   related.length
     ? `<section class="block narrow">
-  <h2>同类内容</h2>
-  <div class="grid" style="margin-top:16px">
-${related
-  .map(
-    (r) => `    <a class="card" href="/posts/${encodeURIComponent(r.slug)}/">
-      <div class="row"><span class="badge">内容</span><span class="title">${escapeHtml(r.title)}</span></div>
-      <p class="desc">${escapeHtml(r.excerpt)}</p>
-    </a>`
-  )
-  .join("\n")}
-  </div>
+  <h2><span>同类内容</span><a class="more" href="/category/${p.catSlug}/">查看该分类 →</a></h2>
+  <ul class="index">
+${related.map((r) => itemRow(r, { tagText: "同分类" })).join("\n")}
+  </ul>
 </section>`
     : ""
 }
@@ -813,36 +977,43 @@ ${related
   }
   log(`  文章页 ${posts.length} 个`);
 
-  /* ---- 文章列表页 ---- */
+  /* ---- 文章列表页（CMS 式索引：全部分类顺序铺开，纯文字）---- */
   const byCat = CATS.map((c) => ({ cat: c, items: posts.filter((p) => p.catSlug === c.slug) }));
   const listBody = `
-${crumb([{ text: "首页", href: "/" }, { text: "内容" }])}
+${crumb([{ text: "首页", href: "/" }, { text: "全部内容" }])}
 <header class="page">
-  <h1>全部内容</h1>
-  <div class="meta"><span>共 ${posts.length} 篇</span><span>按发布时间倒序</span></div>
+  <div class="hd-main">
+    <h1>全部内容</h1>
+    <p class="sub">${escapeHtml(SITE.title)}收录的家庭与成长内容，共 ${posts.length} 篇，按分类归集、按发布时间倒序。</p>
+  </div>
+  <div class="meta">
+    <span class="stat"><b>${posts.length}</b> 篇内容</span>
+    <span class="stat"><b>${CATS.length}</b> 个分类</span>
+  </div>
 </header>
+<nav class="cat-cards" style="margin-top:24px" aria-label="分类快捷入口">
+${CATS.map((c) => {
+  const n = posts.filter((p) => p.catSlug === c.slug).length;
+  return `  <a class="cat-card" href="#cat-${c.slug}">
+    <div class="nm">${escapeHtml(c.name)}</div>
+    <div class="br">${escapeHtml(c.brief)}</div>
+    <div class="ct">${n} 篇 →</div>
+  </a>`;
+}).join("\n")}
+</nav>
 ${byCat
   .filter((g) => g.items.length)
   .map(
-    (g) => `<section class="block">
-  <h2>${escapeHtml(g.cat.name)}</h2>
-  <div class="lead">${g.items.length} 篇</div>
-  <div class="grid">
-${g.items
-  .map(
-    (p) => `    <a class="card" href="/posts/${encodeURIComponent(p.slug)}/">
-      ${p.cover ? `<img class="thumb" src="${escapeHtml(p.cover)}" alt="${escapeHtml(p.title)}" loading="lazy" />` : ""}
-      <div class="row"><span class="badge">内容</span><span class="title">${escapeHtml(p.title)}</span></div>
-      <p class="desc">${escapeHtml(p.excerpt)}</p>
-      <div class="date">${escapeHtml(p.date)}</div>
-    </a>`
-  )
-  .join("\n")}
-  </div>
+    (g) => `<section class="block" id="cat-${g.cat.slug}">
+  <h2><span>${escapeHtml(g.cat.name)}</span><a class="more" href="/category/${g.cat.slug}/">进入分类页 →</a></h2>
+  <div class="lead">${g.items.length} 篇 · ${escapeHtml(g.cat.brief)}</div>
+  <ul class="index">
+${g.items.map((p) => itemRow(p)).join("\n")}
+  </ul>
 </section>`
   )
   .join("\n")}`;
-  fs.writeFileSync(path.join(OUT, "posts", "index.html"), shell({ title: "全部内容", desc: "小乖乖收录的家庭与成长相关内容，按分类浏览。", body: listBody, canonical: "/posts/", active: "posts" }), "utf8");
+  fs.writeFileSync(path.join(OUT, "posts", "index.html"), shell({ title: "全部内容", desc: `小乖乖收录的家庭与成长相关内容，共 ${posts.length} 篇，按分类浏览。`, body: listBody, canonical: "/posts/", active: "posts" }), "utf8");
   log("  文章列表页 /posts/");
 
   /* ---- 分类页 /category/<slug>/（顶部导航的 5 个分类入口）---- */
@@ -850,32 +1021,44 @@ ${g.items
     const items = posts.filter((p) => p.catSlug === c.slug);
     const dir = path.join(OUT, "category", c.slug);
     ensure(dir);
+    const others = CATS.filter((x) => x.slug !== c.slug);
     const catBody = `
-${crumb([{ text: "首页", href: "/" }, { text: "分类" }, { text: c.name }])}
+${crumb([{ text: "首页", href: "/" }, { text: "分类", href: "/posts/" }, { text: c.name }])}
 <header class="page">
-  <h1>${escapeHtml(c.name)}</h1>
-  <div class="meta"><span>共 ${items.length} 篇</span><span>${escapeHtml(c.brief)}</span></div>
+  <div class="hd-main">
+    <h1>${escapeHtml(c.name)}</h1>
+    <p class="sub">${escapeHtml(c.brief)}。本分类共 ${items.length} 篇内容，按发布时间倒序。</p>
+  </div>
+  <div class="meta">
+    <span class="stat"><b>${items.length}</b> 篇内容</span>
+    ${items.length ? `<span>最近更新 ${escapeHtml(items[0].date)}</span>` : ""}
+  </div>
 </header>
 ${
   items.length
-    ? `<div class="grid" style="margin-top:24px">
-${items
-  .map(
-    (p) => `    <a class="card" href="/posts/${encodeURIComponent(p.slug)}/">
-      ${p.cover ? `<img class="thumb" src="${escapeHtml(p.cover)}" alt="${escapeHtml(p.title)}" loading="lazy" />` : ""}
-      <div class="row"><span class="badge">${escapeHtml(c.name.replace(/^\S+\s*/, ""))}</span><span class="title">${escapeHtml(p.title)}</span></div>
-      <p class="desc">${escapeHtml(p.excerpt)}</p>
-      <div class="date">${escapeHtml(p.date)}</div>
-    </a>`
-  )
-  .join("\n")}
-  </div>`
-    : `<p class="lead" style="margin-top:24px">该分类内容正在整理中。</p>`
+    ? `<ul class="index two" style="margin-top:22px">
+${items.map((p) => itemRow(p, { tagText: p.category.replace(/^\S+\s*/, "") })).join("\n")}
+  </ul>`
+    : `<div class="empty-note" style="margin-top:22px">该分类内容正在整理中。</div>`
 }
-<p class="backlink"><a href="/posts/">← 查看全部内容</a></p>`;
+<section class="block">
+  <h2><span>浏览其他分类</span><a class="more" href="/posts/">全部内容 →</a></h2>
+  <div class="cat-cards" style="margin-top:14px">
+${others
+  .map((o) => {
+    const n = posts.filter((p) => p.catSlug === o.slug).length;
+    return `    <a class="cat-card" href="/category/${o.slug}/">
+      <div class="nm">${escapeHtml(o.name)}</div>
+      <div class="br">${escapeHtml(o.brief)}</div>
+      <div class="ct">${n} 篇 →</div>
+    </a>`;
+  })
+  .join("\n")}
+  </div>
+</section>`;
     fs.writeFileSync(
       path.join(dir, "index.html"),
-      shell({ title: c.name, desc: `${c.name}：${c.brief}。小乖乖原创内容。`, body: catBody, canonical: `/category/${c.slug}/`, active: c.slug }),
+      shell({ title: c.name, desc: `${c.name}：${c.brief}。小乖乖原创内容，共 ${items.length} 篇。`, body: catBody, canonical: `/category/${c.slug}/`, active: c.slug }),
       "utf8"
     );
   }
@@ -907,7 +1090,10 @@ ${items
     const body = `
 ${crumb([{ text: "首页", href: "/" }, { text: "小工具", href: "/tools/" }, { text: t.name }])}
 <header class="page">
-  <h1>${escapeHtml(t.name)}</h1>
+  <div class="hd-main">
+    <h1>${escapeHtml(t.name)}</h1>
+    <p class="sub">${escapeHtml(t.desc)}</p>
+  </div>
   <div class="meta">
     ${t.category ? `<span class="pill">${escapeHtml(t.category)}</span>` : ""}
     <span>纯前端运行 · 数据不上传</span>
@@ -927,19 +1113,24 @@ ${frag}
   const toolBody = `
 ${crumb([{ text: "首页", href: "/" }, { text: "小工具" }])}
 <header class="page">
-  <h1>自研小工具</h1>
-  <div class="meta"><span>共 ${tools.length} 个</span><span>全部在本站内运行，不上传数据、不跳转外部网站</span></div>
+  <div class="hd-main">
+    <h1>自研小工具</h1>
+    <p class="sub">全部在本站内运行，不上传数据、不跳转外部网站、不需要注册。计算结果仅供参考。</p>
+  </div>
+  <div class="meta">
+    <span class="stat"><b>${tools.length}</b> 个工具</span>
+  </div>
 </header>
 ${byToolCat
   .filter((g) => g.items.length)
   .map(
     (g) => `<section class="block">
-  <h2>${escapeHtml(g.cat.name)}</h2>
-  <div class="grid">
+  <h2><span>${escapeHtml(g.cat.name)}</span><a class="more" href="/category/${g.cat.slug}/">相关文章 →</a></h2>
+  <div class="grid" style="margin-top:14px">
 ${g.items
   .map(
     (t) => `    <a class="card" href="/tools/${t.slug}/">
-      <div class="row"><span class="badge tool">工具</span><span class="title">${escapeHtml(t.name)}</span></div>
+      <div class="row"><span class="badge tool">${escapeHtml(t.icon || "工具")}</span><span class="title">${escapeHtml(t.name)}</span></div>
       <p class="desc">${escapeHtml(t.desc)}</p>
     </a>`
   )
@@ -951,22 +1142,129 @@ ${g.items
   fs.writeFileSync(path.join(OUT, "tools", "index.html"), shell({ title: "自研小工具", desc: "小乖乖自研的家庭实用小工具，纯前端运行，不上传任何数据。", body: toolBody, canonical: "/tools/", active: "tools" }), "utf8");
   log("  工具列表页 /tools/");
 
+  /* ---- 静态合规页 /about/ /privacy/ /disclaimer/ /terms/ /contact/ ---- */
+  for (const pg of pages) {
+    const dir = path.join(OUT, pg.slug);
+    ensure(dir);
+    const pageBody = `
+${crumb([{ text: "首页", href: "/" }, { text: pg.title }])}
+<header class="page">
+  <div class="hd-main">
+    <h1>${escapeHtml(pg.title)}</h1>
+    ${pg.desc ? `<p class="sub">${escapeHtml(pg.desc)}</p>` : ""}
+  </div>
+  <div class="meta">${pg.updated ? `<span>最近更新 ${escapeHtml(pg.updated)}</span>` : ""}</div>
+</header>
+<article class="body narrow">
+${renderMarkdown(pg.body)}
+</article>
+<section class="block narrow">
+  <h2><span>相关页面</span></h2>
+  <ul class="index">
+${pages
+  .filter((x) => x.slug !== pg.slug)
+  .map(
+    (x) => `    <li>
+      <a class="item" href="/${x.slug}/">
+        <p class="ttl">${escapeHtml(x.title)}</p>
+        <p class="sm">${escapeHtml(x.desc)}</p>
+      </a>
+    </li>`
+  )
+  .join("\n")}
+  </ul>
+</section>`;
+    fs.writeFileSync(
+      path.join(dir, "index.html"),
+      shell({ title: pg.title, desc: pg.desc, body: pageBody, canonical: `/${pg.slug}/`, active: pg.slug, updated: pg.updated }),
+      "utf8"
+    );
+  }
+  log(`  合规页 ${pages.length} 个（${pages.map((p) => "/" + p.slug + "/").join(" ")}）`);
+
+  /* ---- sitemap.xml（搜索引擎索引入口，必须放产物根目录）----
+   * 只收录可索引页面：首页、分类页、列表页、工具页、文章页、合规页。
+   * 404 与 /admin/ 刻意排除 —— 前者 noindex，后者是后台入口。
+   * lastmod 取该页最后有实质变更的日期，优先用内容日期，其次用构建日。
+   */
+  const today = new Date().toISOString().slice(0, 10);
+  const urls = [
+    { loc: "/", pri: "1.0", freq: "daily", last: posts[0] ? posts[0].date : today },
+    { loc: "/posts/", pri: "0.9", freq: "daily", last: posts[0] ? posts[0].date : today },
+    ...CATS.map((c) => {
+      const items = posts.filter((p) => p.catSlug === c.slug);
+      return { loc: `/category/${c.slug}/`, pri: "0.8", freq: "weekly", last: items[0] ? items[0].date : today };
+    }),
+    { loc: "/tools/", pri: "0.7", freq: "weekly", last: today },
+    ...tools.map((t) => ({ loc: `/tools/${t.slug}/`, pri: "0.6", freq: "monthly", last: today })),
+    ...posts.map((p) => ({ loc: `/posts/${encodeURIComponent(p.slug)}/`, pri: "0.7", freq: "monthly", last: p.date || today })),
+    ...pages.map((pg) => ({ loc: `/${pg.slug}/`, pri: String(pg.pri), freq: "yearly", last: pg.updated || today })),
+  ];
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls
+  .map(
+    (u) => `  <url>
+    <loc>${SITE.origin}${u.loc}</loc>
+    <lastmod>${u.last}</lastmod>
+    <changefreq>${u.freq}</changefreq>
+    <priority>${u.pri}</priority>
+  </url>`
+  )
+  .join("\n")}
+</urlset>
+`;
+  fs.writeFileSync(path.join(OUT, "sitemap.xml"), sitemap, "utf8");
+  log(`  sitemap.xml（${urls.length} 条 URL）`);
+
+  /* ---- robots.txt ----
+   * 放行全站抓取，只屏蔽后台与 CMS 配置文件；
+   * 显式声明 Sitemap 位置，方便搜索引擎发现。
+   * 注意：/admin/ 的 Disallow 是「不被收录」，不是「安全防护」——
+   * 后台本身依赖 GitHub OAuth 鉴权，未登录拿不到任何数据。
+   */
+  const robots = `# robots.txt · ${SITE.origin}
+# 全站内容欢迎搜索引擎收录。
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /admin
+Disallow: /posts.json
+Disallow: /tools.json
+Disallow: /404.html
+
+# 明确允许主流搜索引擎抓取正文与图片
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Sitemap: ${SITE.origin}/sitemap.xml
+`;
+  fs.writeFileSync(path.join(OUT, "robots.txt"), robots, "utf8");
+  log("  robots.txt");
+
   // 404 页：CF Pages 只要产物根存在 404.html 就会对未知路径返回真 404。
   // 缺它时未知路径会回落成「200 + 首页」，形成软 404 —— 对内容站 SEO 有害。
   const notFoundBody = `
 <header class="page">
-  <h1>页面走丢了</h1>
+  <div class="hd-main">
+    <h1>页面走丢了</h1>
+    <p class="sub">这个地址在站内不存在，可能是链接过期或输入有误。</p>
+  </div>
   <div class="meta"><span>404 Not Found</span></div>
 </header>
 <section class="block">
-  <p class="lead">这个地址在站内不存在，可能是链接过期或输入有误。</p>
-  <div class="grid">
-    <a class="card" href="/"><div class="row"><span class="title">回到首页</span></div><p class="desc">置顶精选与最新文章都在这里</p></a>
-    <a class="card" href="/posts/"><div class="row"><span class="title">全部文章</span></div><p class="desc">按分类浏览 ${posts.length} 篇原创内容</p></a>
-    <a class="card" href="/tools/"><div class="row"><span class="title">自研小工具</span></div><p class="desc">共 ${tools.length} 个，纯前端运行</p></a>
-  </div>
-</section>
-<p class="backlink"><a href="/">← 返回首页</a></p>`;
+  <h2><span>你可以从这里继续</span></h2>
+  <ul class="index">
+    <li><a class="item" href="/"><p class="ttl">回到首页</p><p class="sm">最新推荐与全部分类入口都在这里</p></a></li>
+    <li><a class="item" href="/posts/"><p class="ttl">全部内容</p><p class="sm">按分类浏览 ${posts.length} 篇原创内容</p></a></li>
+    <li><a class="item" href="/tools/"><p class="ttl">自研小工具</p><p class="sm">共 ${tools.length} 个，纯前端运行、不上传数据</p></a></li>
+    <li><a class="item" href="/about/"><p class="ttl">关于我们</p><p class="sm">了解本站的内容方向与写作原则</p></a></li>
+  </ul>
+</section>`;
   fs.writeFileSync(
     path.join(OUT, "404.html"),
     shell({ title: "页面走丢了", desc: "页面不存在。", body: notFoundBody, noindex: true }),
@@ -975,7 +1273,7 @@ ${g.items
   log("  404 页 /404.html");
 
   log(`\n✅ 构建完成 → ${OUT}`);
-  log(`   文章 ${posts.length} 篇 ｜ 分类 ${CATS.length} 个 ｜ 工具 ${tools.length} 个`);
+  log(`   文章 ${posts.length} 篇 ｜ 分类 ${CATS.length} 个 ｜ 工具 ${tools.length} 个 ｜ 合规页 ${pages.length} 个`);
 }
 
 build();
