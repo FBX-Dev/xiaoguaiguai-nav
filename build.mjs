@@ -699,6 +699,7 @@ ${updated ? `<meta name="last-modified" content="${escapeHtml(updated)}" />` : "
 <style>${BASE_CSS}</style>
 </head>
 <body>
+<!--email_off-->
 ${topbar(active)}
 <div class="wrap">
 ${body}
@@ -714,6 +715,7 @@ ${FOOT_LINKS.map((l) => `      <a href="${l.href}">${escapeHtml(l.text)}</a>`).j
     <p style="margin:6px 0 0">© ${new Date().getFullYear()} ${escapeHtml(SITE.title)} ｜ 本站内容仅供学习参考</p>
   </footer>
 </div>
+<!--/email_off-->
 </body>
 </html>
 `;
