@@ -1,0 +1,73 @@
+name: Deploy to Cloudflare Pages
+
+# 触发条件：
+#   - main 分支推送（内容/工具/后台配置变更后自动上线）
+#   - 手动触发（Actions 页点 Run workflow，用于补救或强制重发）
+#
+# 关键点：CMS 在后台保存文章 = 向 main 提交一次 commit，
+# 因此「后台点保存」到「线上生效」全自动，无需本地介入。
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+  workflow_dispatch:
+
+# 同一时间只跑一个部署，新推送取消排队中的旧任务，避免并发写同一 Pages 项目
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 构建脚本零依赖（只用 node: 内置模块），因此不需要 npm ci / cache，
+      # 也就不会因为 lock 文件缺失或私有源问题导致 CI 失败。
+      - name: Build static site
+        run: node build.mjs
+
+      # 部署前自检：产物缺失即提前失败，避免把空站推上线
+      - name: Verify build output
+        run: |
+          set -e
+          for f in _dist/index.html _dist/nav.json _dist/posts.json _dist/tools.json \
+                   _dist/posts/index.html _dist/tools/index.html _dist/admin/config.yml; do
+            if [ ! -f "$f" ]; then echo "::error::缺少构建产物 $f"; exit 1; fi
+          done
+          POSTS=$(node -e "console.log(require('./_dist/posts.json').count)")
+          TOOLS=$(node -e "console.log(require('./_dist/tools.json').count)")
+          echo "文章 $POSTS 篇 / 工具 $TOOLS 个"
+          if [ "$POSTS" -lt 1 ]; then echo "::error::文章数为 0，疑似构建异常"; exit 1; fi
+          if [ "$TOOLS" -lt 1 ]; then echo "::error::工具数为 0，疑似构建异常"; exit 1; fi
+          for s in $(node -e "require('./_dist/posts.json').posts.forEach(p=>console.log(p.slug))"); do
+            if [ ! -f "_dist/posts/$s/index.html" ]; then echo "::error::缺文章页 $s"; exit 1; fi
+          done
+          for s in $(node -e "require('./_dist/tools.json').tools.forEach(t=>console.log(t.slug))"); do
+            if [ ! -f "_dist/tools/$s/index.html" ]; then echo "::error::缺工具页 $s"; exit 1; fi
+          done
+          echo "✅ 产物完整性校验通过"
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # 显式指定 wrangler 4：v3 自带 3.90，对「只有静态资源、无 Worker 入口」
+          # 的项目会报 Missing entry-point（项目铁律 1）
+          wranglerVersion: '4'
+          command: pages deploy _dist --project-name=xiaoguaiguai-nav --branch=main
