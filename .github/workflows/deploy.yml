@@ -45,7 +45,7 @@ jobs:
       - name: Verify build output
         run: |
           set -e
-          for f in _dist/index.html _dist/posts.json _dist/tools.json \
+          for f in _dist/index.html _dist/404.html _dist/posts.json _dist/tools.json \
                    _dist/posts/index.html _dist/tools/index.html _dist/admin/config.yml; do
             if [ ! -f "$f" ]; then echo "::error::缺少构建产物 $f"; exit 1; fi
           done
@@ -67,6 +67,10 @@ jobs:
           # 首页必须真的含内容（防止生成空壳）
           if ! grep -q 'class="hero-pick"' _dist/index.html; then
             echo "::error::首页缺少置顶精选区块"; exit 1
+          fi
+          # 404 页必须带 noindex（缺它时未知路径回落成「200 + 首页」软 404）
+          if ! grep -q 'name="robots" content="noindex"' _dist/404.html; then
+            echo "::error::404.html 缺 noindex"; exit 1
           fi
           echo "✅ 产物完整性校验通过"
 
