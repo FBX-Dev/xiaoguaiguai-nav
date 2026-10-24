@@ -97,6 +97,23 @@ jobs:
           if ! grep -q 'Sitemap: https://xiaoguaiguai.cn/sitemap.xml' _dist/robots.txt; then
             echo "::error::robots.txt 未声明 sitemap"; exit 1
           fi
+          if ! grep -q 'Disallow: /admin/' _dist/robots.txt; then
+            echo "::error::robots.txt 未屏蔽 /admin/"; exit 1
+          fi
+          # CF 托管 robots 会误把 Baiduspider/PetalBot 写成 Disallow，必须显式放行
+          RBT=$(tr '\n' '|' < _dist/robots.txt)
+          case "$RBT" in
+            *"User-agent: Baiduspider|Allow: /"*) ;;
+            *) echo "::error::robots.txt 未显式放行 Baiduspider"; exit 1 ;;
+          esac
+          case "$RBT" in
+            *"User-agent: PetalBot|Allow: /"*) ;;
+            *) echo "::error::robots.txt 未显式放行 PetalBot"; exit 1 ;;
+          esac
+          case "$RBT" in
+            *"User-agent: GPTBot|Disallow: /"*) ;;
+            *) echo "::error::robots.txt 未拒绝 GPTBot"; exit 1 ;;
+          esac
           # 首页必须真的含内容（防止生成空壳）
           if ! grep -q 'class="hero-pick"' _dist/index.html; then
             echo "::error::首页缺少焦点推荐区块"; exit 1
