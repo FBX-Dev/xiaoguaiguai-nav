@@ -2,21 +2,22 @@
 /**
  * build.mjs · xiaoguaiguai.cn 静态构建
  * ------------------------------------------------------------
+ * 站点定位：家庭与成长主题的**内容站**（原创文章 + 自研小工具），
+ *           不承载外部资源导航。
+ *
  * 输入（仓库根，均入库）：
- *   index.html        首页（运行时 fetch nav.json / posts.json 渲染）
- *   nav.json          导航条目数据源（Sveltia CMS 读写）
  *   posts/*.md        文章（frontmatter + markdown，Sveltia CMS 按篇读写）
  *   tools/tools.json  工具索引
- *   tools/<slug>.html 各工具页面（自包含单页）
+ *   tools/<slug>.html 各工具页面片段（外壳由本脚本注入）
  *   admin/            Sveltia CMS 后台
  *   favicon.svg / _headers
  *
  * 输出：_dist/（构建产物，不入库）
- *   index.html        首页（原样拷贝）
- *   nav.json          原样拷贝
- *   posts.json        【生成】文章索引，按日期倒序
+ *   index.html        首页（【生成】置顶精选 + 最新文章 + 分类入口 + 小工具）
+ *   posts.json        【生成】文章索引，按日期倒序（供站内检索/降级）
  *   posts/index.html  【生成】文章列表页
  *   posts/<slug>/index.html 【生成】文章详情页
+ *   category/<slug>/index.html 【生成】分类页 × 5
  *   tools.json        【生成】工具索引（从 tools/tools.json 派生）
  *   tools/index.html  【生成】工具列表页
  *   tools/<slug>/index.html 【生成】工具页（从 tools/<slug>.html 注入外壳）
@@ -25,7 +26,9 @@
  *   - 零依赖：不引入 markdown 库，自带最小渲染器（够用即可，避免构建链脆弱）
  *   - 页面样式全部内联：本 zone 忽略 query string、无 purge 权限，外部 CSS 改版
  *     必须换路径才能生效（项目铁律 7）；内联则零子资源、零缓存问题。
- *   - 首页保持原有「运行时 fetch」模式不动，最小改动、零回归风险。
+ *   - 首页**构建时静态生成**（非运行时 fetch）：内容站依赖 SEO，静态 HTML
+ *     可被爬虫直接抓取；同时彻底消除 fetch 失败导致的空白页路径。
+ *   - 顶部站头 + 导航栏由 topbar() 统一注入，所有页面共用一套，改一次全站生效。
  */
 
 import fs from "node:fs";
@@ -39,21 +42,21 @@ const OUT = path.join(ROOT, "_dist");
 
 const SITE = {
   title: "小乖乖",
-  subtitle: "家庭资源导航",
+  subtitle: "家庭与成长",
   origin: "https://xiaoguaiguai.cn",
-  desc: "面向妈妈与家庭的极简资源导航与自研小工具，收录婴幼儿养育、儿童教育、女性成长、家庭关系与两性亲密成长五个方向的优质资源。",
+  desc: "面向妈妈与家庭的内容站，原创文章覆盖婴幼儿养育、儿童教育、女性成长、家庭关系与两性亲密成长五个方向，并提供本站自研的实用小工具。",
   disclaimer:
-    "本站点仅做优质资源索引跳转，不提供医疗诊断、诊疗建议。" +
-    "第三方内容由原平台负责，请理性甄别。所有内容仅供学习参考。",
+    "本站内容仅为经验分享与知识科普，不提供医疗诊断、诊疗建议。" +
+    "涉及健康、育儿、心理问题时请以专业人士意见为准。所有内容仅供学习参考。",
 };
 
-/** 分类顺序（与 nav.json 一致，固定 5 个） */
+/** 分类顺序（固定 5 个） */
 const CATS = [
-  { name: "🧸 婴幼儿养育", slug: "yuer", cover: "yuer-content" },
-  { name: "📖 儿童教育", slug: "jiaoyu", cover: "jiaoyu-content" },
-  { name: "🌷 女性成长", slug: "nvxing", cover: "nvxing-content" },
-  { name: "🏠 家庭关系", slug: "jiating", cover: "jiating-content" },
-  { name: "💞 两性亲密成长", slug: "qinmi", cover: "qinmi-content" },
+  { name: "🧸 婴幼儿养育", slug: "yuer", cover: "yuer-content", brief: "喂养、睡眠、发育、疫苗记录" },
+  { name: "📖 儿童教育", slug: "jiaoyu", cover: "jiaoyu-content", brief: "亲子阅读、习惯养成、兴趣选择" },
+  { name: "🌷 女性成长", slug: "nvxing", cover: "nvxing-content", brief: "情绪、时间、自我重启" },
+  { name: "🏠 家庭关系", slug: "jiating", cover: "jiating-content", brief: "家务分工、预算、隔代沟通" },
+  { name: "💞 两性亲密成长", slug: "qinmi", cover: "qinmi-content", brief: "沟通、边界、婚姻经营" },
 ];
 const catOf = (name) =>
   CATS.find((c) => c.name === name) || CATS.find((c) => name && name.includes(c.name.replace(/^\S+\s*/, "")));
@@ -380,10 +383,87 @@ const BASE_CSS = `
   footer.meta a { color: #a8a096; text-decoration: none; border-bottom: 1px dotted #d8d0c4; }
   .backlink { display: inline-block; margin: 30px 0 0; font-size: 13.5px; }
 
+  /* ── 顶部站头 + 导航栏（全站统一，所有页面共用）── */
+  header.site {
+    background: rgba(253,251,247,.92); border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 20; backdrop-filter: saturate(180%) blur(8px);
+  }
+  header.site .bar {
+    max-width: 1080px; margin: 0 auto; padding: 13px 20px;
+    display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+  }
+  header.site .brand { display: flex; align-items: baseline; gap: 9px; text-decoration: none; color: inherit; flex: none; }
+  header.site .brand .nm { font-size: 19px; font-weight: 600; letter-spacing: .03em; }
+  header.site .brand .sub { font-size: 12.5px; color: var(--ink-soft); letter-spacing: .02em; }
+  header.site nav.top { display: flex; flex-wrap: wrap; gap: 4px; margin-left: auto; }
+  header.site nav.top a {
+    padding: 6px 12px; border-radius: 8px; font-size: 14px;
+    color: #5c554d; text-decoration: none; white-space: nowrap;
+    transition: background .15s ease, color .15s ease;
+  }
+  header.site nav.top a:hover { background: var(--accent-soft); color: var(--accent); }
+  header.site nav.top a.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+  /* ── 首页：置顶精选 ── */
+  .hero-pick { display: block; margin: 30px 0 0; text-decoration: none; color: inherit; }
+  .hero-pick .inner {
+    display: grid; grid-template-columns: 1.15fr 1fr; gap: 0;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); overflow: hidden;
+    transition: border-color .18s ease, box-shadow .18s ease;
+  }
+  .hero-pick:hover .inner { border-color: #e2d5c8; box-shadow: 0 10px 30px rgba(180,150,120,.13); }
+  .hero-pick .cover { width: 100%; height: 100%; min-height: 250px; object-fit: cover; display: block; background: var(--accent-soft); }
+  .hero-pick .txt { padding: 26px 30px; display: flex; flex-direction: column; justify-content: center; }
+  .hero-pick .kicker {
+    font-size: 11.5px; letter-spacing: .1em; color: var(--accent);
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+  .hero-pick h2 { margin: 0 0 12px; font-size: 24px; font-weight: 600; line-height: 1.42; }
+  .hero-pick p { margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.75; }
+  .hero-pick .meta { margin-top: 16px; font-size: 12.5px; color: #b3aa9e; display: flex; gap: 10px; align-items: center; }
+
+  /* ── 首页：分类入口卡 ── */
+  .cat-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(196px, 1fr)); }
+  a.cat-card {
+    display: block; padding: 16px 18px; text-decoration: none; color: inherit;
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  }
+  a.cat-card:hover { border-color: #e2d5c8; box-shadow: 0 6px 18px rgba(180,150,120,.1); transform: translateY(-2px); }
+  a.cat-card .nm { font-size: 15.5px; font-weight: 600; margin-bottom: 5px; }
+  a.cat-card .br { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
+  a.cat-card .ct { margin-top: 11px; font-size: 12px; color: var(--accent); }
+
+  /* ── 首页：区块标题（带「查看全部」）── */
+  section.home { margin: 46px 0 0; }
+  section.home > h2 {
+    font-size: 19px; font-weight: 600; margin: 0 0 4px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  }
+  section.home > h2 .more {
+    flex: none; font-size: 13px; font-weight: 400;
+    color: var(--accent); text-decoration: none; white-space: nowrap;
+  }
+  section.home > h2 .more:hover { text-decoration: underline; }
+  section.home > .lead { color: var(--ink-soft); font-size: 13px; margin: 8px 0 16px; }
+
+  @media (max-width: 760px) {
+    .hero-pick .inner { grid-template-columns: 1fr; }
+    .hero-pick .cover { min-height: 180px; aspect-ratio: 16/9; }
+    .hero-pick .txt { padding: 20px 22px; }
+    .hero-pick h2 { font-size: 20px; }
+  }
+
   @media (max-width: 560px) {
     header.page h1 { font-size: 22px; }
     .grid { grid-template-columns: 1fr; }
     .wrap { padding: 0 16px; }
+    header.site .bar { padding: 11px 16px; gap: 12px; }
+    header.site .brand .sub { display: none; }
+    header.site nav.top { margin-left: 0; width: 100%; gap: 2px; }
+    header.site nav.top a { padding: 5px 9px; font-size: 13px; }
   }
 
   /* ── 工具页通用控件（各工具共享，避免每个工具重复定义）── */
@@ -465,7 +545,30 @@ const BASE_CSS = `
   }
 `;
 
-function shell({ title, desc, body, canonical }) {
+/**
+ * 顶部站头 + 导航栏。全站统一注入，所有页面共用一套。
+ * @param {string} [active] 当前页标识：home / posts / tools / <catSlug>
+ */
+function topbar(active) {
+  const items = [
+    { key: "home", text: "首页", href: "/" },
+    ...CATS.map((c) => ({ key: c.slug, text: c.name.replace(/^\S+\s*/, ""), href: `/category/${c.slug}/` })),
+    { key: "tools", text: "小工具", href: "/tools/" },
+  ];
+  return `<header class="site">
+  <div class="bar">
+    <a class="brand" href="/">
+      <span class="nm">${escapeHtml(SITE.title)}</span>
+      <span class="sub">${escapeHtml(SITE.subtitle)}</span>
+    </a>
+    <nav class="top" aria-label="主导航">
+${items.map((i) => `      <a href="${i.href}"${i.key === active ? ' class="on" aria-current="page"' : ""}>${escapeHtml(i.text)}</a>`).join("\n")}
+    </nav>
+  </div>
+</header>`;
+}
+
+function shell({ title, desc, body, canonical, active }) {
   const full = title === SITE.title ? `${SITE.title} · ${SITE.subtitle}` : `${title} ｜ ${SITE.title} · ${SITE.subtitle}`;
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -479,6 +582,7 @@ ${canonical ? `<link rel="canonical" href="${SITE.origin}${canonical}" />` : ""}
 <style>${BASE_CSS}</style>
 </head>
 <body>
+${topbar(active)}
 <div class="wrap">
 ${body}
   <div class="disclaimer">
@@ -486,7 +590,7 @@ ${body}
     <p>${escapeHtml(SITE.disclaimer)}</p>
   </div>
   <footer class="meta">
-    <p>${escapeHtml(SITE.title)} · ${escapeHtml(SITE.subtitle)} ｜ <a href="/">首页</a> ｜ <a href="/posts/">内容</a> ｜ <a href="/tools/">小工具</a> ｜ <a href="/admin" target="_blank" rel="noopener noreferrer">后台</a></p>
+    <p>${escapeHtml(SITE.title)} · ${escapeHtml(SITE.subtitle)} ｜ <a href="/">首页</a> ｜ <a href="/posts/">全部内容</a> ｜ <a href="/tools/">小工具</a> ｜ <a href="/admin" target="_blank" rel="noopener noreferrer">后台</a></p>
   </footer>
 </div>
 </body>
@@ -557,9 +661,11 @@ function build() {
   ensure(OUT);
   ensure(path.join(OUT, "posts"));
   ensure(path.join(OUT, "tools"));
+  ensure(path.join(OUT, "category"));
 
   /* ---- 静态文件拷贝 ---- */
-  for (const f of ["index.html", "nav.json", "favicon.svg", "_headers", "README.md"]) {
+  // 注：不再拷贝 nav.json —— 站点已转为纯内容站，外部资源导航已下线。
+  for (const f of ["favicon.svg", "_headers", "README.md"]) {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(OUT, f));
   }
@@ -569,7 +675,7 @@ function build() {
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(OUT, "admin", f));
   }
 
-  /* ---- posts.json（首页「最新内容」数据源）---- */
+  /* ---- posts.json（供站内检索/降级使用，首页已改为构建时静态渲染）---- */
   const index = posts.map((p) => ({
     slug: p.slug,
     title: p.title,
@@ -582,6 +688,88 @@ function build() {
   }));
   fs.writeFileSync(path.join(OUT, "posts.json"), JSON.stringify({ count: index.length, posts: index }, null, 2) + "\n", "utf8");
   log(`  posts.json（${index.length} 条）`);
+
+  /* ---- 首页（构建时静态生成，利于 SEO，且无运行时 fetch 失败路径）---- */
+  const pick = posts[0]; // 置顶精选 = 最新一篇
+  const latest9 = posts.slice(pick ? 1 : 0, pick ? 10 : 9);
+  const homeBody = `
+<main>
+${
+  pick
+    ? `<a class="hero-pick" href="/posts/${encodeURIComponent(pick.slug)}/">
+  <div class="inner">
+    ${pick.cover ? `<img class="cover" src="${escapeHtml(pick.cover)}" alt="${escapeHtml(pick.title)}" />` : ""}
+    <div class="txt">
+      <div class="kicker">置顶精选</div>
+      <h2>${escapeHtml(pick.title)}</h2>
+      <p>${escapeHtml(pick.excerpt)}</p>
+      <div class="meta"><span>${escapeHtml(pick.category)}</span><span>·</span><span>${escapeHtml(pick.date)}</span></div>
+    </div>
+  </div>
+</a>`
+    : ""
+}
+
+<section class="home">
+  <h2><span>最新文章</span><a class="more" href="/posts/">查看全部 ${posts.length} 篇 →</a></h2>
+  <div class="lead">按发布时间倒序</div>
+  ${
+    latest9.length
+      ? `<div class="grid">
+${latest9
+  .map(
+    (p) => `    <a class="card" href="/posts/${encodeURIComponent(p.slug)}/">
+      ${p.cover ? `<img class="thumb" src="${escapeHtml(p.cover)}" alt="${escapeHtml(p.title)}" loading="lazy" />` : ""}
+      <div class="row"><span class="badge">${escapeHtml(p.category.replace(/^\S+\s*/, ""))}</span><span class="title">${escapeHtml(p.title)}</span></div>
+      <p class="desc">${escapeHtml(p.excerpt)}</p>
+      <div class="date">${escapeHtml(p.date)}</div>
+    </a>`
+  )
+  .join("\n")}
+  </div>`
+      : `<p class="lead">内容正在整理中，敬请期待。</p>`
+  }
+</section>
+
+<section class="home">
+  <h2><span>按分类浏览</span></h2>
+  <div class="cat-cards">
+${CATS.map((c) => {
+  const n = posts.filter((p) => p.catSlug === c.slug).length;
+  return `    <a class="cat-card" href="/category/${c.slug}/">
+      <div class="nm">${escapeHtml(c.name)}</div>
+      <div class="br">${escapeHtml(c.brief)}</div>
+      <div class="ct">${n} 篇文章 →</div>
+    </a>`;
+}).join("\n")}
+  </div>
+</section>
+
+<section class="home">
+  <h2><span>本站小工具</span><a class="more" href="/tools/">全部 ${tools.length} 个 →</a></h2>
+  <div class="lead">纯前端运行，数据不上传，全部在本站内使用</div>
+  ${
+    tools.length
+      ? `<div class="grid">
+${tools
+  .map(
+    (t) => `    <a class="card" href="/tools/${t.slug}/">
+      <div class="row"><span class="badge tool">${escapeHtml(t.icon || "工具")}</span><span class="title">${escapeHtml(t.name)}</span></div>
+      <p class="desc">${escapeHtml(t.desc)}</p>
+    </a>`
+  )
+  .join("\n")}
+  </div>`
+      : `<p class="lead">工具正在开发中。</p>`
+  }
+</section>
+</main>`;
+  fs.writeFileSync(
+    path.join(OUT, "index.html"),
+    shell({ title: SITE.title, desc: SITE.desc, body: homeBody, canonical: "/", active: "home" }),
+    "utf8"
+  );
+  log("  首页 /（静态生成）");
 
   /* ---- 文章详情页 ---- */
   for (const p of posts) {
@@ -619,7 +807,7 @@ ${related
     : ""
 }
 <a class="backlink" href="/posts/">← 返回全部内容</a>`;
-    fs.writeFileSync(path.join(dir, "index.html"), shell({ title: p.title, desc: p.excerpt, body, canonical: `/posts/${encodeURIComponent(p.slug)}/` }), "utf8");
+    fs.writeFileSync(path.join(dir, "index.html"), shell({ title: p.title, desc: p.excerpt, body, canonical: `/posts/${encodeURIComponent(p.slug)}/`, active: p.catSlug }), "utf8");
   }
   log(`  文章页 ${posts.length} 个`);
 
@@ -652,8 +840,44 @@ ${g.items
 </section>`
   )
   .join("\n")}`;
-  fs.writeFileSync(path.join(OUT, "posts", "index.html"), shell({ title: "全部内容", desc: "小乖乖收录的家庭与成长相关内容，按分类浏览。", body: listBody, canonical: "/posts/" }), "utf8");
+  fs.writeFileSync(path.join(OUT, "posts", "index.html"), shell({ title: "全部内容", desc: "小乖乖收录的家庭与成长相关内容，按分类浏览。", body: listBody, canonical: "/posts/", active: "posts" }), "utf8");
   log("  文章列表页 /posts/");
+
+  /* ---- 分类页 /category/<slug>/（顶部导航的 5 个分类入口）---- */
+  for (const c of CATS) {
+    const items = posts.filter((p) => p.catSlug === c.slug);
+    const dir = path.join(OUT, "category", c.slug);
+    ensure(dir);
+    const catBody = `
+${crumb([{ text: "首页", href: "/" }, { text: "分类" }, { text: c.name }])}
+<header class="page">
+  <h1>${escapeHtml(c.name)}</h1>
+  <div class="meta"><span>共 ${items.length} 篇</span><span>${escapeHtml(c.brief)}</span></div>
+</header>
+${
+  items.length
+    ? `<div class="grid" style="margin-top:24px">
+${items
+  .map(
+    (p) => `    <a class="card" href="/posts/${encodeURIComponent(p.slug)}/">
+      ${p.cover ? `<img class="thumb" src="${escapeHtml(p.cover)}" alt="${escapeHtml(p.title)}" loading="lazy" />` : ""}
+      <div class="row"><span class="badge">${escapeHtml(c.name.replace(/^\S+\s*/, ""))}</span><span class="title">${escapeHtml(p.title)}</span></div>
+      <p class="desc">${escapeHtml(p.excerpt)}</p>
+      <div class="date">${escapeHtml(p.date)}</div>
+    </a>`
+  )
+  .join("\n")}
+  </div>`
+    : `<p class="lead" style="margin-top:24px">该分类内容正在整理中。</p>`
+}
+<p class="backlink"><a href="/posts/">← 查看全部内容</a></p>`;
+    fs.writeFileSync(
+      path.join(dir, "index.html"),
+      shell({ title: c.name, desc: `${c.name}：${c.brief}。小乖乖原创内容。`, body: catBody, canonical: `/category/${c.slug}/`, active: c.slug }),
+      "utf8"
+    );
+  }
+  log(`  分类页 ${CATS.length} 个`);
 
   /* ---- tools.json + 工具页 + 工具列表页 ---- */
   const toolsIndex = tools.map((t) => ({
@@ -691,7 +915,7 @@ ${frag}
 <p class="backlink"><a href="/tools/">← 返回全部小工具</a></p>`;
     fs.writeFileSync(
       path.join(dir, "index.html"),
-      shell({ title: t.name, desc: t.desc, body, canonical: `/tools/${t.slug}/` }),
+      shell({ title: t.name, desc: t.desc, body, canonical: `/tools/${t.slug}/`, active: "tools" }),
       "utf8"
     );
   }
@@ -722,11 +946,11 @@ ${g.items
 </section>`
   )
   .join("\n")}`;
-  fs.writeFileSync(path.join(OUT, "tools", "index.html"), shell({ title: "自研小工具", desc: "小乖乖自研的家庭实用小工具，纯前端运行，不上传任何数据。", body: toolBody, canonical: "/tools/" }), "utf8");
+  fs.writeFileSync(path.join(OUT, "tools", "index.html"), shell({ title: "自研小工具", desc: "小乖乖自研的家庭实用小工具，纯前端运行，不上传任何数据。", body: toolBody, canonical: "/tools/", active: "tools" }), "utf8");
   log("  工具列表页 /tools/");
 
   log(`\n✅ 构建完成 → ${OUT}`);
-  log(`   文章 ${posts.length} 篇 ｜ 工具 ${tools.length} 个`);
+  log(`   文章 ${posts.length} 篇 ｜ 分类 ${CATS.length} 个 ｜ 工具 ${tools.length} 个`);
 }
 
 build();
