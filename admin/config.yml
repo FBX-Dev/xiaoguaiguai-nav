@@ -113,3 +113,82 @@ collections:
                     widget: list
                     required: false
                     field: { name: tag, label: 标签, widget: string }
+
+  # ----------------------------------------------------------
+  # 文章内容（folder collection）
+  # 每篇一个 .md 文件，存放在仓库 posts/ 目录。
+  # 新建 / 编辑 / 删除 / 发布 均在本后台完成；保存即提交到 GitHub，
+  # 由 GitHub Actions 触发构建并部署到 Cloudflare Pages。
+  # ----------------------------------------------------------
+  - name: posts
+    label: 内容文章
+    label_singular: 文章
+    description: >-
+      家庭与成长主题文章。每篇文章对应 posts/ 目录下的一个 .md 文件。
+      保存后需等待约 1～2 分钟，自动构建完成后线上生效。
+      每个一级分类建议保持不少于 4 篇。
+    folder: posts
+    extension: md
+    format: frontmatter
+    create: true
+    delete: true
+    slug: "{{slug}}"
+    summary: "{{title}}（{{date}}）"
+    sortable_fields: [date, title]
+    view_filters:
+      - { label: 婴幼儿养育, field: category, pattern: "🧸 婴幼儿养育" }
+      - { label: 儿童教育, field: category, pattern: "📖 儿童教育" }
+      - { label: 女性成长, field: category, pattern: "🌷 女性成长" }
+      - { label: 家庭关系, field: category, pattern: "🏠 家庭关系" }
+      - { label: 两性亲密成长, field: category, pattern: "💞 两性亲密成长" }
+      - { label: 草稿, field: draft, pattern: true }
+    fields:
+      - name: title
+        label: 标题
+        widget: string
+        hint: 建议 8～18 字，具体、不夸张、不制造焦虑
+      - name: date
+        label: 发布日期
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+        hint: 决定首页「最新内容」的排序，越新越靠前
+      - name: category
+        label: 所属分类（固定 5 个，不可新增）
+        widget: select
+        options:
+          - "🧸 婴幼儿养育"
+          - "📖 儿童教育"
+          - "🌷 女性成长"
+          - "🏠 家庭关系"
+          - "💞 两性亲密成长"
+        hint: 与首页一级分类一一对应
+      - name: excerpt
+        label: 摘要
+        widget: text
+        hint: 40～70 字，出现在列表卡片与首页索引上
+      - name: cover
+        label: 封面地址（可留空）
+        widget: string
+        required: false
+        hint: >-
+          留空则自动使用该分类的默认配图。如需自定义，填
+          https://xiaoguaiguai.cn/media/covers/xxx.webp
+      - name: tags
+        label: 标签
+        widget: list
+        required: false
+        field: { name: tag, label: 标签, widget: string }
+      - name: draft
+        label: 草稿（不发布）
+        widget: boolean
+        required: false
+        default: false
+        hint: 勾选后该文章不会出现在任何页面
+      - name: body
+        label: 正文
+        widget: markdown
+        hint: >-
+          支持 Markdown。一级标题由系统自动生成，正文请从二级标题（##）写起。
+          涉及健康、育儿、心理话题时，请保留文末的免责表述。
