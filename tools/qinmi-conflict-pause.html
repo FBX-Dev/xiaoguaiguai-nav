@@ -1,0 +1,133 @@
+<div class="tool">
+  <div class="panel">
+    <h2>现在吵到哪一步了</h2>
+    <div class="hint" style="margin-bottom:14px">
+      吵架最难的不是开始，是发现「已经不是在说原来那件事了」。先判断现在处在哪一步，才知道该做什么。
+    </div>
+    <div id="stages" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px"></div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>现在可以做的一件事</h2>
+    <div id="act"></div>
+    <div class="btns">
+      <button id="next-act" class="ghost">换一种做法</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>暂停 20 分钟的规矩</h2>
+    <ul class="plain">
+      <li><strong>要说出来，不是走开。</strong>「我现在情绪上来了，给我 20 分钟，我一定回来接着谈」——不说这句直接走，对方会理解成冷暴力。</li>
+      <li><strong>给一个具体时间。</strong>「一会儿」不算。说 20 分钟、说十点前，对方才有得等。</li>
+      <li><strong>暂停期间不做这三件事。</strong>不翻旧账、不在脑子里排练怎么赢、不发消息继续吵。</li>
+      <li><strong>回来时先说的第一句很重要。</strong>不是「我想通了」，而是「我回来了，我们接着刚才的说」。</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>这个工具怎么用</h2>
+    <ul class="plain">
+      <li><strong>它是刹车，不是裁判。</strong>工具不会判断谁对谁错，只帮你从「越吵越远」的状态里先退出来。</li>
+      <li><strong>情绪高峰时不要讲道理。</strong>人在被激怒的时候听不进内容，只会找反击点。这不是修养问题，是生理反应。</li>
+      <li><strong>暂停不等于回避。</strong>回避是不谈了；暂停是换一个能谈的状态再谈。差别在于有没有回来的约定。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具提供沟通节奏的参考，<strong>不构成心理咨询或治疗建议</strong>。<br />
+      如果冲突中出现推搡、摔东西、威胁、限制人身自由等行为，这已经不是「沟通问题」，
+      请优先确保安全，联系公安机关或全国妇联维权热线 12338，必要时寻求专业机构帮助。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_conflict";
+  var $ = function (id) { return document.getElementById(id); };
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+
+  var STAGES = [
+    { k: "在说具体的事", c: "#6f9a7c", note: "还在谈问题本身，这时候最容易解决。",
+      acts: [
+        "先把「我要什么」说清楚。不是「你别这样」，而是「我希望下次可以……」。",
+        "确认一下你俩说的是不是同一件事。很多架是因为一件事被理解成了另一件。",
+        "如果有能立刻做的小动作，先答应一个。哪怕只是「明天我来做」。"
+      ]},
+    { k: "开始翻旧账", c: "#a58a5c", note: "话题已经从这件事滑到「你一贯如此」。",
+      acts: [
+        "主动喊停一次：「我们拉回来，只说今天这件。」",
+        "把旧账记下来但先不谈：「你说的那件事我记着，改天单独说。」",
+        "问一句：我们今天是为解决这件事，还是为了分个对错？"
+      ]},
+    { k: "上升到人身评价", c: "#c0705c", note: "开始出现「你就是这种人」这类话，伤人的部分从这里开始。",
+      acts: [
+        "先停 20 分钟。这句话说出去，后面说什么都补不回来。",
+        "换回事实描述：把「你从来不管」改成「这周三件事都是我做的」。",
+        "如果对方开始评价你，说：「你可以说事，但别给我下定义。」"
+      ]},
+    { k: "已经说不出话", c: "#8f8578", note: "不是不想说，是脑子已经乱了，说不成句子。",
+      acts: [
+        "只做一件事：说「我现在说不出话，不是不想理你，给我点时间」。",
+        "去喝杯水、洗把脸。身体先离开对抗状态，脑子才回得来。",
+        "约定一个时间再谈。今晚不行就明早，明早不行就明晚。"
+      ]},
+    { k: "在冷战", c: "#7d8fa8", note: "表面没事了，但谁也不提，气还在。",
+      acts: [
+        "冷战超过 24 小时就该有人先开口，先开口的人不是输。",
+        "开口不用道歉，可以先说一句事实：「昨天那事还没说完。」",
+        "如果对方不接，就把你的想法写下来发过去。文字比当面少很多触发点。"
+      ]},
+    { k: "想和好但不知道怎么开口", c: "#6f9a7c", note: "气消了，但谁先说话都觉得别扭。",
+      acts: [
+        "不用为整件事道歉，先为其中具体的一句道歉。范围小，容易落地。",
+        "做一件小事代替开场白：倒杯水、把对方的东西收好。",
+        "直接说：「我不想再这样了，我们聊聊行吗。」"
+      ]}
+  ];
+
+  var cur = null, idx = 0;
+
+  function renderStages() {
+    var box = $("stages");
+    var html = "";
+    for (var i = 0; i < STAGES.length; i++) {
+      var s = STAGES[i];
+      html += '<button data-i="' + i + '" style="padding:13px 10px;border:1px solid #e6ded2;background:#fff;' +
+        'border-radius:9px;cursor:pointer;font-size:14px;font-family:inherit;color:#3f3a34;line-height:1.5">' +
+        '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + s.c +
+        ';margin-right:6px"></span>' + s.k + "</button>";
+    }
+    box.innerHTML = html;
+    var bs = box.querySelectorAll("button");
+    for (var j = 0; j < bs.length; j++) {
+      bs[j].addEventListener("click", function (e) {
+        var b = e.target.closest("button");
+        cur = STAGES[parseInt(b.getAttribute("data-i"), 10)];
+        idx = 0;
+        for (var k = 0; k < bs.length; k++) {
+          bs[k].style.borderColor = "#e6ded2"; bs[k].style.background = "#fff"; bs[k].style.color = "#3f3a34";
+        }
+        b.style.borderColor = "var(--accent)"; b.style.background = "#fdf8f1"; b.style.color = "var(--accent)";
+        show();
+      });
+    }
+  }
+
+  function show() {
+    if (!cur) return;
+    var a = cur.acts[idx % cur.acts.length];
+    $("act").innerHTML = '<div class="note" style="margin-bottom:14px"><strong>' + cur.k + "</strong> ｜ " +
+      cur.note + '</div><div style="font-size:15.5px;line-height:1.85;color:#3f3a34">' + a + "</div>";
+    $("out").style.display = "block";
+  }
+
+  $("next-act").addEventListener("click", function () {
+    if (!cur) { alert("先选一个阶段。"); return; }
+    idx++;
+    show();
+  });
+
+  renderStages();
+})();
+</script>

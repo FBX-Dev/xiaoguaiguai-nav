@@ -1,5 +1,5 @@
 {
-  "_readme": "本站自研小工具索引。构建时 build.mjs 读取本文件，生成 /tools/ 列表页与 /tools.json。每个 slug 需在同目录下存在同名 .html 片段文件（只写 .tool 区块与内联 script，外壳由构建脚本统一注入）。category 必须与 nav.json 的一级分类名完全一致（含 emoji 与空格）。",
+  "_readme": "本站自研小工具索引。构建时 build.mjs 读取本文件，生成 /tools/ 列表页与 /tools.json。每个 slug 需在同目录下存在同名 .html 片段文件（只写 .tool 区块与内联 script，外壳由构建脚本统一注入）。category 必须与 nav.json 的一级分类名完全一致（含 emoji 与空格）。guide 字段指向该工具的引导文章 slug（posts/<guide>.md），用于文章页与工具页双向互链。",
   "tools": [
     {
       "slug": "baby-age-calculator",
@@ -7,6 +7,7 @@
       "desc": "输入出生日期，算出精确到天的月龄、周龄，并提示下一个发育观察节点还有多久。",
       "category": "🧸 婴幼儿养育",
       "icon": "🍼",
+      "guide": "guide-baby-age-calculator",
       "published": true
     },
     {
@@ -15,6 +16,25 @@
       "desc": "按月龄查看辅食种类、质地与频次的参考顺序，可逐项勾选已尝试的食物并记录进度。",
       "category": "🧸 婴幼儿养育",
       "icon": "🥣",
+      "guide": "guide-complementary-food-guide",
+      "published": true
+    },
+    {
+      "slug": "yuer-growth-record",
+      "name": "身高体重记录与对照",
+      "desc": "登记每次测量的身高体重，自动算出月龄，并与参考中位值做粗略对照、看历次趋势。",
+      "category": "🧸 婴幼儿养育",
+      "icon": "📏",
+      "guide": "guide-yuer-growth-record",
+      "published": true
+    },
+    {
+      "slug": "yuer-vaccine-plan",
+      "name": "疫苗接种时间表",
+      "desc": "按出生日期推算出免费疫苗各剂次的建议时间，可勾选登记已接种的针次。",
+      "category": "🧸 婴幼儿养育",
+      "icon": "💉",
+      "guide": "guide-yuer-vaccine-plan",
       "published": true
     },
     {
@@ -23,6 +43,7 @@
       "desc": "按年龄选一段合适的专注时长，写清这次要做的事，完成后自动留下记录。",
       "category": "📖 儿童教育",
       "icon": "⏱️",
+      "guide": "guide-jiaoyu-focus-timer",
       "published": true
     },
     {
@@ -31,6 +52,25 @@
       "desc": "记录一起读过的书和每天有没有读，用 28 天日历看习惯，不设任务指标。",
       "category": "📖 儿童教育",
       "icon": "📚",
+      "guide": "guide-jiaoyu-reading-tracker",
+      "published": true
+    },
+    {
+      "slug": "jiaoyu-homework-coach",
+      "name": "作业卡点应对参考",
+      "desc": "选出孩子这次卡在哪一层，给出可以直接说的几句话，附陪写作业的三条底线。",
+      "category": "📖 儿童教育",
+      "icon": "✏️",
+      "guide": "guide-jiaoyu-homework-coach",
+      "published": true
+    },
+    {
+      "slug": "jiaoyu-praise-generator",
+      "name": "具体表扬生成器",
+      "desc": "写下孩子具体做了什么，生成「描述行为」而不是「贴标签」的说法，附为什么夸具体才有用。",
+      "category": "📖 儿童教育",
+      "icon": "🌱",
+      "guide": "guide-jiaoyu-praise-generator",
       "published": true
     },
     {
@@ -39,6 +79,7 @@
       "desc": "选一个最接近的情绪词，写两句想说的话，给一个小建议。不做评估、不用打卡。",
       "category": "🌷 女性成长",
       "icon": "🌤️",
+      "guide": "guide-nvxing-mood-journal",
       "published": true
     },
     {
@@ -47,6 +88,25 @@
       "desc": "把今天的事按「有没有时间要求」和「是否必须我做」分四格，并给出参考处理顺序。",
       "category": "🌷 女性成长",
       "icon": "🗂️",
+      "guide": "guide-nvxing-quadrant-todo",
+      "published": true
+    },
+    {
+      "slug": "nvxing-period-tracker",
+      "name": "生理期记录与周期推算",
+      "desc": "记录每次月经的开始与结束日期，算出平均周期、预计下次日期，并用日历标出预测经期与易孕窗口。",
+      "category": "🌷 女性成长",
+      "icon": "🌸",
+      "guide": "guide-nvxing-period-tracker",
+      "published": true
+    },
+    {
+      "slug": "nvxing-energy-audit",
+      "name": "精力收支梳理表",
+      "desc": "勾出最近一周在消耗你、和给你充电的事，看出消耗的结构性来源，不评分、不评价。",
+      "category": "🌷 女性成长",
+      "icon": "🔋",
+      "guide": "guide-nvxing-energy-audit",
       "published": true
     },
     {
@@ -55,6 +115,7 @@
       "desc": "勾选家里的家务项、写下每项「算完成」的标准，自动估算每周耗时与占比分布。",
       "category": "🏠 家庭关系",
       "icon": "🧹",
+      "guide": "guide-jiating-chore-split",
       "published": true
     },
     {
@@ -63,6 +124,25 @@
       "desc": "输入月收入，按常见分类框架估算各项金额与占比，并给出储蓄率与结构提示。",
       "category": "🏠 家庭关系",
       "icon": "📊",
+      "guide": "guide-jiating-budget-planner",
+      "published": true
+    },
+    {
+      "slug": "jiating-boundary-script",
+      "name": "界限沟通话术生成器",
+      "desc": "选清对方是谁、在做什么、你想要的结果，给出几句可以直接说出口的拒绝与划界说法。",
+      "category": "🏠 家庭关系",
+      "icon": "🛡️",
+      "guide": "guide-jiating-boundary-script",
+      "published": true
+    },
+    {
+      "slug": "jiating-decide-map",
+      "name": "家里谁说了算对照表",
+      "desc": "列出家里需要拿主意的事，标出影响范围与实际决定人，看出权限不清的地方。",
+      "category": "🏠 家庭关系",
+      "icon": "🧭",
+      "guide": "guide-jiating-decide-map",
       "published": true
     },
     {
@@ -71,6 +151,7 @@
       "desc": "把带指责的话拆成「事实—感受—需要—请求」四段，并给出可以直接说的版本。",
       "category": "💞 两性亲密成长",
       "icon": "💬",
+      "guide": "guide-qinmi-sentence-converter",
       "published": true
     },
     {
@@ -79,6 +160,25 @@
       "desc": "记下对你们重要的日子，算出距离下一次还有多久、一起走过多少天。",
       "category": "💞 两性亲密成长",
       "icon": "📅",
+      "guide": "guide-qinmi-anniversary",
+      "published": true
+    },
+    {
+      "slug": "qinmi-conflict-pause",
+      "name": "争吵暂停指引",
+      "desc": "判断这次争执到了哪一步，给出当下可以做的一件事，附「暂停 20 分钟」的具体规矩。",
+      "category": "💞 两性亲密成长",
+      "icon": "⏸️",
+      "guide": "guide-qinmi-conflict-pause",
+      "published": true
+    },
+    {
+      "slug": "qinmi-time-check",
+      "name": "两人时间与隐形劳动对照",
+      "desc": "对比双方每天可自由支配的时间，并勾出常被漏算的隐形操心劳动。",
+      "category": "💞 两性亲密成长",
+      "icon": "⏳",
+      "guide": "guide-qinmi-time-check",
       "published": true
     }
   ]

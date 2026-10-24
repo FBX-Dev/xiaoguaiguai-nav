@@ -1,0 +1,191 @@
+<div class="tool">
+  <div class="panel">
+    <h2>最近一周，哪些事在消耗你</h2>
+    <div class="hint" style="margin-bottom:14px">
+      下面这些是常见项，勾上最近一周确实发生过的。不用全选，凭第一反应勾就好。
+    </div>
+    <div id="drain"></div>
+  </div>
+
+  <div class="panel">
+    <h2>最近一周，哪些事给你充电</h2>
+    <div id="charge"></div>
+  </div>
+
+  <div class="panel">
+    <h2>其他补充（可选）</h2>
+    <div class="field">
+      <label class="lbl" for="extra">还想加上什么？</label>
+      <input type="text" id="extra" placeholder="例如：每天通勤来回两小时" />
+      <div class="hint">写一件事按一次「加进消耗项」或「加进充电项」。这一项只用于本次计算，不做长期保存。</div>
+    </div>
+    <div class="btns">
+      <button id="add-d" class="ghost">加进消耗项</button>
+      <button id="add-c" class="ghost">加进充电项</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="btns" style="margin-top:0">
+      <button id="calc">看看这一周的能量收支</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>这一周的结果</h2>
+    <div class="kv">
+      <div class="cell"><div class="k">消耗项</div><div class="v" id="r-d">—</div></div>
+      <div class="cell"><div class="k">充电项</div><div class="v" id="r-c">—</div></div>
+      <div class="cell"><div class="k">主要消耗来源</div><div class="v" id="r-top">—</div></div>
+    </div>
+    <div id="r-list" style="margin-top:18px"></div>
+    <div class="note" id="r-text" style="margin-top:16px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>这个工具怎么用</h2>
+    <ul class="plain">
+      <li><strong>它不给分，也不评价你过得好不好。</strong>只是把「感觉被掏空」这件事拆成具体的条目，让它可以被看见。</li>
+      <li><strong>消耗和充电不是对立的。</strong>同一件事对不同人可能相反。带孩子对有些人是消耗，对另一些人是充电，都正常。</li>
+      <li><strong>看的是结构，不是数量。</strong>消耗项多不一定是问题，问题通常是「没有一项充电」或「消耗全集中在一个人身上」。</li>
+      <li><strong>一次只看一周。</strong>状态每周都在变。今天觉得全是消耗，下个月再看可能完全不同。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具仅用于自我梳理，<strong>不构成心理评估或医学建议</strong>。
+      如果你长期感到疲惫、提不起劲、对什么都失去兴趣，并且持续两周以上，
+      请考虑联系心理咨询师或精神心理科。这不是意志力的问题，也不该一个人扛。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_energy";
+  // 消耗项：常见但容易被忽略的「隐形支出」
+  var DRAINS = [
+    "睡眠不足（每天不足 6 小时）",
+    "要同时照顾孩子和长辈",
+    "家务几乎全在我身上",
+    "工作之外还要处理家里的事",
+    "和伴侣有没解决的矛盾",
+    "被家人或亲戚反复追问",
+    "做决定都要我来拍板",
+    "记着全家人的日程和琐事",
+    "身体不舒服还硬撑",
+    "很少有属于自己的时间",
+    "要在不同人之间调和",
+    "钱的事让我焦虑"
+  ];
+  var CHARGES = [
+    "睡够了一整晚",
+    "有人帮我分担了家务",
+    "和伴侣有过一次好好说话",
+    "见了一个让我放松的朋友",
+    "有半小时完全属于自己",
+    "完成了一件拖很久的事",
+    "被认真听了一次",
+    "运动或散步过",
+    "有一个人对我说了谢谢",
+    "安静地待着没被打扰"
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  var state = load();
+  state.d = state.d || {};
+  state.c = state.c || {};
+  state.extraD = state.extraD || [];
+  state.extraC = state.extraC || [];
+
+  function renderList(boxId, items, key, extraKey) {
+    var box = $(boxId);
+    var html = "";
+    for (var i = 0; i < items.length; i++) {
+      var k = key + i;
+      html += '<label class="chk"><input type="checkbox" data-k="' + k + '"' + (state[key][k] ? " checked" : "") +
+        ' /><span class="nm">' + esc(items[i]) + "</span></label>";
+    }
+    for (var j = 0; j < state[extraKey].length; j++) {
+      var ek = "x" + j;
+      html += '<label class="chk"><input type="checkbox" data-k="' + ek + '"' +
+        (state[key][ek] ? " checked" : "") + ' /><span class="nm">' + esc(state[extraKey][j]) +
+        ' <em>（自己补充）</em></span></label>';
+    }
+    box.innerHTML = html;
+    var bs = box.querySelectorAll("input");
+    for (var m = 0; m < bs.length; m++) {
+      bs[m].addEventListener("change", function (e) {
+        state[key][e.target.getAttribute("data-k")] = e.target.checked;
+        save(state);
+      });
+    }
+  }
+
+  function refresh() {
+    renderList("drain", DRAINS, "d", "extraD");
+    renderList("charge", CHARGES, "c", "extraC");
+  }
+
+  $("add-d").addEventListener("click", function () {
+    var v = ($("extra").value || "").trim();
+    if (!v) { alert("先写一件想补充的事。"); return; }
+    state.extraD.push(v.slice(0, 40));
+    $("extra").value = "";
+    save(state);
+    refresh();
+  });
+  $("add-c").addEventListener("click", function () {
+    var v = ($("extra").value || "").trim();
+    if (!v) { alert("先写一件想补充的事。"); return; }
+    state.extraC.push(v.slice(0, 40));
+    $("extra").value = "";
+    save(state);
+    refresh();
+  });
+
+  $("calc").addEventListener("click", function () {
+    var dn = 0, cn = 0;
+    for (var i = 0; i < DRAINS.length; i++) if (state.d["d" + i]) dn++;
+    for (var j = 0; j < state.extraD.length; j++) if (state.d["x" + j]) dn++;
+    for (var k = 0; k < CHARGES.length; k++) if (state.c["c" + k]) cn++;
+    for (var l = 0; l < state.extraC.length; l++) if (state.c["x" + l]) cn++;
+
+    if (!dn && !cn) { alert("先勾选至少一项，再来看结果。"); return; }
+
+    $("r-d").innerHTML = dn + '<small>项</small>';
+    $("r-c").innerHTML = cn + '<small>项</small>';
+
+    // 找「结构性」消耗：同时命中「照顾他人」「一个人扛」这类组合
+    var flags = [];
+    if (state.d["d1"] && state.d["d2"]) flags.push("照顾与家务同时压在你身上");
+    if (state.d["d7"]) flags.push("全家的琐事都记在你脑子里");
+    if (state.d["d6"] || state.d["d10"]) flags.push("你在承担情绪调和与决策的角色");
+    if (!cn) flags.push("这一周没有一项充电");
+    $("r-top").innerHTML = flags.length ? '<span style="font-size:15px">' + esc(flags[0]) + "</span>" : "较分散";
+
+    var html = "";
+    if (flags.length) {
+      html += '<div class="hint" style="margin-bottom:8px">这一周比较明显的结构性消耗：</div><ul class="plain">' +
+        flags.map(function (f) { return "<li>" + esc(f) + "</li>"; }).join("") + "</ul>";
+    }
+    $("r-list").innerHTML = html;
+
+    var t = "这一周你勾了 " + dn + " 项消耗、" + cn + " 项充电。";
+    if (dn > 0 && cn === 0) {
+      t += "消耗项有，充电项一项都没有——这通常是最需要调整的状态。不用做大事，先给自己留一件小事的时间，比如每天 20 分钟。";
+    } else if (cn > 0 && cn >= dn) {
+      t += "充电项不比消耗少，说明你这周还算撑得住。可以记一下：是哪几件事在起作用？下次状态差的时候，优先把这几件安排上。";
+    } else {
+      t += "消耗多于充电，属于常见的紧绷状态。可以挑一项最不必须的消耗，试着交给别人，哪怕只交一半。";
+    }
+    t += " 这只是你自己勾出来的一个快照，不构成任何评估。";
+    $("r-text").textContent = t;
+    $("out").style.display = "block";
+  });
+
+  refresh();
+})();
+</script>

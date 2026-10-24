@@ -477,6 +477,46 @@ const BASE_CSS = `
   footer.meta .fnav { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; margin: 0 0 12px; }
   .backlink { display: inline-block; margin: 30px 0 0; font-size: 13.5px; }
 
+  /* ── 文章文末的「配套小工具」卡片 ──
+     引导类文章的价值是「讲清原理」，工具的价值是「当场能用」。
+     把跳转做成卡片而不是一行链接，是为了让读者一眼看到「接下来能做什么」。 */
+  .tool-link {
+    margin: 36px 0 0; border: 1px solid var(--line); background: var(--panel);
+    border-radius: var(--radius-lg); padding: 18px 20px 20px; box-shadow: var(--shadow);
+  }
+  .tool-link .tl-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 13px; }
+  .tool-link .tl-badge {
+    font-size: 11.5px; font-weight: 600; letter-spacing: .04em;
+    color: #5d8a6c; background: #eef4ef; padding: 3px 9px; border-radius: 5px;
+  }
+  .tool-link .tl-tip { font-size: 12.5px; color: var(--ink-mute); }
+  .tool-link a.tl-card {
+    display: flex; align-items: center; gap: 13px; text-decoration: none; color: inherit;
+    border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 13px 15px;
+    background: #fdfcfa; transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .tool-link a.tl-card:hover { border-color: #e0d4c6; box-shadow: var(--shadow-hover); }
+  .tool-link .tl-icon { font-size: 24px; line-height: 1; flex: none; }
+  .tool-link .tl-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .tool-link .tl-name { font-size: 15.5px; font-weight: 600; color: var(--ink); }
+  .tool-link .tl-desc { font-size: 13px; color: var(--ink-soft); line-height: 1.62; }
+  .tool-link .tl-go { font-size: 13px; color: var(--accent); white-space: nowrap; flex: none; font-weight: 500; }
+  .tool-link .tl-note { margin: 11px 0 0; font-size: 12px; color: var(--ink-mute); }
+
+  /* ── 工具页顶部的「配套阅读」入口（与文章互链的另一半）── */
+  .guide-link {
+    margin: 0 0 24px; padding: 14px 17px; border: 1px solid var(--line);
+    border-left: 3px solid var(--accent); background: #fdfaf7;
+    border-radius: 8px; font-size: 14px; line-height: 1.75; color: var(--ink-2);
+  }
+  .guide-link .gl-lbl { font-weight: 600; color: var(--ink); }
+  .guide-link a { color: var(--accent); text-decoration: none; border-bottom: 1px solid #e8c8b6; }
+  .guide-link a:hover { border-bottom-color: var(--accent); }
+  @media (max-width: 560px) {
+    .tool-link .tl-go { display: none; }
+    .tool-link a.tl-card { align-items: flex-start; }
+  }
+
   /* ── 顶部站头 + 导航栏（全站统一，所有页面共用）── */
   header.site {
     background: rgba(251,250,248,.94); border-bottom: 1px solid var(--line);
@@ -751,6 +791,9 @@ function readPosts() {
       excerpt: data.excerpt || "",
       cover: data.cover || (cat ? `${SITE.origin}/media/covers/${cat.cover}.webp` : ""),
       tags: Array.isArray(data.tags) ? data.tags : [],
+      // 配套小工具 slug：引导类文章在 frontmatter 里用 tool: <slug> 声明，
+      // 构建时自动渲染成文末的「配套小工具」卡片，无需在正文里手写链接。
+      tool: data.tool ? String(data.tool).trim() : "",
       body,
     });
   }
@@ -827,12 +870,55 @@ function itemRow(p, opt = {}) {
     </li>`;
 }
 
+/**
+ * 文章文末的「配套小工具」卡片。
+ * 引导类文章负责讲清原理，工具负责当场能用——两者必须能互相走到，
+ * 否则读者读完不知道该干什么，工具页也拿不到自然流量。
+ * @param {object} t 工具对象
+ */
+function toolCard(t) {
+  if (!t) return "";
+  return `<aside class="tool-link">
+  <div class="tl-head">
+    <span class="tl-badge">配套小工具</span>
+    <span class="tl-tip">纯前端运行 · 数据不上传 · 无需注册</span>
+  </div>
+  <a class="tl-card" href="/tools/${encodeURIComponent(t.slug)}/">
+    <span class="tl-icon" aria-hidden="true">${escapeHtml(t.icon || "🧰")}</span>
+    <span class="tl-main">
+      <span class="tl-name">${escapeHtml(t.name)}</span>
+      <span class="tl-desc">${escapeHtml(t.desc)}</span>
+    </span>
+    <span class="tl-go">打开工具 →</span>
+  </a>
+  <p class="tl-note">打开即用，不用注册。计算结果仅供参考，不构成任何专业意见。</p>
+</aside>`;
+}
+
+/**
+ * 工具页顶部的「配套阅读」入口 —— 与文章页的卡片构成双向互链。
+ * @param {object} p 引导文章对象
+ */
+function guideLink(p) {
+  if (!p) return "";
+  return `<aside class="guide-link">
+  <span class="gl-lbl">先看原理，再用工具：</span>
+  <a href="/posts/${encodeURIComponent(p.slug)}/">${escapeHtml(p.title)}</a>
+</aside>`;
+}
+
 function build() {
   log("→ 读取源文件");
   const posts = readPosts();
   const tools = readTools();
   const pages = readPages();
   log(`  文章 ${posts.length} 篇，工具 ${tools.length} 个，静态页 ${pages.length} 个`);
+
+  // 双向互链的两张索引表：
+  //   toolBySlug   —— 文章 frontmatter 的 tool 字段 → 工具对象（文末卡片）
+  //   postBySlug   —— 工具 tools.json 的 guide 字段 → 引导文章（工具页顶部入口）
+  const toolBySlug = new Map(tools.map((t) => [t.slug, t]));
+  const postBySlug = new Map(posts.map((p) => [p.slug, p]));
 
   rmrf(OUT);
   ensure(OUT);
@@ -863,6 +949,9 @@ function build() {
     cover: p.cover,
     tags: p.tags,
     url: `/posts/${encodeURIComponent(p.slug)}/`,
+    // 配套小工具（引导类文章才有）——便于站内检索与验收核对双向互链
+    tool: p.tool || "",
+    toolUrl: p.tool && toolBySlug.has(p.tool) ? `/tools/${p.tool}/` : "",
   }));
   fs.writeFileSync(path.join(OUT, "posts.json"), JSON.stringify({ count: index.length, posts: index }, null, 2) + "\n", "utf8");
   log(`  posts.json（${index.length} 条）`);
@@ -963,6 +1052,7 @@ ${crumb([{ text: "首页", href: "/" }, { text: "全部内容", href: "/posts/" 
 <article class="body narrow">
 ${renderMarkdown(p.body)}
 ${p.tags.length ? `<div class="tags">${p.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</div>` : ""}
+${toolCard(toolBySlug.get(p.tool))}
 </article>
 ${
   related.length
@@ -1074,6 +1164,9 @@ ${others
     category: t.category,
     icon: t.icon || "",
     url: `/tools/${t.slug}/`,
+    // 该工具的引导文章（可能为空）——供外部消费与验收脚本核对双向互链
+    guide: t.guide || "",
+    guideUrl: t.guide && postBySlug.has(t.guide) ? `/posts/${t.guide}/` : "",
   }));
   fs.writeFileSync(path.join(OUT, "tools.json"), JSON.stringify({ count: toolsIndex.length, tools: toolsIndex }, null, 2) + "\n", "utf8");
   log(`  tools.json（${toolsIndex.length} 个）`);
@@ -1101,6 +1194,7 @@ ${crumb([{ text: "首页", href: "/" }, { text: "小工具", href: "/tools/" }, 
     <span>纯前端运行 · 数据不上传</span>
   </div>
 </header>
+${guideLink(t.guide ? postBySlug.get(t.guide) : null)}
 ${frag}
 <p class="backlink"><a href="/tools/">← 返回全部小工具</a></p>`;
     fs.writeFileSync(

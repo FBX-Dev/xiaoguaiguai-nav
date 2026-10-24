@@ -1,0 +1,169 @@
+<div class="tool">
+  <div class="panel">
+    <h2>把家里的事列出来</h2>
+    <div class="field">
+      <label class="lbl" for="item">一件需要有人拿主意的事</label>
+      <input type="text" id="item" placeholder="例如：孩子上哪个兴趣班" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="lv">这件事的影响范围</label>
+      <select id="lv">
+        <option value="big">影响全家人、且不好回头（买房、择校、大额支出）</option>
+        <option value="mid">影响一两个人，可以改（作息、报班、出行安排）</option>
+        <option value="small">只影响自己，随时能调整（穿什么、吃什么）</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="lbl" for="who">现在实际是谁在决定</label>
+      <select id="who">
+        <option value="我">我</option>
+        <option value="伴侣">伴侣</option>
+        <option value="长辈">长辈</option>
+        <option value="一起">一起商量</option>
+        <option value="没人">没人明确负责</option>
+      </select>
+    </div>
+    <div class="btns">
+      <button id="add">加进清单</button>
+      <button id="demo" class="ghost">看个例子</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>分工现状</h2>
+    <div class="stat" id="sum"></div>
+    <div id="table"></div>
+    <div class="note" id="r-text" style="margin-top:16px"></div>
+  </div>
+
+  <div class="panel" id="empty-panel">
+    <div class="empty">还没有条目。加几件家里常要拿主意的事，就能看出「谁说了算」是不是清楚。</div>
+  </div>
+
+  <div class="panel">
+    <h2>这个工具怎么用</h2>
+    <ul class="plain">
+      <li><strong>它不评谁对谁错。</strong>只是把「谁拍板」这件事摆到桌面上。很多家庭矛盾不是观点不同，是权限不清。</li>
+      <li><strong>看的是「有没有明确的人」。</strong>如果一列里出现大量「没人明确负责」，那才是真正的风险点——出事时没人兜底。</li>
+      <li><strong>不要求所有事都统一。</strong>小事各自决定反而更高效。关键是大事上，两个人得先对齐，再对长辈说明。</li>
+      <li><strong>用途是拿去做一次谈话。</strong>把这张表给伴侣看，比一句「你怎么什么都不管」有用得多。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具用于家庭内部梳理，<strong>不构成法律意见或调解建议</strong>。
+      如果涉及家庭暴力、财产争议、抚养权等实际问题，请咨询专业律师或当地妇联（12338）。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_decide";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) { return []; } }
+  function save(l) { try { localStorage.setItem(KEY, JSON.stringify(l.slice(0, 80))); } catch (e) {} }
+
+  var LV = { big: "重大", mid: "中等", small: "日常" };
+
+  // 按影响范围给建议
+  function advice(lv, who) {
+    if (lv === "big") {
+      if (who === "一起") return "合适：重大事项由两个人共同拍板，责任共担。";
+      if (who === "长辈") return "需要调整：影响全家的决定让长辈单方拍板，一旦结果不好，责任会落到你身上。";
+      if (who === "没人") return "高风险：重大事项没有人负责，最容易在出问题时互相埋怨。";
+      return "需要确认：由一个人拍板可以，但另一方要事先知情并同意。";
+    }
+    if (lv === "mid") {
+      if (who === "没人") return "建议明确：这类事可以轮流或分工，但要有「这次谁定」的约定。";
+      if (who === "一起") return "可以简化：中等事项不必每次商量，交给主要执行的那个人即可。";
+      return "可以接受：影响有限、能改回来的事，一个人决定效率更高。";
+    }
+    if (who === "长辈") return "注意边界：只影响自己的小事，不必由别人决定。";
+    return "交给本人：日常小事各自决定就好，不用拿来讨论。";
+  }
+
+  function render() {
+    var list = load();
+    if (!list.length) {
+      $("out").style.display = "none";
+      $("empty-panel").style.display = "block";
+      return;
+    }
+    $("empty-panel").style.display = "none";
+
+    var byWho = { 我: 0, 伴侣: 0, 长辈: 0, 一起: 0, 没人: 0 };
+    var bigNobody = 0;
+    for (var i = 0; i < list.length; i++) {
+      byWho[list[i].who] = (byWho[list[i].who] || 0) + 1;
+      if (list[i].lv === "big" && (list[i].who === "没人" || list[i].who === "长辈")) bigNobody++;
+    }
+
+    $("sum").innerHTML = "<span>共 <b>" + list.length + "</b> 件事</span>" +
+      "<span>我决定 <b>" + byWho["我"] + "</b></span>" +
+      "<span>伴侣决定 <b>" + byWho["伴侣"] + "</b></span>" +
+      "<span>长辈决定 <b>" + byWho["长辈"] + "</b></span>" +
+      "<span>一起商量 <b>" + byWho["一起"] + "</b></span>" +
+      "<span>没人负责 <b>" + byWho["没人"] + "</b></span>";
+
+    var html = '<table><thead><tr><th>事项</th><th style="width:60px">影响</th>' +
+      '<th style="width:84px">谁决定</th><th style="width:46%">提示</th><th style="width:56px">操作</th></tr></thead><tbody>';
+    for (var j = list.length - 1; j >= 0; j--) {
+      var it = list[j];
+      var color = it.who === "没人" ? "#b57b6b" : (it.lv === "big" && it.who !== "一起" ? "#a58a5c" : "#5d8a6c");
+      html += "<tr><td>" + esc(it.item) + "</td><td>" + LV[it.lv] + "</td><td>" + esc(it.who) +
+        '</td><td style="color:' + color + '">' + esc(advice(it.lv, it.who)) +
+        '</td><td><button class="ghost" data-i="' + j + '" style="padding:4px 10px;font-size:12.5px">删除</button></td></tr>';
+    }
+    html += "</tbody></table>";
+    $("table").innerHTML = html;
+
+    var bs = $("table").querySelectorAll("[data-i]");
+    for (var k = 0; k < bs.length; k++) {
+      bs[k].addEventListener("click", function (e) {
+        var idx = parseInt(e.target.getAttribute("data-i"), 10);
+        var l = load();
+        l.splice(idx, 1);
+        save(l);
+        render();
+      });
+    }
+
+    var t = "";
+    if (bigNobody) {
+      t = "有 " + bigNobody + " 件「影响全家且不好回头」的事，目前不是由你们两个人共同决定。这是家庭矛盾最常见的源头——先解决这几件，其他的都好谈。";
+    } else if (byWho["没人"] >= 2) {
+      t = "有 " + byWho["没人"] + " 件事没有明确的人负责。建议挑其中最容易出问题的一件，先定下「以后谁定」。";
+    } else if (byWho["一起"] >= Math.ceil(list.length / 2)) {
+      t = "大部分事项都靠一起商量。稳妥，但比较耗精力。可以把中等和日常的事授权出去，只留重大事项一起定。";
+    } else {
+      t = "分工看起来比较清楚。建议定期（比如每季度）回看一次，尤其是孩子长大、老人身体变化之后，权限会需要重新分配。";
+    }
+    t += " 这只是把现状摆出来，不代表某种分工一定更好。";
+    $("r-text").textContent = t;
+    $("out").style.display = "block";
+  }
+
+  $("add").addEventListener("click", function () {
+    var v = ($("item").value || "").trim();
+    if (!v) { alert("先写一件需要拿主意的事。"); return; }
+    var l = load();
+    l.push({ item: v.slice(0, 40), lv: $("lv").value, who: $("who").value });
+    save(l);
+    $("item").value = "";
+    render();
+  });
+
+  $("demo").addEventListener("click", function () {
+    save([
+      { item: "孩子上哪个兴趣班", lv: "mid", who: "我" },
+      { item: "要不要换房 / 换学区", lv: "big", who: "长辈" },
+      { item: "老人来同住多久", lv: "big", who: "没人" },
+      { item: "周末去哪", lv: "small", who: "伴侣" },
+      { item: "大额支出怎么定", lv: "big", who: "一起" }
+    ]);
+    render();
+  });
+
+  render();
+})();
+</script>

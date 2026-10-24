@@ -1,0 +1,239 @@
+<div class="tool">
+  <div class="panel">
+    <h2>登记一次测量</h2>
+    <div class="field">
+      <label class="lbl" for="sex">宝宝性别</label>
+      <select id="sex">
+        <option value="boy">男孩</option>
+        <option value="girl">女孩</option>
+      </select>
+      <div class="hint">男孩和女孩的生长参考值不一样，所以要先选。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="birth">出生日期</label>
+      <input type="date" id="birth" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="mdate">测量日期</label>
+      <input type="date" id="mdate" />
+      <div class="hint">量身高建议在早上、脱鞋、靠墙站直或躺着量；体重建议空腹、穿得少一点。条件尽量保持一致，比数值本身更重要。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="h">身高（厘米）</label>
+      <input type="number" id="h" step="0.1" min="30" max="140" placeholder="例如 75.5" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="w">体重（公斤）</label>
+      <input type="number" id="w" step="0.01" min="1" max="40" placeholder="例如 9.6" />
+    </div>
+    <div class="btns">
+      <button id="add">记下这一次</button>
+      <button id="fill-today" class="ghost">测量日期填今天</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>这一次的结果</h2>
+    <div class="kv">
+      <div class="cell"><div class="k">测量时月龄</div><div class="v" id="r-age">—</div></div>
+      <div class="cell"><div class="k">身高</div><div class="v" id="r-h">—</div></div>
+      <div class="cell"><div class="k">体重</div><div class="v" id="r-w">—</div></div>
+      <div class="cell"><div class="k">与上次相比</div><div class="v" id="r-delta">—</div></div>
+    </div>
+    <div class="note" id="r-text" style="margin-top:16px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>历次记录</h2>
+    <div id="history"></div>
+    <div class="btns">
+      <button id="clear" class="ghost">清空全部记录</button>
+    </div>
+    <div class="hint" style="margin-top:12px">
+      记录只存在这台设备的浏览器里，不上传、不同步。换设备或清理浏览器数据会丢失。
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>这个工具怎么用</h2>
+    <ul class="plain">
+      <li><strong>看趋势，不看单点。</strong>一次测量的数值受吃奶、排便、量的姿势影响很大。真正有意义的是「这条线是不是稳定往上走」。</li>
+      <li><strong>不判百分位。</strong>这里只把测到的数值和参考中位值做个粗略对照，<strong>不是</strong>生长曲线百分位判定，也不能用来判断发育是否达标。</li>
+      <li><strong>带上记录去体检。</strong>儿保门诊真正需要的是连续几次的数据。把这张表打印或截图给医生，比口头描述有用得多。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具仅用于家庭自行留档与粗略对照，<strong>不构成任何医学评估</strong>。
+      如果发现身高体重连续两次没有增长、或短期内明显偏离原有趋势，
+      请带孩子到儿童保健门诊由医生用标准生长曲线判断。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_growth";
+  // WHO 儿童生长标准的中位值（男孩/女孩，按整数月龄，身高 cm / 体重 kg）。
+  // 仅作粗略对照用，不是百分位曲线。
+  var REF = {
+    boy: [[0,49.9,3.3],[3,61.4,6.4],[6,67.6,7.9],[9,72.0,8.9],[12,75.7,9.6],
+          [18,82.3,10.9],[24,87.1,12.2],[36,96.1,14.3]],
+    girl:[[0,49.1,3.2],[3,59.8,5.8],[6,65.7,7.3],[9,70.1,8.2],[12,74.0,8.9],
+          [18,80.7,10.2],[24,85.7,11.5],[36,95.1,13.9]]
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function fmt(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parseD(s) { var p = String(s).split("-"); return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])); }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+
+  // 精确月龄（月 + 余天）
+  function ageOf(birth, ref) {
+    var y = ref.getFullYear() - birth.getFullYear();
+    var m = ref.getMonth() - birth.getMonth();
+    var d = ref.getDate() - birth.getDate();
+    if (d < 0) {
+      m -= 1;
+      d += new Date(ref.getFullYear(), ref.getMonth(), 0).getDate();
+    }
+    if (m < 0) { y -= 1; m += 12; }
+    return { total: y * 12 + m, days: d, y: y, m: m };
+  }
+
+  // 线性插值取参考中位值
+  function refAt(sex, months) {
+    var arr = REF[sex] || REF.boy;
+    if (months <= arr[0][0]) return { h: arr[0][1], w: arr[0][2] };
+    var last = arr[arr.length - 1];
+    if (months >= last[0]) return { h: last[1], w: last[2] };
+    for (var i = 0; i < arr.length - 1; i++) {
+      var a = arr[i], b = arr[i + 1];
+      if (months >= a[0] && months <= b[0]) {
+        var k = (months - a[0]) / (b[0] - a[0]);
+        return { h: a[1] + (b[1] - a[1]) * k, w: a[2] + (b[2] - a[2]) * k };
+      }
+    }
+    return { h: last[1], w: last[2] };
+  }
+
+  function band(pct) {
+    if (pct < -10) return { txt: "低于参考中位", color: "#b57b6b" };
+    if (pct > 10) return { txt: "高于参考中位", color: "#7d8fa8" };
+    return { txt: "接近参考中位", color: "#5d8a6c" };
+  }
+
+  function renderRow(rec) {
+    var birth = parseD(rec.birth);
+    var md = parseD(rec.mdate);
+    var a = ageOf(birth, md);
+    var r = refAt(rec.sex, a.total);
+    var dh = ((rec.h - r.h) / r.h) * 100;
+    var dw = ((rec.w - r.w) / r.w) * 100;
+    var bh = band(dh), bw = band(dw);
+    return { age: a, ref: r, dh: dh, dw: dw, bh: bh, bw: bw };
+  }
+
+  function showLast(rec, prev) {
+    var o = renderRow(rec);
+    $("r-age").innerHTML = o.age.total + '<small>个月</small>' + (o.age.days ? o.age.days + '<small>天</small>' : "");
+    $("r-h").innerHTML = rec.h + '<small>cm</small>';
+    $("r-w").innerHTML = rec.w + '<small>kg</small>';
+
+    if (prev) {
+      var dh = (rec.h - prev.h).toFixed(1);
+      var dw = (rec.w - prev.w).toFixed(2);
+      $("r-delta").innerHTML = "身高 " + (dh > 0 ? "+" : "") + dh + '<small>cm</small>　体重 ' + (dw > 0 ? "+" : "") + dw + '<small>kg</small>';
+    } else {
+      $("r-delta").textContent = "首次记录";
+    }
+
+    var sexTxt = rec.sex === "girl" ? "女孩" : "男孩";
+    var t = "按 " + sexTxt + " " + o.age.total + " 月龄的参考中位值（身高 " + o.ref.h.toFixed(1) +
+      " cm、体重 " + o.ref.w.toFixed(1) + " kg）粗略对照：身高" + o.bh.txt + "（" +
+      (o.dh > 0 ? "+" : "") + o.dh.toFixed(1) + "%），体重" + o.bw.txt + "（" +
+      (o.dw > 0 ? "+" : "") + o.dw.toFixed(1) + "%）。";
+    if (prev) {
+      var dm = Math.round((parseD(rec.mdate) - parseD(prev.mdate)) / 86400000);
+      t += " 距上次记录 " + dm + " 天。";
+    }
+    t += " 这只是粗对照，请以儿保门诊的标准生长曲线为准。";
+    $("r-text").textContent = t;
+    $("out").style.display = "block";
+  }
+
+  function renderHistory(store) {
+    var box = $("history");
+    var list = store.records || [];
+    if (!list.length) {
+      box.innerHTML = '<div class="empty">还没有记录。填一次测量，这里会按时间倒序列出。</div>';
+      return;
+    }
+    var html = '<table><thead><tr><th style="width:96px">测量日期</th><th style="width:74px">月龄</th>' +
+      '<th style="width:76px">身高</th><th style="width:76px">体重</th><th>对照</th></tr></thead><tbody>';
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      var o = renderRow(r);
+      html += "<tr><td>" + esc(r.mdate) + "</td><td>" + o.age.total + " 个月</td>" +
+        "<td>" + r.h + " cm</td><td>" + r.w + " kg</td>" +
+        '<td style="color:' + o.bh.color + '">' + o.bh.txt.replace("参考中位", "") + " / " +
+        o.bw.txt.replace("参考中位", "") + "</td></tr>";
+    }
+    html += "</tbody></table>";
+    box.innerHTML = html;
+  }
+
+  function collect() {
+    var birth = $("birth").value;
+    var mdate = $("mdate").value;
+    var h = parseFloat($("h").value);
+    var w = parseFloat($("w").value);
+    if (!birth) { alert("请先选择出生日期。"); return null; }
+    if (!mdate) { alert("请选择测量日期。"); return null; }
+    if (!(h > 0) || !(w > 0)) { alert("请填写身高和体重。"); return null; }
+    if (parseD(mdate) < parseD(birth)) { alert("测量日期不能早于出生日期。"); return null; }
+    return { sex: $("sex").value, birth: birth, mdate: mdate, h: Math.round(h * 10) / 10, w: Math.round(w * 100) / 100 };
+  }
+
+  $("add").addEventListener("click", function () {
+    var rec = collect();
+    if (!rec) return;
+    var store = load();
+    var list = store.records || [];
+    // 同一天重复登记视为修正，覆盖旧值
+    var idx = -1;
+    for (var i = 0; i < list.length; i++) if (list[i].mdate === rec.mdate && list[i].sex === rec.sex) { idx = i; break; }
+    if (idx >= 0) list.splice(idx, 1);
+    list.push(rec);
+    list.sort(function (a, b) { return a.mdate < b.mdate ? 1 : -1; });
+    store.records = list.slice(0, 60);
+    save(store);
+    showLast(rec, list[1] || null);
+    renderHistory(store);
+  });
+
+  $("fill-today").addEventListener("click", function () {
+    $("mdate").value = fmt(new Date());
+  });
+
+  $("clear").addEventListener("click", function () {
+    if (!confirm("确定清空全部测量记录吗？此操作不可恢复。")) return;
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    $("out").style.display = "none";
+    renderHistory({});
+  });
+
+  // 回填
+  var st = load();
+  if (st.records && st.records.length) {
+    var last = st.records[0];
+    $("sex").value = last.sex || "boy";
+    $("birth").value = last.birth || "";
+    renderHistory(st);
+    showLast(last, st.records[1] || null);
+  } else {
+    renderHistory(st);
+  }
+})();
+</script>

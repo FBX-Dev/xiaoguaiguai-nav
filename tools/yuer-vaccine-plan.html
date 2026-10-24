@@ -1,0 +1,150 @@
+<div class="tool">
+  <div class="panel">
+    <h2>输入出生日期</h2>
+    <div class="field">
+      <label class="lbl" for="birth">宝宝出生日期</label>
+      <input type="date" id="birth" />
+      <div class="hint">国家免疫规划疫苗（免费）的接种月龄以出生日期推算。各地接种门诊的安排可能略有差异，以接种证与门诊通知为准。</div>
+    </div>
+    <div class="btns">
+      <button id="gen">生成接种时间表</button>
+      <button id="today" class="ghost">出生日期填今天</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>免费疫苗接种时间表</h2>
+    <div class="stat" id="sum"></div>
+    <table>
+      <thead>
+        <tr><th style="width:82px">月龄</th><th style="width:96px">建议日期</th><th>疫苗</th><th style="width:104px">状态</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="hint" style="margin-top:12px">
+      「建议日期」按出生日期加对应月龄推算，实际接种以当地门诊排期为准，前后几天都属正常。
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>已接种登记</h2>
+    <div class="hint" style="margin-bottom:12px">勾选已经打完的针次，下次打开时状态会保留。这里只是家庭备忘，不能替代接种证。</div>
+    <div id="chk-list"></div>
+  </div>
+
+  <div class="panel">
+    <h2>这个工具怎么用</h2>
+    <ul class="plain">
+      <li><strong>它算的是「大概什么时候」，不是「哪天必须去」。</strong>推迟几天、提前几天通常都不影响效果，具体听门诊安排。</li>
+      <li><strong>疫苗名以接种证为准。</strong>不同厂家、不同省份的程序细节会有差别，这里列的是国家免疫规划的常见框架。</li>
+      <li><strong>本工具不包含自费疫苗。</strong>自费疫苗是否接种，请与接种门诊医生沟通后决定。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本表仅作家庭日程提醒，<strong>不构成接种建议或医学意见</strong>。
+      如果孩子有早产、过敏史、正在生病或长期用药，接种前请务必告知接种医生。
+      具体接种方案以接种门诊的安排和《预防接种证》记录为准。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_vaccine";
+  // 国家免疫规划疫苗常见框架（月龄，疫苗名）。仅列免费疫苗，作日程提醒用。
+  var PLAN = [
+    { m: 0,  name: "乙肝疫苗 第1剂、卡介苗" },
+    { m: 1,  name: "乙肝疫苗 第2剂" },
+    { m: 2,  name: "脊灰灭活疫苗 第1剂" },
+    { m: 3,  name: "脊灰灭活疫苗 第2剂、百白破 第1剂" },
+    { m: 4,  name: "脊灰减毒活疫苗 第3剂、百白破 第2剂" },
+    { m: 5,  name: "百白破 第3剂" },
+    { m: 6,  name: "乙肝疫苗 第3剂、A群流脑多糖 第1剂" },
+    { m: 8,  name: "麻腮风 第1剂、乙脑减毒活疫苗 第1剂" },
+    { m: 9,  name: "A群流脑多糖 第2剂" },
+    { m: 18, name: "麻腮风 第2剂、百白破 第4剂、甲肝减毒活疫苗" },
+    { m: 24, name: "乙脑减毒活疫苗 第2剂" },
+    { m: 36, name: "A群C群流脑多糖 第1剂" },
+    { m: 48, name: "脊灰减毒活疫苗 第4剂" },
+    { m: 72, name: "白破疫苗、A群C群流脑多糖 第2剂" }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function fmt(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parseD(s) { var p = String(s).split("-"); return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])); }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+
+  // 出生日期 + 月龄 → 建议日期（按日历月加，日期不存在时顺延到当月最后一天）
+  function addMonths(birth, months) {
+    var y = birth.getFullYear();
+    var m = birth.getMonth() + months;
+    var d = birth.getDate();
+    var last = new Date(y, m + 1, 0).getDate();
+    return new Date(y, m, Math.min(d, last));
+  }
+
+  function render() {
+    var birthV = $("birth").value;
+    if (!birthV) { alert("请先选择出生日期。"); return; }
+    var birth = parseD(birthV);
+    var now = new Date();
+    var today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    localStorage.setItem(KEY + "_birth", birthV);
+
+    var store = load();
+    var done = store.done || {};
+    var rows = "", total = PLAN.length, passed = 0;
+
+    for (var i = 0; i < PLAN.length; i++) {
+      var it = PLAN[i];
+      var dt = addMonths(birth, it.m);
+      var key = "m" + it.m;
+      var isDone = !!done[key];
+      var isPast = dt <= today0;
+      if (isPast) passed++;
+      var st, color;
+      if (isDone) { st = "已接种"; color = "#5d8a6c"; }
+      else if (isPast) { st = "应已到期"; color = "#b57b6b"; }
+      else { st = "还有 " + Math.ceil((dt - today0) / 86400000) + " 天"; color = "#b3aa9e"; }
+      rows += "<tr><td>" + it.m + " 月龄</td><td>" + fmt(dt) + "</td><td>" + esc(it.name) +
+        '</td><td style="color:' + color + '">' + st + "</td></tr>";
+    }
+    $("rows").innerHTML = rows;
+    $("sum").innerHTML = '<span>共 <b>' + total + '</b> 个剂次</span><span>已到接种时间 <b>' + passed +
+      '</b> 个</span><span>已登记接种 <b>' + Object.keys(done).filter(function (k) { return done[k]; }).length + "</b> 个</span>";
+    $("out").style.display = "block";
+
+    // 勾选列表
+    var chk = "";
+    for (var j = 0; j < PLAN.length; j++) {
+      var p = PLAN[j], k = "m" + p.m;
+      chk += '<label class="chk"><input type="checkbox" data-k="' + k + '"' + (done[k] ? " checked" : "") +
+        ' /><span class="nm">' + p.m + " 月龄：" + esc(p.name) + "</span></label>";
+    }
+    $("chk-list").innerHTML = chk;
+    var bs = $("chk-list").querySelectorAll("input");
+    for (var x = 0; x < bs.length; x++) {
+      bs[x].addEventListener("change", function (e) {
+        var s = load();
+        s.done = s.done || {};
+        s.done[e.target.getAttribute("data-k")] = e.target.checked;
+        save(s);
+        if ($("birth").value) render();
+      });
+    }
+  }
+
+  $("gen").addEventListener("click", render);
+  $("birth").addEventListener("change", render);
+  $("today").addEventListener("click", function () {
+    $("birth").value = fmt(new Date());
+    render();
+  });
+
+  var savedBirth = localStorage.getItem(KEY + "_birth");
+  if (savedBirth) { $("birth").value = savedBirth; render(); }
+  else { $("chk-list").innerHTML = '<div class="empty">填好出生日期后，这里会列出可以勾选的剂次。</div>'; }
+})();
+</script>

@@ -1,0 +1,185 @@
+<div class="tool">
+  <div class="panel">
+    <h2>先说清是谁、什么事</h2>
+    <div class="field">
+      <label class="lbl" for="who">对方是谁</label>
+      <select id="who">
+        <option value="长辈">家里长辈（婆婆 / 妈妈 / 岳母等）</option>
+        <option value="伴侣">伴侣</option>
+        <option value="亲戚">亲戚（姑姑 / 姨 / 表亲等）</option>
+        <option value="邻居">邻居 / 熟人</option>
+        <option value="同事">同事 / 朋友</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="lbl" for="scene">对方在做什么让你为难</label>
+      <select id="scene">
+        <option value="带娃">对怎么带孩子指手画脚</option>
+        <option value="催问">反复追问私事（收入 / 二胎 / 工作）</option>
+        <option value="借住">想长期住到你家</option>
+        <option value="借钱">开口借钱或要你担保</option>
+        <option value="插手">插手你们夫妻之间的事</option>
+        <option value="比较">拿你和别人比较</option>
+        <option value="要求">要求你按他的安排做事</option>
+        <option value="打听">到处打听并传你的事</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="lbl" for="want">你希望的结果是</label>
+      <select id="want">
+        <option value="拒绝">明确拒绝，但不想翻脸</option>
+        <option value="延后">暂时拖住，不当场答应</option>
+        <option value="划界">立一条以后都适用的规矩</option>
+        <option value="止损">已经答应过，想收回来</option>
+      </select>
+    </div>
+    <div class="btns">
+      <button id="gen">给我几句能直接说的话</button>
+      <button id="demo" class="ghost">看个例子</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>可以这么说</h2>
+    <div id="list"></div>
+    <div class="btns">
+      <button id="regen" class="ghost">换一批说法</button>
+      <button id="copy">复制全部</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>四句通用结构</h2>
+    <ul class="plain">
+      <li><strong>先接住对方的好意。</strong>不是客套，是为了不让对方进入防御状态。拒绝一个人最难的从来不是内容，是姿态。</li>
+      <li><strong>再讲事实，不讲动机。</strong>说「孩子最近在调作息」比说「你不懂」有效得多。判断对方动机，只会把话题带偏。</li>
+      <li><strong>然后说你的决定，用「我们」。</strong>「我们家现在是这样安排的」比「我不让你」更难反驳。</li>
+      <li><strong>最后留一个出口。</strong>给一个对方能接受的替代方案，拒绝才落得下去。</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>这个工具怎么用</h2>
+    <ul class="plain">
+      <li><strong>话术是草稿，不是台词。</strong>照着背会显得生硬。挑一句你觉得最不像「学来的」那种，用自己平时说话的语气改一遍。</li>
+      <li><strong>不用一次说清所有事。</strong>先把最困扰你的那一件说掉。一次立十条规矩，对方只会记住你「难相处」。</li>
+      <li><strong>对方不接受，是正常的。</strong>立界限的第一次几乎都不会顺利。重要的是你说了，而不是他马上同意。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具提供的是沟通表达参考，<strong>不构成法律意见或心理干预建议</strong>。
+      如果涉及财产纠纷、家庭暴力、人身安全威胁，请优先保护自己，
+      必要时联系公安机关、妇联（12338）或专业律师，不要独自处理。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_boundary";
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+
+  // 场景 → 中间那句「事实」
+  var SCENE = {
+    带娃: "孩子现在有一套固定的作息和吃法，我们照着执行",
+    催问: "这些事我们有自己的安排，暂时不打算多说",
+    借住: "家里现在的空间和人手，确实腾不出来",
+    借钱: "我们家的钱有固定的用途，没有可以自由挪动的部分",
+    插手: "这是我们两个人之间的事，我们自己会处理",
+    比较: "每家情况不一样，比较起来意义不大",
+    要求: "我最近手上的事排满了，按你的安排来做不了",
+    打听: "这些是家里的事，我不想往外说"
+  };
+
+  // 想要的结果 → 结尾那句「决定 + 出口」
+  var WANT = {
+    拒绝: [
+      "所以这次我就不答应了。有别的能帮上的地方，你尽管说。",
+      "这件事我只能做到这儿，剩下的你们商量着来。",
+      "不是不帮，是真做不了。要不我帮你想想还有没有别的办法？"
+    ],
+    延后: [
+      "我先不马上答复，回去和家里人商量一下再说，行吗？",
+      "这事急不得，给我两天时间，我想清楚再回你。",
+      "我现在没法答应你，等我确认一下再说，别先安排。"
+    ],
+    划界: [
+      "以后这类事我们就按这个来，说清楚了对大家都省事。",
+      "我们家就定这么一条：这类事由我们自己决定，别的都好说。",
+      "我把话说在前头，不是针对你，是这样以后就不容易有误会。"
+    ],
+    止损: [
+      "之前是我答应得太快，没想清楚。这次得改回来，跟你说一声。",
+      "上次那事我考虑得不周全，现在要调整一下，不是反悔，是真做不到。",
+      "之前说的那个，我这边确实撑不住了，我们重新商量一下。"
+    ]
+  };
+
+  // 开场句（按对方身份调整）
+  var OPEN = {
+    长辈: "妈，我知道你是为我们好，这点我明白。",
+    伴侣: "这事我想跟你好好说一次，不是吵架。",
+    亲戚: "谢谢你还惦记着我们。",
+    邻居: "谢谢你关心。",
+    同事: "谢谢你想着我。"
+  };
+
+  var EXTRA = [
+    "（如果是当面说，先停两秒再开口。停顿本身就是一种态度。）",
+    "（如果对方打断你，就说：等我说完这一句。）",
+    "（如果对方开始翻旧账，就说：旧事我们改天再谈，今天只说这一件。）",
+    "（如果对方情绪上来，就说：我不是要跟你吵，我只是想让你知道我的想法。）"
+  ];
+
+  function build(who, scene, want) {
+    var st = load();
+    var seed = st.seed || 0;
+    var tails = WANT[want] || WANT.拒绝;
+    var out = [];
+    var n = 3;
+    for (var i = 0; i < n; i++) {
+      var tail = tails[(seed + i) % tails.length];
+      var mid = SCENE[scene];
+      var body = OPEN[who] + mid + "，所以" + tail.replace(/^所以/, "");
+      out.push({ s: body, tip: EXTRA[(seed + i) % EXTRA.length] });
+    }
+    st.seed = seed + n;
+    save(st);
+    return out;
+  }
+
+  function run() {
+    var who = $("who").value, scene = $("scene").value, want = $("want").value;
+    var list = build(who, scene, want);
+    $("list").innerHTML = list.map(function (x, i) {
+      return '<div style="padding:14px 0;border-bottom:1px solid #f4efe7">' +
+        '<div style="font-size:15px;line-height:1.85;color:#3f3a34">' + esc(x.s) + "</div>" +
+        '<div style="font-size:12.5px;color:#a8a096;margin-top:7px">' + esc(x.tip) + "</div></div>";
+    }).join("");
+    $("out").style.display = "block";
+  }
+
+  $("gen").addEventListener("click", run);
+  $("regen").addEventListener("click", run);
+  $("demo").addEventListener("click", function () {
+    $("who").value = "长辈";
+    $("scene").value = "带娃";
+    $("want").value = "划界";
+    run();
+  });
+  $("copy").addEventListener("click", function () {
+    var items = $("list").querySelectorAll("div > div:first-child");
+    var txt = [];
+    for (var i = 0; i < items.length; i++) txt.push(items[i].textContent);
+    if (!txt.length) return;
+    var s = txt.join("\n\n");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(s).then(function () { alert("已复制。"); }, function () { alert("复制失败，请手动选中。"); });
+    } else {
+      alert("当前浏览器不支持自动复制，请手动选中。");
+    }
+  });
+})();
+</script>

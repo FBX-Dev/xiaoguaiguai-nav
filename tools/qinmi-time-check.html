@@ -1,0 +1,142 @@
+<div class="tool">
+  <div class="panel">
+    <h2>先填一下两个人的基本情况</h2>
+    <div class="field">
+      <label class="lbl" for="wh">工作日每天大概有多少小时完全属于自己（不含通勤和睡觉）</label>
+      <input type="number" id="wh" min="0" max="16" step="0.5" placeholder="例如 2" />
+      <div class="hint">「属于自己」指可以自由支配、不用照顾别人、不用处理家里事的时间。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="wm">对方同样口径的时间</label>
+      <input type="number" id="wm" min="0" max="16" step="0.5" placeholder="例如 3" />
+    </div>
+    <div class="btns">
+      <button id="calc">对比一下</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>时间对比</h2>
+    <div class="kv">
+      <div class="cell"><div class="k">我每天自有时间</div><div class="v" id="r-w">—</div></div>
+      <div class="cell"><div class="k">对方每天自有时间</div><div class="v" id="r-m">—</div></div>
+      <div class="cell"><div class="k">每周差距</div><div class="v" id="r-gap">—</div></div>
+    </div>
+    <div class="note" id="r-text" style="margin-top:16px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>哪些事算「家务」，先对齐口径</h2>
+    <div class="hint" style="margin-bottom:12px">
+      很多争执不是「谁做得多」，是两个人对「什么算家务」的定义不一样。
+      下面这些常被漏算，勾上你家里确实存在、但目前没人专门负责的项。
+    </div>
+    <div id="hidden"></div>
+  </div>
+
+  <div class="panel" id="hidden-out" style="display:none">
+    <h2>漏算的部分</h2>
+    <div class="stat" id="h-sum"></div>
+    <div class="note" id="h-text"></div>
+  </div>
+
+  <div class="panel">
+    <h2>这个工具怎么用</h2>
+    <ul class="plain">
+      <li><strong>它不判谁吃亏。</strong>它做的是把「感觉不公平」变成可以对话的具体数字。</li>
+      <li><strong>比的是「可自由支配的时间」，不是工作量。</strong>有人干活不累，有人带娃带一天崩溃——辛苦程度无法量化，但时间可以。</li>
+      <li><strong>数字不好看也不代表要立刻调整。</strong>人生阶段不同，某段时间一方付出多是正常的。关键是另一方知道，而不是当作理所当然。</li>
+      <li><strong>最好的用法是两个人一起填。</strong>各自填一遍再对照，差异本身就是信息。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具用于家庭内部分工沟通，<strong>不构成任何评估或判断</strong>。
+      如果长期处于严重失衡且无法沟通，可以考虑婚姻家庭咨询；涉及人身安全的，请联系公安机关或妇联（12338）。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_time_check";
+  var $ = function (id) { return document.getElementById(id); };
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  // 常被漏算的隐形劳动
+  var HIDDEN = [
+    "记着孩子的疫苗、体检、家长会时间",
+    "记着家里什么东西快用完了要买",
+    "安排节假日去哪、给谁打电话",
+    "记得长辈的生日和人情往来",
+    "协调两家人之间的安排",
+    "孩子生病时请假、跑医院",
+    "跟学校 / 老师 / 兴趣班对接",
+    "安排全家的出行和证件",
+    "处理家里的报修、缴费、对账",
+    "在家人之间传话和缓和情绪",
+    "观察并记住每个人的状态变化",
+    "决定每顿饭吃什么并落实"
+  ];
+
+  var st = load();
+  st.hidden = st.hidden || {};
+
+  function renderHidden() {
+    var box = $("hidden");
+    var html = "";
+    for (var i = 0; i < HIDDEN.length; i++) {
+      html += '<label class="chk"><input type="checkbox" data-k="h' + i + '"' + (st.hidden["h" + i] ? " checked" : "") +
+        ' /><span class="nm">' + esc(HIDDEN[i]) + "</span></label>";
+    }
+    box.innerHTML = html;
+    var bs = box.querySelectorAll("input");
+    for (var j = 0; j < bs.length; j++) {
+      bs[j].addEventListener("change", function (e) {
+        st.hidden[e.target.getAttribute("data-k")] = e.target.checked;
+        save(st);
+        showHidden();
+      });
+    }
+    showHidden();
+  }
+
+  function showHidden() {
+    var n = 0;
+    for (var i = 0; i < HIDDEN.length; i++) if (st.hidden["h" + i]) n++;
+    if (!n) { $("hidden-out").style.display = "none"; return; }
+    $("h-sum").innerHTML = "<span>已勾选 <b>" + n + "</b> 项隐形劳动</span>";
+    var t = "这 " + n + " 项通常不占大块时间，但需要有人一直「记着」。记着的那个人的脑子是没法真正下班的——这本身就是一种持续消耗。";
+    if (n >= 6) t += " 你勾了 " + n + " 项，说明这类事务在家里占比不小。建议挑其中 2~3 项明确交给另一个人，注意是「整件事都归他」，不是「他帮忙做」。";
+    else t += " 建议在下次分工时，把这几项也写进清单，让它们从「默认由我记得」变成「明确由谁负责」。";
+    $("h-text").textContent = t;
+    $("hidden-out").style.display = "block";
+  }
+
+  $("calc").addEventListener("click", function () {
+    var w = parseFloat($("wh").value), m = parseFloat($("wm").value);
+    if (isNaN(w) || isNaN(m)) { alert("请把两个时间都填上。"); return; }
+    $("r-w").innerHTML = w + '<small>小时</small>';
+    $("r-m").innerHTML = m + '<small>小时</small>';
+    var gap = Math.abs(w - m);
+    var weekGap = (gap * 7).toFixed(1);
+    $("r-gap").innerHTML = weekGap + '<small>小时</small>';
+
+    var t;
+    if (gap < 0.5) {
+      t = "两个人的自有时间基本相当（每天差不到半小时），这一块比较平衡。可以顺手看一下上面「漏算的部分」，把那些不占时间但占心力的事也对一对。";
+    } else if (w < m) {
+      t = "你每天比对方少 " + gap + " 小时自有时间，一周累计差 " + weekGap +
+        " 小时——差不多是一个完整的工作日。这个差距不一定是错的，但如果长期如此、且没被双方看见，容易积累成怨气。建议把这个数字直接给对方看。";
+    } else {
+      t = "你每天比对方多 " + gap + " 小时自有时间，一周累计多 " + weekGap +
+        " 小时。可以主动问一句：对方的时间都去哪儿了？有些付出不会主动说出口。";
+    }
+    t += " 这是两个人自己填的数字，只是一个对话的起点，不构成任何评价。";
+    $("r-text").textContent = t;
+    $("out").style.display = "block";
+  });
+
+  renderHidden();
+})();
+</script>

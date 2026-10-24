@@ -1,0 +1,244 @@
+<div class="tool">
+  <div class="panel">
+    <h2>记录一次月经</h2>
+    <div class="field">
+      <label class="lbl" for="start">这次月经开始的日期</label>
+      <input type="date" id="start" />
+      <div class="hint">按「第一天有出血」算起。不确定具体哪一天，选最接近的那天也可以。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="end">结束日期（可选）</label>
+      <input type="date" id="end" />
+      <div class="hint">还没结束可以不填，之后再来补。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="flow">量（可选）</label>
+      <select id="flow">
+        <option value="">不记录</option>
+        <option value="少">偏少</option>
+        <option value="中">中等</option>
+        <option value="多">偏多</option>
+      </select>
+    </div>
+    <div class="btns">
+      <button id="add">记下这次</button>
+      <button id="today" class="ghost">开始日期填今天</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>周期概览</h2>
+    <div class="kv">
+      <div class="cell"><div class="k">平均周期</div><div class="v" id="r-cycle">—</div></div>
+      <div class="cell"><div class="k">最近一次周期</div><div class="v" id="r-last">—</div></div>
+      <div class="cell"><div class="k">预计下次</div><div class="v" id="r-next">—</div></div>
+      <div class="cell"><div class="k">已记录</div><div class="v" id="r-count">—</div></div>
+    </div>
+    <div class="note" id="r-text" style="margin-top:16px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>近 3 个周期日历</h2>
+    <div id="calendar"></div>
+    <div class="hint" style="margin-top:12px">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#c96f4a;margin-right:5px"></span>已记录的经期　
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f0c4b0;margin-right:5px"></span>预测经期　
+      <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#cfd8e6;margin-right:5px"></span>预测易孕窗口
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>历史记录</h2>
+    <div id="history"></div>
+  </div>
+
+  <div class="panel">
+    <h2>这个工具怎么用</h2>
+    <ul class="plain">
+      <li><strong>它是记录工具，不是诊断工具。</strong>它做的只是「按你已记录的几次，往后推算大概哪天」。推算依赖历史规律，规律本身会变。</li>
+      <li><strong>至少记 3 次，推算才有意义。</strong>只记了 1~2 次时，给出的数字波动很大，参考价值有限。</li>
+      <li><strong>周期在 21~35 天之间都属常见范围。</strong>偶尔提前或推后一周，通常与压力、作息、体重变化、生病有关，不必紧张。</li>
+      <li><strong>易孕窗口是粗略估算。</strong>不能用于避孕，也不能当作备孕的唯一依据。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      记录只存在这台设备的浏览器里，<strong>不上传、不同步、不会被任何人看到</strong>。<br />
+      本工具<strong>不构成任何医学判断</strong>。如果出现以下情况，请到妇科就诊，不要靠推算观察：
+      连续 3 个周期短于 21 天或长于 35 天、经期超过 7 天、出血量突然明显增多、
+      非经期出血、停经超过 3 个月、或伴随剧烈疼痛。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_period";
+  var $ = function (id) { return document.getElementById(id); };
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function fmt(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parseD(s) { var p = String(s).split("-"); return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])); }
+  function dayDiff(a, b) { return Math.round((b - a) / 86400000); }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) { return []; } }
+  function save(l) { try { localStorage.setItem(KEY, JSON.stringify(l.slice(0, 120))); } catch (e) {} }
+
+  function sorted() {
+    return load().slice().sort(function (a, b) { return a.start < b.start ? -1 : 1; });
+  }
+
+  // 周期长度 = 相邻两次开始日期的间隔
+  function cycles(list) {
+    var out = [];
+    for (var i = 1; i < list.length; i++) {
+      var d = dayDiff(parseD(list[i - 1].start), parseD(list[i].start));
+      if (d > 0 && d < 200) out.push(d);
+    }
+    return out;
+  }
+
+  function avg(arr) {
+    if (!arr.length) return 0;
+    var s = 0;
+    for (var i = 0; i < arr.length; i++) s += arr[i];
+    return Math.round(s / arr.length);
+  }
+
+  function markMap(list, avgCycle) {
+    var map = {};
+    for (var i = 0; i < list.length; i++) {
+      var r = list[i];
+      var s = parseD(r.start);
+      var e = r.end ? parseD(r.end) : new Date(s.getTime() + 4 * 86400000);
+      for (var d = new Date(s); d <= e; d = new Date(d.getTime() + 86400000)) map[fmt(d)] = "actual";
+    }
+    // 预测：从最后一次开始日往后推
+    if (list.length >= 2 && avgCycle >= 21 && avgCycle <= 40) {
+      var lastS = parseD(list[list.length - 1].start);
+      for (var k = 1; k <= 3; k++) {
+        var ps = new Date(lastS.getTime() + avgCycle * k * 86400000);
+        for (var j = 0; j < 5; j++) {
+          var dd = new Date(ps.getTime() + j * 86400000);
+          if (!map[fmt(dd)]) map[fmt(dd)] = "predict";
+        }
+        // 易孕窗口：下次经期前 14 天为排卵日，前 5 后 4 天为窗口
+        var ov = new Date(ps.getTime() - 14 * 86400000);
+        for (var m = -5; m <= 4; m++) {
+          var fd = new Date(ov.getTime() + m * 86400000);
+          if (!map[fmt(fd)]) map[fmt(fd)] = "fertile";
+        }
+      }
+    }
+    return map;
+  }
+
+  function renderCalendar(list, map) {
+    var box = $("calendar");
+    var now = new Date();
+    var html = "";
+    for (var m = 2; m >= 0; m--) {
+      var base = new Date(now.getFullYear(), now.getMonth() - m, 1);
+      var y = base.getFullYear(), mo = base.getMonth();
+      var first = new Date(y, mo, 1);
+      var days = new Date(y, mo + 1, 0).getDate();
+      var lead = (first.getDay() + 6) % 7; // 周一为第一列
+      html += '<div style="margin-bottom:22px"><div style="font-size:13.5px;font-weight:600;color:#554e46;margin-bottom:8px">' +
+        y + " 年 " + (mo + 1) + ' 月</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
+      var wk = ["一", "二", "三", "四", "五", "六", "日"];
+      for (var w = 0; w < 7; w++) html += '<div style="text-align:center;font-size:11px;color:#b3aa9e">' + wk[w] + "</div>";
+      for (var l = 0; l < lead; l++) html += "<div></div>";
+      for (var d = 1; d <= days; d++) {
+        var ds = fmt(new Date(y, mo, d));
+        var st = map[ds] || "";
+        var bg = "#fff", fg = "#4a443d", bd = "#f2eee8";
+        if (st === "actual") { bg = "#c96f4a"; fg = "#fff"; bd = "#c96f4a"; }
+        else if (st === "predict") { bg = "#f0c4b0"; fg = "#7a4432"; bd = "#f0c4b0"; }
+        else if (st === "fertile") { bg = "#cfd8e6"; fg = "#41506b"; bd = "#cfd8e6"; }
+        var isToday = ds === fmt(now);
+        html += '<div title="' + ds + '" style="text-align:center;padding:6px 0;border-radius:6px;font-size:12.5px;' +
+          'background:' + bg + ";color:" + fg + ";border:1px solid " + (isToday ? "#c96f4a" : bd) + ";" +
+          (isToday ? "font-weight:700;" : "") + '">' + d + "</div>";
+      }
+      html += "</div></div>";
+    }
+    box.innerHTML = html;
+  }
+
+  function render() {
+    var list = sorted();
+    var out = $("out");
+    if (!list.length) {
+      out.style.display = "none";
+      $("calendar").innerHTML = '<div class="empty">还没有记录。记下第一次月经开始的日期，这里会显示日历。</div>';
+      $("history").innerHTML = '<div class="empty">暂无记录。</div>';
+      return;
+    }
+    var cs = cycles(list);
+    var a = avg(cs);
+    $("r-count").innerHTML = list.length + '<small>次</small>';
+
+    if (cs.length) {
+      var mn = Math.min.apply(null, cs), mx = Math.max.apply(null, cs);
+      $("r-cycle").innerHTML = a + '<small>天</small>';
+      $("r-last").innerHTML = cs[cs.length - 1] + '<small>天</small>';
+      var lastStart = parseD(list[list.length - 1].start);
+      var next = new Date(lastStart.getTime() + a * 86400000);
+      var gap = dayDiff(new Date(), next);
+      $("r-next").innerHTML = fmt(next).slice(5) + '<small>日</small>';
+      var t = "基于已记录的 " + cs.length + " 个周期，平均 " + a + " 天（最短 " + mn + " 天，最长 " + mx +
+        " 天）。预计下次开始日期为 " + fmt(next) + "，" + (gap >= 0 ? "大约还有 " + gap + " 天" : "已过 " + Math.abs(gap) + " 天，可以再等等或补记一次") + "。";
+      if (mx - mn > 9) t += " 你的周期波动较大（相差 " + (mx - mn) + " 天），推算结果参考价值有限，建议持续记录观察。";
+      if (a < 21 || a > 35) t += " 平均周期 " + a + " 天，超出常见的 21~35 天范围，建议到妇科咨询，不要只靠推算。";
+      t += " 这是基于历史规律的粗略估算，不构成医学判断。";
+      $("r-text").textContent = t;
+    } else {
+      $("r-cycle").innerHTML = "—";
+      $("r-last").innerHTML = "—";
+      $("r-next").innerHTML = "—";
+      $("r-text").textContent = "目前只记录了 1 次。再记录 1~2 次之后，才能算出周期长度和预计日期。";
+    }
+    out.style.display = "block";
+
+    renderCalendar(list, markMap(list, a || 28));
+
+    var html = '<table><thead><tr><th style="width:110px">开始日期</th><th style="width:110px">结束日期</th>' +
+      '<th style="width:60px">量</th><th style="width:80px">周期</th><th>操作</th></tr></thead><tbody>';
+    for (var i = list.length - 1; i >= 0; i--) {
+      var r = list[i];
+      var cy = "—";
+      if (i > 0) {
+        var dd = dayDiff(parseD(list[i - 1].start), parseD(r.start));
+        if (dd > 0 && dd < 200) cy = dd + " 天";
+      }
+      html += "<tr><td>" + esc(r.start) + "</td><td>" + (r.end ? esc(r.end) : "—") + "</td><td>" +
+        (r.flow ? esc(r.flow) : "—") + "</td><td>" + cy + '</td><td><button class="ghost" data-del="' + esc(r.start) +
+        '" style="padding:4px 10px;font-size:12.5px">删除</button></td></tr>';
+    }
+    html += "</tbody></table>";
+    $("history").innerHTML = html;
+    var ds = $("history").querySelectorAll("[data-del]");
+    for (var j = 0; j < ds.length; j++) {
+      ds[j].addEventListener("click", function (e) {
+        var key = e.target.getAttribute("data-del");
+        if (!confirm("删除 " + key + " 这条记录？")) return;
+        var l = load().filter(function (x) { return x.start !== key; });
+        save(l);
+        render();
+      });
+    }
+  }
+
+  $("add").addEventListener("click", function () {
+    var s = $("start").value, e = $("end").value;
+    if (!s) { alert("请选择这次月经开始的日期。"); return; }
+    if (e && parseD(e) < parseD(s)) { alert("结束日期不能早于开始日期。"); return; }
+    var l = load().filter(function (x) { return x.start !== s; });
+    l.push({ start: s, end: e || "", flow: $("flow").value });
+    save(l);
+    $("end").value = ""; $("flow").value = "";
+    render();
+  });
+
+  $("today").addEventListener("click", function () { $("start").value = fmt(new Date()); });
+
+  render();
+})();
+</script>

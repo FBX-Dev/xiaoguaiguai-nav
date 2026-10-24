@@ -1,0 +1,133 @@
+<div class="tool">
+  <div class="panel">
+    <h2>描述你看到的事</h2>
+    <div class="field">
+      <label class="lbl" for="what">孩子刚才做了什么？（写具体行为，不写评价）</label>
+      <textarea id="what" rows="3" placeholder="例如：他拼图拼了 20 分钟，中间倒了两次又自己捡起来接着拼"
+        style="width:100%;padding:11px 13px;border:1px solid #e6ded2;border-radius:8px;font-size:14.5px;font-family:inherit;line-height:1.7;resize:vertical;box-sizing:border-box"></textarea>
+      <div class="hint">写得越具体，生成的说法越像真的。写「他很棒」这种评价，工具会提示你补细节。</div>
+    </div>
+    <div class="btns">
+      <button id="gen">生成几种说法</button>
+      <button id="demo" class="ghost">看个例子</button>
+    </div>
+  </div>
+
+  <div class="panel" id="warn" style="display:none">
+    <h2>先补一个细节</h2>
+    <div class="note" id="warn-text"></div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>可以这么说</h2>
+    <div id="list"></div>
+    <div class="btns">
+      <button id="regen" class="ghost">换一批</button>
+      <button id="copy">复制全部</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>为什么夸得具体才有用</h2>
+    <ul class="plain">
+      <li><strong>「你真聪明」是贴标签。</strong>标签会让孩子怕失败——万一做不好，标签就没了。所以他宁愿挑简单的做。</li>
+      <li><strong>「你试了三次才拼上」是描述。</strong>描述让孩子知道：哪件事被看见了、努力本身有价值。下次他还会愿意试。</li>
+      <li><strong>夸过程比夸结果稳。</strong>结果有运气成分，过程是他自己能控制的。</li>
+      <li><strong>不用每次都夸。</strong>说得太多会贬值。看到真正值得说的，说出来就好。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具只提供表达方式的参考，<strong>不评价任何孩子的能力或性格</strong>。
+      如果孩子长期对表扬反应冷淡、或对失败异常恐惧，建议与老师或儿童心理专业人士沟通。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_praise";
+  // 评价词（写这些词说明没描述行为，需要补细节）
+  var JUDGE = ["很棒", "真棒", "聪明", "厉害", "乖", "懂事", "好孩子", "天才", "优秀", "第一名", "最棒", "听话"];
+
+  var $ = function (id) { return document.getElementById(id); };
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+
+  // 从描述里抽一个「动作短语」用于嵌入句式
+  function core(text) {
+    var t = String(text).trim().replace(/[。！!，,；;]+$/, "");
+    return t.length > 28 ? t.slice(0, 28) + "……" : t;
+  }
+
+  var TEMPLATES = [
+    function (c) { return "我注意到你" + c + "。这个过程我看见了。"; },
+    function (c) { return c + "——这件事不容易，你做到了。"; },
+    function (c) { return "刚才" + c + "，你是怎么想到这个办法的？"; },
+    function (c) { return "你" + c + "的时候，我看到你一直在想办法，没有放弃。"; },
+    function (c) { return "这个我得记一下：" + c + "。挺难得的。"; },
+    function (c) { return c + "。换我可能早就放下来了，你坚持得比我久。"; },
+    function (c) { return "你刚才" + c + "，我觉得这个做法很管用，下次遇到类似的还能这么干。"; },
+    function (c) { return "谢谢你把" + c + "这件事做好了，这对我有帮助。"; }
+  ];
+
+  var DEMO = "他拼图拼了 20 分钟，中间倒了两次又自己捡起来接着拼";
+
+  function generate(text) {
+    var c = core(text);
+    var out = [];
+    var pool = TEMPLATES.slice();
+    var st = load();
+    var seed = (st.seed || 0);
+    // 轮换起点，让「换一批」真的换
+    for (var i = 0; i < 4; i++) {
+      var t = pool[(seed + i) % pool.length];
+      out.push(t(c));
+    }
+    st.seed = seed + 4;
+    save(st);
+    return out;
+  }
+
+  function run() {
+    var raw = ($("what").value || "").trim();
+    if (!raw) { alert("先写一句孩子做了什么。"); return; }
+
+    var hit = [];
+    for (var i = 0; i < JUDGE.length; i++) if (raw.indexOf(JUDGE[i]) >= 0) hit.push(JUDGE[i]);
+    if (hit.length && raw.length < 24) {
+      $("warn-text").innerHTML = "你写的是「" + esc(hit.join("、")) +
+        "」这类评价，不是具体行为。<br />夸评价会让孩子依赖别人的判断；夸行为他才知道自己做了什么。<br />" +
+        "<strong>试着补一句：他当时具体做了什么动作？坚持了多久？想了什么办法？</strong>";
+      $("warn").style.display = "block";
+      $("out").style.display = "none";
+      return;
+    }
+    $("warn").style.display = "none";
+
+    var list = generate(raw);
+    $("list").innerHTML = list.map(function (s) {
+      return '<div style="padding:13px 0;border-bottom:1px solid #f4efe7;font-size:15px;line-height:1.8;color:#3f3a34">' + esc(s) + "</div>";
+    }).join("");
+    $("out").style.display = "block";
+  }
+
+  $("gen").addEventListener("click", run);
+  $("regen").addEventListener("click", run);
+  $("demo").addEventListener("click", function () {
+    $("what").value = DEMO;
+    run();
+  });
+  $("copy").addEventListener("click", function () {
+    var items = $("list").querySelectorAll("div");
+    var txt = [];
+    for (var i = 0; i < items.length; i++) txt.push(items[i].textContent);
+    if (!txt.length) return;
+    var s = txt.join("\n");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(s).then(function () { alert("已复制。"); }, function () { alert("复制失败，请手动选中。"); });
+    } else {
+      alert("当前浏览器不支持自动复制，请手动选中。");
+    }
+  });
+})();
+</script>

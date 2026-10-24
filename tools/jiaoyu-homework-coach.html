@@ -1,0 +1,128 @@
+<div class="tool">
+  <div class="panel">
+    <h2>这次卡在哪一步</h2>
+    <div class="hint" style="margin-bottom:14px">
+      孩子写作业卡住的时候，先别急着讲题。先判断卡在哪一层，处理方式完全不一样。
+    </div>
+    <div id="blocks" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px"></div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>可以这么说</h2>
+    <div id="script"></div>
+    <div class="btns">
+      <button id="next-script" class="ghost">换一种说法</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>陪写作业的三条底线</h2>
+    <ul class="plain">
+      <li><strong>不代笔。</strong>帮他写完，等于告诉他「你不行」。写错也比不写好。</li>
+      <li><strong>不盯着每一笔。</strong>坐旁边全程盯，孩子会把注意力放在你的表情上，而不是题目上。</li>
+      <li><strong>不把作业变成亲子关系的考场。</strong>今天写不完，明天老师会处理。关系崩了，明天更难。</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>这个工具怎么用</h2>
+    <ul class="plain">
+      <li><strong>先分类，再开口。</strong>「不会做」和「不想做」和「太累了」是三种完全不同的问题，用同一句催促去处理，只会越催越僵。</li>
+      <li><strong>话术是参考，不是台词。</strong>照着念会很假。看一遍，用自己的话说出来就行。</li>
+      <li><strong>记录用得多的那一类。</strong>如果连续一周都卡在「注意力」，那要改的是环境，不是孩子。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      如果孩子长期出现明显的注意力困难、读写困难，或因为作业频繁出现强烈情绪反应，
+      建议与班主任沟通，必要时到儿童保健或心理门诊做专业评估。
+      本工具只提供沟通思路，<strong>不构成任何诊断或干预建议</strong>。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_hw_coach";
+  // 卡点分类 + 对应话术（每条给 3 种说法，语气与详略刻意不同）
+  var KINDS = [
+    { k: "读不懂题", c: "#7d8fa8", why: "不是不会算，是没理解题目在问什么。", scripts: [
+      "「你先把这道题读给我听一遍。」——读的过程他自己就会发现漏了哪个条件。",
+      "「题目里说的这个数，是已经有的，还是要我们求的？」把问题缩小到一个点。",
+      "「你猜出题的人想考你什么？」换个视角，比直接讲解更容易让他动起来。"
+    ]},
+    { k: "知识没学会", c: "#a58a5c", why: "这是真的不会，需要回到课本或例题。", scripts: [
+      "「我们翻回去看例题，你照着例题的步骤做一遍。」先模仿，再独立。",
+      "「你哪一步开始不确定的？从那儿开始讲。」定位断点，比从头讲一遍高效。",
+      "「这道先放着，我记一下，明天问老师。」允许留白，不硬耗。"
+    ]},
+    { k: "不想做", c: "#c0705c", why: "情绪在前，题目在后。这时候讲题是无效的。", scripts: [
+      "「看起来你现在很不想写。要不先歇十分钟，十分钟后我们只写第一题。」把任务缩到最小。",
+      "「今天作业里，哪一科你最不烦？从那个开始。」先启动，再谈完成。",
+      "「我知道你烦。烦也可以写，我们一人写一题，轮流来。」承认情绪，但不取消任务。"
+    ]},
+    { k: "注意力飘走", c: "#b57b6b", why: "不是态度问题，多半是环境或时长不合适。", scripts: [
+      "「我们试试写 15 分钟就休息 3 分钟。」把大块时间切成小段。",
+      "「桌子上只留现在这一科的作业，其他先收起来。」减少可见的干扰源。",
+      "「先做 5 分钟，做完你可以自己决定要不要继续。」降低启动门槛。"
+    ]},
+    { k: "嫌难/畏难", c: "#8b8b9a", why: "题目跨度太大，孩子看不到「能做到」的可能。", scripts: [
+      "「我们不看整页，只看第一小问。」把一整页拆成一个点。",
+      "「这道题的哪一部分你会？先做会的部分。」先建立一点掌控感。",
+      "「难才正常，不难就不用学了。你先写一个你觉得可能对的答案。」允许试错。"
+    ]},
+    { k: "太累/身体不适", c: "#8f8578", why: "这是生理信号，不是懒。硬撑只会两败俱伤。", scripts: [
+      "「先喝点水、上个厕所，回来再说。」先处理身体需求。",
+      "「今天状态确实不好。剩下的我帮你写个说明，明天补。」保护关系优先于完成。",
+      "「我们只做最必要的，其他的明天早起十分钟做。」给一个可执行的替代方案。"
+    ]}
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var cur = null, idx = 0;
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
+  function save(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+
+  function renderBlocks() {
+    var box = $("blocks");
+    var html = "";
+    for (var i = 0; i < KINDS.length; i++) {
+      var m = KINDS[i];
+      html += '<button data-i="' + i + '" style="padding:14px 10px;border:1px solid #e6ded2;background:#fff;' +
+        'border-radius:9px;cursor:pointer;font-size:14.5px;font-family:inherit;color:#3f3a34;text-align:center">' +
+        '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + m.c +
+        ';margin-right:7px"></span>' + m.k + "</button>";
+    }
+    box.innerHTML = html;
+    var bs = box.querySelectorAll("button");
+    for (var j = 0; j < bs.length; j++) {
+      bs[j].addEventListener("click", function (e) {
+        var b = e.target.closest("button");
+        cur = KINDS[parseInt(b.getAttribute("data-i"), 10)];
+        idx = 0;
+        for (var k = 0; k < bs.length; k++) {
+          bs[k].style.borderColor = "#e6ded2"; bs[k].style.background = "#fff"; bs[k].style.color = "#3f3a34";
+        }
+        b.style.borderColor = "var(--accent)"; b.style.background = "#fdf8f1"; b.style.color = "var(--accent)";
+        // 记录一次分类计数
+        var s = load(); s[cur.k] = (s[cur.k] || 0) + 1; save(s);
+        showScript();
+      });
+    }
+  }
+
+  function showScript() {
+    if (!cur) return;
+    var txt = cur.scripts[idx % cur.scripts.length];
+    $("script").innerHTML = '<div class="note" style="margin-bottom:14px"><strong>' + cur.k + "</strong> ｜ " +
+      cur.why + '</div><div style="font-size:15.5px;line-height:1.85;color:#3f3a34">' + txt + "</div>";
+    $("out").style.display = "block";
+  }
+
+  $("next-script").addEventListener("click", function () {
+    if (!cur) { alert("请先选一个卡点类型。"); return; }
+    idx++;
+    showScript();
+  });
+
+  renderBlocks();
+})();
+</script>
