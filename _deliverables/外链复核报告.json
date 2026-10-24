@@ -1,0 +1,326 @@
+{
+  "generatedAt": "2026-10-23T01:30:49.092Z",
+  "total": 40,
+  "linkCheck": [
+    {
+      "cat": "🌷 女性成长",
+      "title": "中国妇女网",
+      "url": "https://www.cnwomen.com.cn/",
+      "status": 200,
+      "finalUrl": "https://www.cnwomen.com.cn/"
+    },
+    {
+      "cat": "🌷 女性成长",
+      "title": "壹心理",
+      "url": "https://www.xinli001.com/",
+      "status": 200,
+      "finalUrl": "https://www.xinli001.com/"
+    },
+    {
+      "cat": "🌷 女性成长",
+      "title": "澎湃新闻",
+      "url": "https://www.thepaper.cn/",
+      "status": 200,
+      "finalUrl": "https://www.thepaper.cn/"
+    },
+    {
+      "cat": "🌷 女性成长",
+      "title": "简单心理",
+      "url": "https://www.jiandanxinli.com/",
+      "status": 200,
+      "finalUrl": "https://www.jiandanxinli.com/"
+    },
+    {
+      "cat": "🌷 女性成长",
+      "title": "果壳",
+      "url": "https://www.guokr.com/",
+      "status": 200,
+      "finalUrl": "https://www.guokr.com/"
+    },
+    {
+      "cat": "🌷 女性成长",
+      "title": "声动活泼",
+      "url": "https://tide.fm/",
+      "status": 200,
+      "finalUrl": "https://tide.fm/"
+    },
+    {
+      "cat": "🌷 女性成长",
+      "title": "Keep",
+      "url": "https://www.gotokeep.com/",
+      "status": 200,
+      "finalUrl": "https://www.gotokeep.com/"
+    },
+    {
+      "cat": "🌷 女性成长",
+      "title": "微信读书",
+      "url": "https://weread.qq.com/",
+      "status": 200,
+      "finalUrl": "https://weread.qq.com/"
+    },
+    {
+      "cat": "🏠 家庭关系",
+      "title": "喜马拉雅 · 家庭教育",
+      "url": "https://www.ximalaya.com/",
+      "status": 200,
+      "finalUrl": "https://www.ximalaya.com/"
+    },
+    {
+      "cat": "🏠 家庭关系",
+      "title": "豆瓣 · 关系书影单",
+      "url": "https://www.douban.com/",
+      "status": 200,
+      "finalUrl": "https://www.douban.com/"
+    },
+    {
+      "cat": "🏠 家庭关系",
+      "title": "蜻蜓FM · 婚姻家庭",
+      "url": "https://www.qtfm.cn/",
+      "status": 200,
+      "finalUrl": "https://www.qtfm.cn/"
+    },
+    {
+      "cat": "🏠 家庭关系",
+      "title": "随手记",
+      "url": "https://www.sui.com/",
+      "status": 200,
+      "finalUrl": "https://www.sui.com/"
+    },
+    {
+      "cat": "🏠 家庭关系",
+      "title": "滴答清单",
+      "url": "https://dida365.com/",
+      "status": 200,
+      "finalUrl": "https://dida365.com/"
+    },
+    {
+      "cat": "🏠 家庭关系",
+      "title": "得到 · 家庭沟通课",
+      "url": "https://www.dedao.cn/",
+      "status": 200,
+      "finalUrl": "https://www.dedao.cn/"
+    },
+    {
+      "cat": "🏠 家庭关系",
+      "title": "知乎 · 家庭话题",
+      "url": "https://www.zhihu.com/",
+      "status": 200,
+      "finalUrl": "https://www.zhihu.com/signin?next=%2F"
+    },
+    {
+      "cat": "🏠 家庭关系",
+      "title": "荔枝FM",
+      "url": "https://www.lizhi.fm/",
+      "status": 200,
+      "finalUrl": "https://www.lizhi.fm/"
+    },
+    {
+      "cat": "💞 两性亲密成长",
+      "title": "亲密关系科普",
+      "url": "https://www.xinli001.com/",
+      "status": 200,
+      "finalUrl": "https://www.xinli001.com/"
+    },
+    {
+      "cat": "💞 两性亲密成长",
+      "title": "婚姻家庭权益科普",
+      "url": "https://www.cnwomen.com.cn/",
+      "status": 200,
+      "finalUrl": "https://www.cnwomen.com.cn/"
+    },
+    {
+      "cat": "💞 两性亲密成长",
+      "title": "婚姻与伴侣咨询",
+      "url": "https://www.jiandanxinli.com/",
+      "status": 200,
+      "finalUrl": "https://www.jiandanxinli.com/"
+    },
+    {
+      "cat": "💞 两性亲密成长",
+      "title": "亲密关系书单",
+      "url": "https://www.douban.com/",
+      "status": 200,
+      "finalUrl": "https://www.douban.com/"
+    },
+    {
+      "cat": "💞 两性亲密成长",
+      "title": "亲密关系沟通课",
+      "url": "https://www.dedao.cn/",
+      "status": 200,
+      "finalUrl": "https://www.dedao.cn/"
+    },
+    {
+      "cat": "💞 两性亲密成长",
+      "title": "蜻蜓FM",
+      "url": "https://www.qtfm.cn/",
+      "status": 200,
+      "finalUrl": "https://www.qtfm.cn/"
+    },
+    {
+      "cat": "💞 两性亲密成长",
+      "title": "亲密关系话题讨论",
+      "url": "https://www.zhihu.com/",
+      "status": 200,
+      "finalUrl": "https://www.zhihu.com/signin?next=%2F"
+    },
+    {
+      "cat": "💞 两性亲密成长",
+      "title": "得到 App",
+      "url": "https://www.igetget.com/",
+      "status": 200,
+      "finalUrl": "https://www.igetget.com/"
+    },
+    {
+      "cat": "📖 儿童教育",
+      "title": "国家中小学智慧教育平台",
+      "url": "https://basic.smartedu.cn/",
+      "status": 200,
+      "finalUrl": "https://basic.smartedu.cn/"
+    },
+    {
+      "cat": "📖 儿童教育",
+      "title": "人教社教材资源",
+      "url": "https://www.pep.com.cn/",
+      "status": 200,
+      "finalUrl": "https://www.pep.com.cn/maintenance.html"
+    },
+    {
+      "cat": "📖 儿童教育",
+      "title": "宝宝巴士",
+      "url": "https://www.babybus.com/",
+      "status": 200,
+      "finalUrl": "https://www.babybus.com/"
+    },
+    {
+      "cat": "📖 儿童教育",
+      "title": "洋葱学园",
+      "url": "https://yangcongxueyuan.com/",
+      "status": 200,
+      "finalUrl": "https://yangcongxueyuan.com/"
+    },
+    {
+      "cat": "📖 儿童教育",
+      "title": "科普中国",
+      "url": "https://www.kepuchina.cn/",
+      "status": 200,
+      "finalUrl": "https://www.kepuchina.cn/"
+    },
+    {
+      "cat": "📖 儿童教育",
+      "title": "洪恩识字",
+      "url": "https://www.ihuman.com/",
+      "status": 200,
+      "finalUrl": "https://www.ihuman.com/"
+    },
+    {
+      "cat": "📖 儿童教育",
+      "title": "作业帮",
+      "url": "https://www.zuoyebang.com/",
+      "status": 200,
+      "finalUrl": "https://www.zuoyebang.com/"
+    },
+    {
+      "cat": "📖 儿童教育",
+      "title": "英文亲子观影参考",
+      "url": "https://www.commonsensemedia.org/",
+      "status": 200,
+      "finalUrl": "https://www.commonsensemedia.org/"
+    },
+    {
+      "cat": "🧸 婴幼儿养育",
+      "title": "儿童疾病预防科普",
+      "url": "https://www.chinacdc.cn/",
+      "status": 200,
+      "finalUrl": "https://www.chinacdc.cn/"
+    },
+    {
+      "cat": "🧸 婴幼儿养育",
+      "title": "成长记录与同龄交流",
+      "url": "https://www.babytree.com/",
+      "status": 200,
+      "finalUrl": "http://www.babytree.com/baby202208_index/"
+    },
+    {
+      "cat": "🧸 婴幼儿养育",
+      "title": "亲宝宝",
+      "url": "https://www.qbb6.com/",
+      "status": 200,
+      "finalUrl": "https://www.qbb6.com/"
+    },
+    {
+      "cat": "🧸 婴幼儿养育",
+      "title": "婴幼儿喂养指南",
+      "url": "https://www.cnsoc.org/learncons/",
+      "status": 200,
+      "finalUrl": "https://www.cnsoc.org/learncons/"
+    },
+    {
+      "cat": "🧸 婴幼儿养育",
+      "title": "小步在家早教",
+      "url": "https://www.xiaobu.com/",
+      "status": 200,
+      "finalUrl": "https://www.xiaobu.com/"
+    },
+    {
+      "cat": "🧸 婴幼儿养育",
+      "title": "疫苗记录与提醒",
+      "url": "https://www.xiaodoumiao.cn/",
+      "status": 200,
+      "finalUrl": "https://www.xiaodoumiao.cn/"
+    },
+    {
+      "cat": "🧸 婴幼儿养育",
+      "title": "生长曲线怎么读",
+      "url": "https://www.who.int/tools/child-growth-standards",
+      "status": 200,
+      "finalUrl": "https://www.who.int/tools/child-growth-standards"
+    },
+    {
+      "cat": "🧸 婴幼儿养育",
+      "title": "母乳喂养基础科普",
+      "url": "https://www.who.int/zh/health-topics/breastfeeding",
+      "status": 200,
+      "finalUrl": "https://www.who.int/zh/health-topics/breastfeeding"
+    }
+  ],
+  "summary": {
+    "ok": 40,
+    "warn": 0,
+    "bad": 0
+  },
+  "redlineHits": [],
+  "hostCount": {
+    "www.who.int": 2,
+    "www.cnsoc.org": 1,
+    "www.xiaodoumiao.cn": 1,
+    "www.babytree.com": 1,
+    "www.chinacdc.cn": 1,
+    "www.qbb6.com": 1,
+    "www.xiaobu.com": 1,
+    "basic.smartedu.cn": 1,
+    "www.kepuchina.cn": 1,
+    "www.pep.com.cn": 1,
+    "www.commonsensemedia.org": 1,
+    "www.babybus.com": 1,
+    "yangcongxueyuan.com": 1,
+    "www.ihuman.com": 1,
+    "www.zuoyebang.com": 1,
+    "www.jiandanxinli.com": 2,
+    "www.xinli001.com": 2,
+    "www.cnwomen.com.cn": 2,
+    "tide.fm": 1,
+    "www.guokr.com": 1,
+    "www.thepaper.cn": 1,
+    "www.gotokeep.com": 1,
+    "weread.qq.com": 1,
+    "www.dedao.cn": 2,
+    "www.zhihu.com": 2,
+    "www.douban.com": 2,
+    "www.ximalaya.com": 1,
+    "www.lizhi.fm": 1,
+    "www.qtfm.cn": 2,
+    "dida365.com": 1,
+    "www.sui.com": 1,
+    "www.igetget.com": 1
+  }
+}
