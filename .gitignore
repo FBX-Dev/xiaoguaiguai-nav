@@ -13,3 +13,5 @@ _selfcheck.py
 _gen.py
 _*.log
 _*.png
+# 本轮新增的本地验收脚本（不入库）
+_trash_*
