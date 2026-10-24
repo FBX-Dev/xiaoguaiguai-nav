@@ -156,7 +156,7 @@ draft: false         # true 则完全不发布
 推送 `main` 分支即触发 GitHub Actions：`node build.mjs` → 产物校验 → 部署 CF Pages。
 **在后台保存文章 = 一次 commit = 自动上线**，无需本地介入。
 
-需先在仓库配置两个 Secret（Settings → Secrets and variables → Actions）：
+需先在仓库配置两个 Secret（Settings → Secrets and variables → Actions）—— ✅ **均已配置**：
 
 | Secret | 值 | 权限要求 |
 |---|---|---|
@@ -167,6 +167,20 @@ draft: false         # true 则完全不发布
 
 **判断 CI 失败原因**：workflow 里 Build / Verify 全绿而只有 Deploy 红 ⇒ 逻辑没问题，缺 Secrets。
 `node _trash_check_ci.mjs` 可打印本次 commit 的步骤级结论（含每个 step 的 OK/FAIL）。
+
+### 工作流版本基线（2026-10-24）
+
+| 项 | 取值 | 说明 |
+|---|---|---|
+| `runs-on` | `ubuntu-24.04` | **钉具体 LTS**，不用 `ubuntu-latest`（浮动标签会随 GitHub 迁移产生 notice 注解） |
+| `actions/checkout` | `@v7` | `using: node24` |
+| `actions/setup-node` | `@v7` | `using: node24`，`node-version: '22'` |
+| `cloudflare/wrangler-action` | `@v4` | `using: node24`，配 `wranglerVersion: '4'` |
+
+> 旧版 `@v4 / @v4 / @v3` 声明的是 `node20`，在 Node 24 runner 上会被强制提权并产生
+> `Node.js 20 is deprecated` 警告注解。升级前务必核对新版 `action.yml` 的入参名有没有变
+> （本轮实测三者入参名全部保留）。验收判据：`check-runs/{id}/annotations` 返回 `[]`，
+> 且 `actions/jobs/{id}` 的 `labels` 回显 `["ubuntu-24.04"]`。
 
 ### 手动部署（兜底）
 
@@ -234,9 +248,10 @@ CSP 的作用是拦掉 CF 边缘自动注入的 RUM 信标（`static.cloudflarei
 2. ~~上传配图到 R2 并回填 `cover` 字段~~ —— ✅ 已完成（2026-10-24，Agent 代生成上传，10 张）
 3. ~~人工核验所有第三方外链~~ —— ✅ 已完成（历史项，外部导航已于 2026-10-24 整体下线）
 4. ~~在 Cloudflare 为 `xiaoguaiguai.cn` 绑定 Pages 自定义域~~ —— ✅ 已完成
-5. **配置 GitHub Actions 部署 Secrets** —— `CLOUDFLARE_ACCOUNT_ID` ✅ 已配；`CLOUDFLARE_API_TOKEN` ⏳ **待办**。
-   逐步操作见 **`_deliverables/CI部署Secrets配置指引.md`**（含 CF 后台点击路径与失败判读）。
-6. **补其余 4 个分类的小工具**（每分类 ≥2 个，当前仅婴幼儿养育有 2 个）—— ⏳ 待办
+5. ~~配置 GitHub Actions 部署 Secrets~~ —— ✅ 已完成（2026-10-24，两个 Secret 均已配置，CI 全绿）
+   逐步操作留档见 **`_deliverables/CI部署Secrets配置指引.md`**（含 CF 后台点击路径与失败判读）。
+6. ~~消除 CI 注解~~ —— ✅ 已完成（2026-10-24，升级 action 至 node24 版本 + `runs-on` 钉 `ubuntu-24.04`，注解数归零）
+7. **补其余 4 个分类的小工具**（每分类 ≥2 个，当前仅婴幼儿养育有 2 个）—— ⏳ 待办
    建议清单：📖 儿童教育（儿童专注计时器 / 亲子阅读打卡）、🌷 女性成长（情绪日记 / 四象限待办）、
    🏠 家庭关系（家务分工表 / 家庭开支记录）、💞 两性亲密成长（沟通句式转换器 / 纪念日计算）。
    复制 `tools/baby-age-calculator.html` 的片段结构即可，`build.mjs` 会自动生成外壳与列表项。
