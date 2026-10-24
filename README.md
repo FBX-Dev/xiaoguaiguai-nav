@@ -234,7 +234,8 @@ CSP 的作用是拦掉 CF 边缘自动注入的 RUM 信标（`static.cloudflarei
 2. ~~上传配图到 R2 并回填 `cover` 字段~~ —— ✅ 已完成（2026-10-24，Agent 代生成上传，10 张）
 3. ~~人工核验所有第三方外链~~ —— ✅ 已完成（历史项，外部导航已于 2026-10-24 整体下线）
 4. ~~在 Cloudflare 为 `xiaoguaiguai.cn` 绑定 Pages 自定义域~~ —— ✅ 已完成
-5. **配置 GitHub Actions 部署 Secrets**（`CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`）—— ⏳ **待办**，见第十节
+5. **配置 GitHub Actions 部署 Secrets** —— `CLOUDFLARE_ACCOUNT_ID` ✅ 已配；`CLOUDFLARE_API_TOKEN` ⏳ **待办**。
+   逐步操作见 **`_deliverables/CI部署Secrets配置指引.md`**（含 CF 后台点击路径与失败判读）。
 6. **补其余 4 个分类的小工具**（每分类 ≥2 个，当前仅婴幼儿养育有 2 个）—— ⏳ 待办
    建议清单：📖 儿童教育（儿童专注计时器 / 亲子阅读打卡）、🌷 女性成长（情绪日记 / 四象限待办）、
    🏠 家庭关系（家务分工表 / 家庭开支记录）、💞 两性亲密成长（沟通句式转换器 / 纪念日计算）。
