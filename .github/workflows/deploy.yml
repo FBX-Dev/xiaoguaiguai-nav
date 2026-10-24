@@ -53,7 +53,8 @@ jobs:
         run: |
           set -e
           for f in _dist/index.html _dist/404.html _dist/posts.json _dist/tools.json \
-                   _dist/posts/index.html _dist/tools/index.html _dist/admin/config.yml; do
+                   _dist/posts/index.html _dist/tools/index.html _dist/admin/config.yml \
+                   _dist/sitemap.xml _dist/robots.txt; do
             if [ ! -f "$f" ]; then echo "::error::缺少构建产物 $f"; exit 1; fi
           done
           POSTS=$(node -e "console.log(require('./_dist/posts.json').count)")
@@ -71,9 +72,41 @@ jobs:
           for s in yuer jiaoyu nvxing jiating qinmi; do
             if [ ! -f "_dist/category/$s/index.html" ]; then echo "::error::缺分类页 $s"; exit 1; fi
           done
+          # 合规页必须齐全（Google AdSense 审核与搜索评估的必需项）
+          for s in about privacy disclaimer terms contact; do
+            if [ ! -f "_dist/$s/index.html" ]; then echo "::error::缺合规页 /$s/"; exit 1; fi
+          done
+          # 隐私政策必须写明第三方广告与 Cookie 退出方式
+          for kw in AdSense Cookie 个性化广告 adssettings.google.com; do
+            if ! grep -q "$kw" _dist/privacy/index.html; then
+              echo "::error::隐私政策缺少关键词 $kw"; exit 1
+            fi
+          done
+          # 联系邮箱必须出现在首页页脚
+          if ! grep -q 'contact@xiaoguaiguai.cn' _dist/index.html; then
+            echo "::error::页脚缺少联系邮箱"; exit 1
+          fi
+          # sitemap 必须覆盖首页与全部文章，且不收录后台
+          if ! grep -q '<loc>https://xiaoguaiguai.cn/</loc>' _dist/sitemap.xml; then
+            echo "::error::sitemap 缺首页"; exit 1
+          fi
+          SLOC=$(grep -c '<loc>' _dist/sitemap.xml || true)
+          echo "sitemap 条目 $SLOC"
+          if [ "$SLOC" -lt "$POSTS" ]; then echo "::error::sitemap 条目少于文章数"; exit 1; fi
+          if grep -q '/admin' _dist/sitemap.xml; then echo "::error::sitemap 不应收录 /admin/"; exit 1; fi
+          if ! grep -q 'Sitemap: https://xiaoguaiguai.cn/sitemap.xml' _dist/robots.txt; then
+            echo "::error::robots.txt 未声明 sitemap"; exit 1
+          fi
           # 首页必须真的含内容（防止生成空壳）
           if ! grep -q 'class="hero-pick"' _dist/index.html; then
-            echo "::error::首页缺少置顶精选区块"; exit 1
+            echo "::error::首页缺少焦点推荐区块"; exit 1
+          fi
+          # 列表页必须是纯文字索引（本轮改版核心：列表不再用配图）
+          if ! grep -q 'class="index"' _dist/index.html; then
+            echo "::error::首页缺少纯文字索引"; exit 1
+          fi
+          if grep -q 'class="thumb"' _dist/index.html; then
+            echo "::error::首页列表仍残留配图"; exit 1
           fi
           # 404 页必须带 noindex（缺它时未知路径回落成「200 + 首页」软 404）
           if ! grep -q 'name="robots" content="noindex"' _dist/404.html; then
