@@ -1,0 +1,227 @@
+<div class="tool">
+  <div class="panel">
+    <h2>设置这一次的专注时长</h2>
+    <div class="tabs" id="dur-tabs">
+      <button data-min="10">10 分钟</button>
+      <button data-min="15" class="on">15 分钟</button>
+      <button data-min="20">20 分钟</button>
+      <button data-min="25">25 分钟</button>
+      <button data-min="30">30 分钟</button>
+    </div>
+    <div class="field">
+      <label class="lbl" for="task">这次要做什么（可不填）</label>
+      <input type="text" id="task" maxlength="40" placeholder="例如：写完数学练习册第 3 页" />
+      <div class="hint">把任务写具体一点，比写「写作业」更容易开始。时长按孩子年龄调整：6～8 岁从 10～15 分钟起步更现实。</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>计时</h2>
+    <div style="text-align:center;padding:10px 0 4px">
+      <div id="clock" style="font-size:52px;font-weight:600;color:var(--accent);letter-spacing:2px;line-height:1.1">15:00</div>
+      <div id="phase" class="hint" style="margin-top:8px">准备就绪</div>
+    </div>
+    <div style="height:8px;background:#f2ece3;border-radius:99px;overflow:hidden;margin:16px 0 4px">
+      <div id="bar" style="height:100%;width:0%;background:var(--accent);transition:width .3s linear"></div>
+    </div>
+    <div class="btns">
+      <button id="start">开始专注</button>
+      <button id="pause" class="ghost">暂停</button>
+      <button id="reset" class="ghost">重置</button>
+    </div>
+    <div class="hint" style="margin-top:12px">计时期间可以先离开这个页面，浏览器标签页不会中断计时。但请不要关掉标签页。</div>
+  </div>
+
+  <div class="panel">
+    <h2>完成记录</h2>
+    <div class="stat">
+      <span>累计 <b id="cnt-total">0</b> 次</span>
+      <span>合计 <b id="cnt-min">0</b> 分钟</span>
+      <span>今天 <b id="cnt-today">0</b> 次</span>
+    </div>
+    <div id="log-list"></div>
+    <div class="btns">
+      <button id="clear-log" class="ghost">清空全部记录</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>怎么用比较顺</h2>
+    <ul class="plain">
+      <li><strong>计时是给「开始」用的，不是给「坐满」用的。</strong>孩子提前做完了，就提前结束，别硬拖到铃响。</li>
+      <li><strong>时长宁短勿长。</strong>从孩子能轻松完成的时间开始，做成习惯了再慢慢加。</li>
+      <li><strong>一次只放一件事。</strong>桌面上只留这次要用的书和笔，其他先收走。</li>
+      <li><strong>中途被打断就记下来。</strong>如果每次都在第 5 分钟断掉，说明时长设长了，或者任务太大。</li>
+      <li><strong>结束后休息一会儿。</strong>休息时间让孩子自己选，别马上接下一件事。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      专注时长个体差异很大，同一年龄的孩子差别也不小。如果孩子长期难以维持注意力、或明显影响到日常学习和生活，
+      建议咨询儿科医生或儿童保健门诊，本工具只做计时辅助，不能用于判断任何发育或注意力问题。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_focus_log";
+  var totalSec = 15 * 60;
+  var left = totalSec;
+  var timer = null;
+  var running = false;
+  var curTask = "";
+
+  var clockEl = document.getElementById("clock");
+  var phaseEl = document.getElementById("phase");
+  var barEl = document.getElementById("bar");
+  var taskEl = document.getElementById("task");
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function fmt(sec) { return pad(Math.floor(sec / 60)) + ":" + pad(sec % 60); }
+
+  function paint() {
+    clockEl.textContent = fmt(left);
+    var pct = totalSec ? ((totalSec - left) / totalSec) * 100 : 0;
+    barEl.style.width = pct.toFixed(1) + "%";
+    if (!running && left === totalSec) phaseEl.textContent = "准备就绪";
+  }
+
+  function beep() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      var ac = new Ctx();
+      var o = ac.createOscillator();
+      var g = ac.createGain();
+      o.type = "sine";
+      o.frequency.value = 880;
+      g.gain.setValueAtTime(0.0001, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.25, ac.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 1.1);
+      o.connect(g);
+      g.connect(ac.destination);
+      o.start();
+      o.stop(ac.currentTime + 1.2);
+      setTimeout(function () { try { ac.close(); } catch (e) {} }, 1600);
+    } catch (e) {}
+  }
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) { return []; }
+  }
+  function save(list) {
+    try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, 60))); } catch (e) {}
+  }
+  function today() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  }
+
+  function renderLog() {
+    var list = load();
+    var mins = 0, td = 0;
+    for (var i = 0; i < list.length; i++) {
+      mins += list[i].min || 0;
+      if (list[i].day === today()) td++;
+    }
+    document.getElementById("cnt-total").textContent = list.length;
+    document.getElementById("cnt-min").textContent = mins;
+    document.getElementById("cnt-today").textContent = td;
+
+    var box = document.getElementById("log-list");
+    if (!list.length) {
+      box.innerHTML = '<div class="empty">还没有记录。完成一次专注后会出现在这里。</div>';
+      return;
+    }
+    var html = '<table><thead><tr><th style="width:112px">日期</th><th>任务</th><th style="width:74px">时长</th></tr></thead><tbody>';
+    for (var j = 0; j < Math.min(list.length, 12); j++) {
+      var r = list[j];
+      html += "<tr><td>" + r.day + " " + (r.time || "") + "</td><td>" + (r.task || "（未填写）") + "</td><td>" + r.min + " 分钟</td></tr>";
+    }
+    html += "</tbody></table>";
+    if (list.length > 12) html += '<div class="hint" style="margin-top:10px">仅显示最近 12 条，共 ' + list.length + " 条。</div>";
+    box.innerHTML = html;
+  }
+
+  function addRecord() {
+    var list = load();
+    var d = new Date();
+    list.unshift({
+      day: today(),
+      time: pad(d.getHours()) + ":" + pad(d.getMinutes()),
+      min: Math.round(totalSec / 60),
+      task: curTask || ""
+    });
+    save(list);
+    renderLog();
+  }
+
+  function tick() {
+    if (left <= 0) {
+      stopTimer();
+      phaseEl.textContent = "时间到，可以休息了";
+      barEl.style.width = "100%";
+      clockEl.textContent = "00:00";
+      beep();
+      addRecord();
+      return;
+    }
+    left--;
+    paint();
+  }
+
+  function startTimer() {
+    if (running) return;
+    if (left <= 0) left = totalSec;
+    running = true;
+    curTask = (taskEl.value || "").trim().slice(0, 40);
+    phaseEl.textContent = "专注中" + (curTask ? "：" + curTask : "");
+    clockEl.style.opacity = "1";
+    timer = setInterval(tick, 1000);
+    paint();
+  }
+
+  function stopTimer() {
+    running = false;
+    if (timer) { clearInterval(timer); timer = null; }
+  }
+
+  document.getElementById("start").addEventListener("click", startTimer);
+
+  document.getElementById("pause").addEventListener("click", function () {
+    if (!running) return;
+    stopTimer();
+    phaseEl.textContent = "已暂停";
+  });
+
+  document.getElementById("reset").addEventListener("click", function () {
+    stopTimer();
+    left = totalSec;
+    paint();
+    phaseEl.textContent = "准备就绪";
+  });
+
+  var tabs = document.querySelectorAll("#dur-tabs button");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].addEventListener("click", function (e) {
+      if (running) {
+        alert("计时进行中，请先暂停或重置再改时长。");
+        return;
+      }
+      for (var k = 0; k < tabs.length; k++) tabs[k].classList.remove("on");
+      e.target.classList.add("on");
+      totalSec = parseInt(e.target.getAttribute("data-min"), 10) * 60;
+      left = totalSec;
+      paint();
+    });
+  }
+
+  document.getElementById("clear-log").addEventListener("click", function () {
+    if (!confirm("确定清空全部完成记录吗？此操作不可恢复。")) return;
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    renderLog();
+  });
+
+  paint();
+  renderLog();
+})();
+</script>

@@ -62,6 +62,14 @@ jobs:
           echo "文章 $POSTS 篇 / 工具 $TOOLS 个"
           if [ "$POSTS" -lt 1 ]; then echo "::error::文章数为 0，疑似构建异常"; exit 1; fi
           if [ "$TOOLS" -lt 1 ]; then echo "::error::工具数为 0，疑似构建异常"; exit 1; fi
+          # 硬指标：每个分类文章 ≥4 篇、小工具 ≥2 个
+          for cat in "🧸 婴幼儿养育" "📖 儿童教育" "🌷 女性成长" "🏠 家庭关系" "💞 两性亲密成长"; do
+            PC=$(node -e "console.log(require('./_dist/posts.json').posts.filter(p=>p.category==='$cat').length)")
+            TC=$(node -e "console.log(require('./_dist/tools.json').tools.filter(t=>t.category==='$cat').length)")
+            echo "  $cat → 文章 $PC / 工具 $TC"
+            if [ "$PC" -lt 4 ]; then echo "::error::$cat 文章不足 4 篇（实际 $PC）"; exit 1; fi
+            if [ "$TC" -lt 2 ]; then echo "::error::$cat 小工具不足 2 个（实际 $TC）"; exit 1; fi
+          done
           for s in $(node -e "require('./_dist/posts.json').posts.forEach(p=>console.log(p.slug))"); do
             if [ ! -f "_dist/posts/$s/index.html" ]; then echo "::error::缺文章页 $s"; exit 1; fi
           done

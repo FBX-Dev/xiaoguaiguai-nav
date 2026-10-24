@@ -1,0 +1,206 @@
+<div class="tool">
+  <div class="panel">
+    <h2>现在感觉怎么样</h2>
+    <div class="hint" style="margin-bottom:14px">先选一个最接近的词，不用纠结准不准。情绪没有标准答案，选错了也没关系。</div>
+    <div id="moods" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:9px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>它有多强烈</h2>
+    <div class="field">
+      <label class="lbl" for="lv">强度：<b id="lv-txt" style="color:var(--accent)">3</b> / 5</label>
+      <input type="range" id="lv" min="1" max="5" value="3" style="width:100%;accent-color:var(--accent)" />
+      <div class="hint">1 = 有点在意，5 = 强烈到影响做事。</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>先做一件小事</h2>
+    <div id="tip" class="note" style="margin-bottom:0">选择情绪后，这里会给一个小建议。</div>
+    <div class="btns">
+      <button id="next-tip" class="ghost">换一个建议</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>写两句（可选）</h2>
+    <div class="field">
+      <label class="lbl" for="note">发生了什么？想对自己说什么？</label>
+      <textarea id="note" rows="4" placeholder="随便写，不用通顺。写完只有你自己看得到。"
+        style="width:100%;padding:11px 13px;border:1px solid #e6ded2;border-radius:8px;font-size:14.5px;font-family:inherit;line-height:1.7;resize:vertical;box-sizing:border-box"></textarea>
+      <div class="hint">内容只存在这台设备的浏览器里，不上传、不同步。</div>
+    </div>
+    <div class="btns">
+      <button id="save">记下这一次</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>最近记录</h2>
+    <div id="history"></div>
+  </div>
+
+  <div class="panel">
+    <h2>关于这个工具</h2>
+    <ul class="plain">
+      <li><strong>它不做评估。</strong>只是帮你把情绪说出来、写下来，这一步本身就有用。</li>
+      <li><strong>没有「应该」的感觉。</strong>生气、委屈、疲惫、麻木，都只是信号，不是缺点。</li>
+      <li><strong>不需要每天都记。</strong>想起来的时候用一次就好，用不着打卡。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      如果你持续两周以上情绪低落、对以前喜欢的事提不起兴趣、睡眠或食欲明显改变，或者出现伤害自己的念头，
+      请尽快寻求专业帮助——联系精神心理科、当地心理援助热线，或你信任的医生。这不是「想开点」能解决的事，
+      也不是你的错。本工具不能替代任何专业评估或治疗。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var MOODS = [
+    { k: "累", c: "#8f8578", tips: [
+      "把「应该做的事」列出来，只留下今天非做不可的一件，其余划掉。",
+      "找个地方坐下，什么都不做 5 分钟。不是休息，就是停一下。",
+      "如果身体也沉，先喝杯温水、吃点东西。累和饿常常一起出现。"
+    ]},
+    { k: "烦", c: "#b57b6b", tips: [
+      "把烦的那件事写成一句话。写出来之后，通常比在脑子里转的时候小。",
+      "离开当前的空间走两分钟，哪怕只是去阳台站一会儿。",
+      "问自己：这件事三天后还重要吗？如果答案是否，先放下。"
+    ]},
+    { k: "委屈", c: "#7d8fa8", tips: [
+      "先别急着分析对错。承认一句「我确实不好受」，比讲道理有用。",
+      "把想说的话写下来，不用发给任何人。写的过程就是出口。",
+      "找一个平时说话让你放松的人，只说一句「我今天有点堵」，不用展开。"
+    ]},
+    { k: "生气", c: "#c0705c", tips: [
+      "生气通常是因为某个界限被越过了。先问自己：被越过的是哪一条？",
+      "在说话之前先深呼吸三次。不是压住情绪，是给自己一点选择空间。",
+      "把「你怎么能这样」换成「这件事让我很难受」。同样的情绪，不同的结果。"
+    ]},
+    { k: "焦虑", c: "#a58a5c", tips: [
+      "把担心的事分成两栏：能做的、做不了的。只在能做的这一栏里挑一件。",
+      "焦虑常来自不确定。写下「我确切知道的是什么」，把模糊的部分缩小。",
+      "试试 4-7-8 呼吸：吸气 4 秒、屏住 7 秒、呼气 8 秒，重复四轮。"
+    ]},
+    { k: "麻木", c: "#9a9a9a", tips: [
+      "麻木常常是撑太久之后的保护反应，不是冷淡。先允许自己暂时没有感觉。",
+      "做一件有明确感官反馈的小事：洗个热水澡、晒几分钟太阳、摸摸凉的东西。",
+      "别急着「找回状态」。先保证吃饭、睡觉、喝水这三件事。"
+    ]},
+    { k: "平静", c: "#6f9a7c", tips: [
+      "记住现在这个状态是什么感觉。下次难的时候，你知道它还会回来。",
+      "趁这个时候把一件拖了很久的小事做掉，比硬撑着做更轻松。",
+      "写一句给未来自己的话，留在记录里。"
+    ]},
+    { k: "说不上来", c: "#8b8b9a", tips: [
+      "说不清也很正常。可以从身体入手：哪里紧、哪里沉、哪里没力气。",
+      "给自己十分钟什么都不做，看看会不会冒出来一个词。",
+      "不用今天就想明白。有些情绪需要时间才会显出形状。"
+    ]}
+  ];
+
+  var KEY = "xgg_mood_log";
+  var cur = null;
+  var tipIdx = 0;
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function stamp() {
+    var d = new Date();
+    return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) { return []; } }
+  function save(l) { try { localStorage.setItem(KEY, JSON.stringify(l.slice(0, 80))); } catch (e) {} }
+
+  function renderMoods() {
+    var box = document.getElementById("moods");
+    var html = "";
+    for (var i = 0; i < MOODS.length; i++) {
+      var m = MOODS[i];
+      html += '<button class="mood-btn" data-i="' + i + '" style="padding:13px 8px;border:1px solid #e6ded2;background:#fff;border-radius:9px;cursor:pointer;font-size:14.5px;font-family:inherit;color:#3f3a34;display:flex;align-items:center;justify-content:center;gap:7px">' +
+        '<span style="width:9px;height:9px;border-radius:50%;background:' + m.c + ';flex:none"></span>' + m.k + "</button>";
+    }
+    box.innerHTML = html;
+    var bs = box.querySelectorAll("button");
+    for (var j = 0; j < bs.length; j++) {
+      bs[j].addEventListener("click", function (e) {
+        var b = e.target.closest("button");
+        var idx = parseInt(b.getAttribute("data-i"), 10);
+        cur = MOODS[idx];
+        tipIdx = 0;
+        for (var k = 0; k < bs.length; k++) {
+          bs[k].style.borderColor = "#e6ded2";
+          bs[k].style.background = "#fff";
+          bs[k].style.color = "#3f3a34";
+        }
+        b.style.borderColor = "var(--accent)";
+        b.style.background = "#fdf8f1";
+        b.style.color = "var(--accent)";
+        showTip();
+      });
+    }
+  }
+
+  function showTip() {
+    if (!cur) return;
+    var lv = parseInt(document.getElementById("lv").value, 10);
+    var t = cur.tips[tipIdx % cur.tips.length];
+    var lead = lv >= 4 ? "现在感觉比较强，先只做这一件：" : "可以试试：";
+    document.getElementById("tip").innerHTML = "<strong>" + cur.k + "</strong> ｜ " + lead + esc(t);
+  }
+
+  function renderHistory() {
+    var list = load();
+    var box = document.getElementById("history");
+    if (!list.length) {
+      box.innerHTML = '<div class="empty">还没有记录。</div>';
+      return;
+    }
+    var html = '<table><thead><tr><th style="width:118px">时间</th><th style="width:76px">情绪</th><th style="width:52px">强度</th><th>备注</th></tr></thead><tbody>';
+    for (var i = 0; i < Math.min(list.length, 10); i++) {
+      var r = list[i];
+      html += "<tr><td>" + esc(r.at) + "</td><td>" + esc(r.mood) + "</td><td>" + r.lv + "</td><td>" + (r.note ? esc(r.note) : "—") + "</td></tr>";
+    }
+    html += "</tbody></table>";
+    if (list.length > 10) html += '<div class="hint" style="margin-top:10px">仅显示最近 10 条，共 ' + list.length + " 条。</div>";
+    html += '<div class="btns"><button id="clear-mood" class="ghost">清空全部记录</button></div>';
+    box.innerHTML = html;
+    document.getElementById("clear-mood").addEventListener("click", function () {
+      if (!confirm("确定清空全部记录吗？此操作不可恢复。")) return;
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      renderHistory();
+    });
+  }
+
+  document.getElementById("lv").addEventListener("input", function (e) {
+    document.getElementById("lv-txt").textContent = e.target.value;
+    showTip();
+  });
+
+  document.getElementById("next-tip").addEventListener("click", function () {
+    if (!cur) { alert("请先选一个情绪词。"); return; }
+    tipIdx++;
+    showTip();
+  });
+
+  document.getElementById("save").addEventListener("click", function () {
+    if (!cur) { alert("请先选一个情绪词。"); return; }
+    var list = load();
+    list.unshift({
+      at: stamp(),
+      mood: cur.k,
+      lv: parseInt(document.getElementById("lv").value, 10),
+      note: (document.getElementById("note").value || "").trim().slice(0, 300)
+    });
+    save(list);
+    document.getElementById("note").value = "";
+    renderHistory();
+  });
+
+  renderMoods();
+  renderHistory();
+})();
+</script>

@@ -1,0 +1,182 @@
+<div class="tool">
+  <div class="panel">
+    <h2>这个月大概有多少</h2>
+    <div class="field">
+      <label class="lbl" for="income">家庭月收入合计（税后，元）</label>
+      <input type="number" id="income" min="0" step="100" placeholder="例如 15000" />
+      <div class="hint">只在这台设备上计算，不会上传。不确定就填个大概数，这个工具看的是比例不是精确值。</div>
+    </div>
+    <div class="btns">
+      <button id="gen">生成分配参考</button>
+      <button id="clear" class="ghost">清空</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>支出分类参考</h2>
+    <div class="hint" style="margin-bottom:14px">
+      下面是常见的分类框架和参考占比。改数字会立即重算，请按你家的实际情况调整，不必照搬。
+    </div>
+    <div id="rows"></div>
+    <div class="btns">
+      <button id="recalc">按当前数字重算</button>
+      <button id="export" class="ghost">复制成文本</button>
+    </div>
+  </div>
+
+  <div class="panel" id="sum" style="display:none">
+    <h2>合计</h2>
+    <div class="stat">
+      <span>月收入 <b id="s-in">—</b></span>
+      <span>计划支出 <b id="s-out">—</b></span>
+      <span>结余 <b id="s-left">—</b></span>
+      <span>储蓄率 <b id="s-rate">—</b></span>
+    </div>
+    <div id="advice"></div>
+  </div>
+
+  <div class="panel">
+    <h2>几个常见问题</h2>
+    <ul class="plain">
+      <li><strong>「记账」和「预算」是两件事。</strong>记账是记录已经花的，预算是提前决定要花多少。只记账不预算，通常还是不知道钱去哪了。</li>
+      <li><strong>先定总额，再分细项。</strong>先决定这个月「吃饭」这一类总共花多少，再想里面怎么分，比逐笔记更容易坚持。</li>
+      <li><strong>留一笔不解释的钱。</strong>给每个人一点不需要说明用途的额度，能减少很多摩擦。</li>
+      <li><strong>应急金优先。</strong>在谈投资之前，先把 3～6 个月的基本开支存起来。这笔钱只求稳，不求收益。</li>
+      <li><strong>比例是参考不是标准。</strong>房贷占比、教育占比在不同城市差别极大，先看你自己的数，再跟参考比。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具只做分类与比例的计算参考，不构成任何投资、理财或税务建议。涉及具体产品选择、债务重组、税务安排时，
+      请咨询持牌专业人士。所有输入数据仅保存在你的浏览器中。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_budget";
+  // 分类：名称 / 参考占比(%) / 说明
+  var CATS = [
+    ["住（房贷/房租、物业、水电燃气）", 30, "含固定居住成本与每月水电燃气网费"],
+    ["食（三餐、外卖、零食）", 20, "含在家做饭与在外就餐"],
+    ["行（通勤、油费、公共交通）", 8, "含车辆保养保险的月均摊"],
+    ["孩子相关（教育、用品、医疗）", 15, "含课外班、书籍、衣物、体检"],
+    ["保险（寿险、医疗、意外）", 8, "按年缴折算到月"],
+    ["日常与个人（衣物、护理、社交）", 7, "含人情往来与个人用品"],
+    ["储蓄与投资", 10, "先存后花，建议自动转出"],
+    ["弹性备用", 2, "给意外支出留的口子"]
+  ];
+
+  var vals = CATS.map(function (c) { return c[1]; });
+  try {
+    var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (raw && Array.isArray(raw.vals) && raw.vals.length === CATS.length) vals = raw.vals;
+  } catch (e) {}
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function money(n) {
+    if (!isFinite(n)) return "—";
+    return n.toLocaleString("zh-CN", { maximumFractionDigits: 0 });
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ vals: vals })); } catch (e) {} }
+
+  function renderRows() {
+    var html = '<table><thead><tr><th>分类</th><th style="width:96px">占比 %</th><th style="width:118px">金额（元/月）</th></tr></thead><tbody>';
+    for (var i = 0; i < CATS.length; i++) {
+      html += "<tr><td>" + esc(CATS[i][0]) + '<div class="hint" style="margin:2px 0 0;font-size:12px">' + esc(CATS[i][2]) + "</div></td>" +
+        '<td><input type="number" data-i="' + i + '" value="' + vals[i] + '" min="0" max="100" step="1" style="width:74px;padding:6px 9px;border:1px solid #e6ded2;border-radius:6px;font-size:13.5px;font-family:inherit;box-sizing:border-box" /></td>' +
+        '<td class="amt" data-a="' + i + '" style="color:var(--accent);font-weight:600">—</td></tr>';
+    }
+    html += "</tbody></table>";
+    document.getElementById("rows").innerHTML = html;
+
+    var ins = document.querySelectorAll("input[data-i]");
+    for (var j = 0; j < ins.length; j++) {
+      ins[j].addEventListener("input", function (e) {
+        var k = parseInt(e.target.getAttribute("data-i"), 10);
+        var v = parseFloat(e.target.value);
+        vals[k] = isFinite(v) ? Math.max(0, Math.min(100, v)) : 0;
+        save();
+        recalc(false);
+      });
+    }
+  }
+
+  function recalc(alertOn) {
+    var inc = parseFloat(document.getElementById("income").value);
+    if (!isFinite(inc) || inc <= 0) {
+      if (alertOn) alert("请先填写家庭月收入。");
+      return;
+    }
+    var pctSum = 0, amtSum = 0;
+    for (var i = 0; i < vals.length; i++) {
+      pctSum += vals[i];
+      var amt = (inc * vals[i]) / 100;
+      amtSum += amt;
+      var cell = document.querySelector('.amt[data-a="' + i + '"]');
+      if (cell) cell.textContent = money(amt);
+    }
+    document.getElementById("s-in").textContent = money(inc) + " 元";
+    document.getElementById("s-out").textContent = money(amtSum) + " 元";
+    var left = inc - amtSum;
+    document.getElementById("s-left").textContent = money(left) + " 元";
+    document.getElementById("s-rate").textContent = ((vals[6] || 0)).toFixed(0) + "%";
+
+    var tips = [];
+    if (Math.abs(pctSum - 100) > 0.5) {
+      tips.push("当前占比合计 <strong>" + pctSum.toFixed(0) + "%</strong>，" + (pctSum > 100 ? "超出 100%，支出会大于收入。" : "还没到 100%，剩下的部分建议先明确用途，否则容易被零散花掉。"));
+    }
+    if (left < 0) tips.push("计划支出已经超过收入，需要调整某一类的占比。");
+    var hz = vals[0] || 0;
+    if (hz > 40) tips.push("居住类占比达到 " + hz.toFixed(0) + "%，在多数城市这个比例偏高，其他分类会比较紧。");
+    if ((vals[6] || 0) < 10) tips.push("储蓄与投资占比偏低。可以试试「先存后花」：发工资当天先转出一笔固定金额。");
+    if ((vals[7] || 0) < 2) tips.push("弹性备用几乎没有余量，遇到一次性支出容易打乱计划。");
+    if (!tips.length) tips.push("各项比例看起来比较均衡。执行一两个月后再回来看一次，比一次定到位更实际。");
+
+    document.getElementById("advice").innerHTML = '<div class="note" style="margin-bottom:0">' +
+      tips.map(function (t) { return "· " + t; }).join("<br>") + "</div>";
+    document.getElementById("out").style.display = "block";
+    document.getElementById("sum").style.display = "block";
+  }
+
+  document.getElementById("gen").addEventListener("click", function () {
+    renderRows();
+    recalc(true);
+  });
+
+  document.getElementById("recalc").addEventListener("click", function () { recalc(true); });
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!confirm("确定清空输入与调整过的占比吗？")) return;
+    document.getElementById("income").value = "";
+    vals = CATS.map(function (c) { return c[1]; });
+    save();
+    document.getElementById("out").style.display = "none";
+    document.getElementById("sum").style.display = "none";
+    document.getElementById("rows").innerHTML = "";
+  });
+
+  document.getElementById("export").addEventListener("click", function () {
+    var inc = parseFloat(document.getElementById("income").value) || 0;
+    var lines = ["家庭支出分配参考（月收入 " + money(inc) + " 元）", ""];
+    for (var i = 0; i < CATS.length; i++) {
+      lines.push(CATS[i][0] + "：" + vals[i] + "%　约 " + money((inc * vals[i]) / 100) + " 元");
+    }
+    var txt = lines.join("\n");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () {
+        alert("已复制到剪贴板。");
+      }, function () {
+        alert(txt);
+      });
+    } else {
+      alert(txt);
+    }
+  });
+
+  document.getElementById("income").addEventListener("input", function () {
+    if (document.getElementById("out").style.display === "block") recalc(false);
+  });
+})();
+</script>

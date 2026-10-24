@@ -1,0 +1,165 @@
+<div class="tool">
+  <div class="panel">
+    <h2>添加一本书</h2>
+    <div class="field">
+      <label class="lbl" for="b-title">书名</label>
+      <input type="text" id="b-title" maxlength="40" placeholder="例如：猜猜我有多爱你" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="b-date">开始读的日期</label>
+      <input type="date" id="b-date" />
+    </div>
+    <div class="btns">
+      <button id="add">加入书架</button>
+    </div>
+    <div class="hint" style="margin-top:12px">数据只保存在这台设备的浏览器里，不会上传到任何服务器，换设备或清理浏览器数据后会消失。</div>
+  </div>
+
+  <div class="panel">
+    <h2>阅读打卡</h2>
+    <div class="stat">
+      <span>书架 <b id="c-books">0</b> 本</span>
+      <span>已读完 <b id="c-done">0</b> 本</span>
+      <span>打卡 <b id="c-days">0</b> 天</span>
+      <span>连续 <b id="c-streak">0</b> 天</span>
+    </div>
+    <div class="btns" style="margin-top:0">
+      <button id="checkin">记录今天读过了</button>
+    </div>
+    <div class="hint" style="margin-top:12px">同一天点多次只算一次。连续天数按自然日计算，中断一天会重新开始，这很正常，不用有负担。</div>
+  </div>
+
+  <div class="panel">
+    <h2>我的书架</h2>
+    <div id="shelf"></div>
+  </div>
+
+  <div class="panel">
+    <h2>打卡日历（最近 28 天）</h2>
+    <div id="calendar"></div>
+  </div>
+
+  <div class="panel">
+    <h2>怎么记录更轻松</h2>
+    <ul class="plain">
+      <li><strong>记「读过了」比记「读了多久」容易坚持。</strong>打卡只需要点一下，不用掏出手机掐时间。</li>
+      <li><strong>书架不必按年龄排序。</strong>孩子自己挑的书，重复读很多遍也很正常，重复本身就是学习。</li>
+      <li><strong>读完了再标完成。</strong>读一半放下、过阵子再拿起来，都是正常的阅读节奏。</li>
+      <li><strong>别拿打卡数量当指标。</strong>这里只用来回顾「我们一起读过哪些书」，不是任务清单。</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_reading";
+  var state = { books: [], days: [] };
+  try {
+    var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (raw && typeof raw === "object") {
+      state.books = Array.isArray(raw.books) ? raw.books : [];
+      state.days = Array.isArray(raw.days) ? raw.days : [];
+    }
+  } catch (e) {}
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function streak() {
+    if (!state.days.length) return 0;
+    var set = {};
+    for (var i = 0; i < state.days.length; i++) set[state.days[i]] = 1;
+    var n = 0;
+    var d = new Date();
+    // 今天没打卡时，从昨天开始算，避免「今天还没读」就把连续断掉
+    if (!set[ymd(d)]) d.setDate(d.getDate() - 1);
+    while (set[ymd(d)]) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+
+  function render() {
+    var done = 0;
+    for (var i = 0; i < state.books.length; i++) if (state.books[i].done) done++;
+    document.getElementById("c-books").textContent = state.books.length;
+    document.getElementById("c-done").textContent = done;
+    document.getElementById("c-days").textContent = state.days.length;
+    document.getElementById("c-streak").textContent = streak();
+
+    var box = document.getElementById("shelf");
+    if (!state.books.length) {
+      box.innerHTML = '<div class="empty">书架还是空的，先加一本正在读的书吧。</div>';
+    } else {
+      var html = '<table><thead><tr><th>书名</th><th style="width:104px">开始日期</th><th style="width:88px">状态</th><th style="width:64px"></th></tr></thead><tbody>';
+      for (var j = 0; j < state.books.length; j++) {
+        var b = state.books[j];
+        html += "<tr><td>" + esc(b.title) + '</td><td>' + esc(b.date || "—") + "</td>" +
+          '<td class="st">' + (b.done ? '<span style="color:#5d8a6c">已读完</span>' : "在读") + "</td>" +
+          '<td><button class="ghost mini" data-t="' + j + '" style="padding:4px 9px;font-size:12px">' + (b.done ? "重读" : "标完成") + "</button> " +
+          '<button class="ghost mini" data-d="' + j + '" style="padding:4px 9px;font-size:12px">删</button></td></tr>';
+      }
+      html += "</tbody></table>";
+      box.innerHTML = html;
+
+      var ts = box.querySelectorAll("button[data-t]");
+      for (var k = 0; k < ts.length; k++) {
+        ts[k].addEventListener("click", function (e) {
+          var i2 = parseInt(e.target.getAttribute("data-t"), 10);
+          state.books[i2].done = !state.books[i2].done;
+          save(); render();
+        });
+      }
+      var ds = box.querySelectorAll("button[data-d]");
+      for (var m = 0; m < ds.length; m++) {
+        ds[m].addEventListener("click", function (e) {
+          var i3 = parseInt(e.target.getAttribute("data-d"), 10);
+          if (!confirm("确定删除《" + state.books[i3].title + "》吗？")) return;
+          state.books.splice(i3, 1);
+          save(); render();
+        });
+      }
+    }
+
+    // 28 天日历
+    var set2 = {};
+    for (var p = 0; p < state.days.length; p++) set2[state.days[p]] = 1;
+    var cal = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;max-width:340px">';
+    var base = new Date();
+    base.setDate(base.getDate() - 27);
+    for (var q = 0; q < 28; q++) {
+      var dd = new Date(base.getFullYear(), base.getMonth(), base.getDate() + q);
+      var on = !!set2[ymd(dd)];
+      cal += '<div title="' + ymd(dd) + '" style="aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11.5px;' +
+        (on ? "background:var(--accent);color:#fff" : "background:#f5f1ea;color:#b3aa9e") + '">' + dd.getDate() + "</div>";
+    }
+    cal += "</div>";
+    cal += '<div class="hint" style="margin-top:12px">深色格子表示当天有打卡记录。</div>';
+    document.getElementById("calendar").innerHTML = cal;
+  }
+
+  document.getElementById("add").addEventListener("click", function () {
+    var t = (document.getElementById("b-title").value || "").trim();
+    if (!t) { alert("请先填写书名"); return; }
+    var d = document.getElementById("b-date").value || ymd(new Date());
+    state.books.unshift({ title: t.slice(0, 40), date: d, done: false });
+    document.getElementById("b-title").value = "";
+    save(); render();
+  });
+
+  document.getElementById("checkin").addEventListener("click", function () {
+    var t = ymd(new Date());
+    if (state.days.indexOf(t) >= 0) {
+      alert("今天已经打过卡了。");
+      return;
+    }
+    state.days.push(t);
+    save(); render();
+  });
+
+  document.getElementById("b-date").value = ymd(new Date());
+  render();
+})();
+</script>

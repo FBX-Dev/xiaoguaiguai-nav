@@ -1,0 +1,184 @@
+<div class="tool">
+  <div class="panel">
+    <h2>添加一个日子</h2>
+    <div class="field">
+      <label class="lbl" for="d-name">这是什么日子</label>
+      <input type="text" id="d-name" maxlength="24" placeholder="例如：结婚纪念日 / 第一次见面 / 他的生日" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="d-date">日期</label>
+      <input type="date" id="d-date" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="d-repeat">是否每年重复</label>
+      <select id="d-repeat">
+        <option value="1">每年重复（纪念日、生日）</option>
+        <option value="0">只算一次（某次旅行、某个决定）</option>
+      </select>
+    </div>
+    <div class="btns">
+      <button id="add">加入</button>
+    </div>
+    <div class="hint" style="margin-top:12px">数据只保存在这台设备的浏览器里，不会上传、不会同步到任何账号。</div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>距离最近的日子</h2>
+    <div id="next"></div>
+  </div>
+
+  <div class="panel" id="listbox" style="display:none">
+    <h2>全部日子</h2>
+    <div id="list"></div>
+  </div>
+
+  <div class="panel">
+    <h2>关于「记住日子」这件事</h2>
+    <ul class="plain">
+      <li><strong>记不住不等于不在乎。</strong>很多人是真的对日期不敏感，这跟感情深浅没有直接关系。</li>
+      <li><strong>与其等对方记，不如一起记。</strong>把重要日子写进共享日历，比每年考验一次记忆力轻松得多。</li>
+      <li><strong>提前一周提醒，比当天提醒有用。</strong>当天才想起来，通常已经来不及安排了。</li>
+      <li><strong>形式不重要，被想到才重要。</strong>一句提前说的话、一顿简单的饭，比临时补救的礼物更有效。</li>
+      <li><strong>也可以标记「不适合庆祝的日子」。</strong>有些日子对某个人来说是难过的，记下来，是为了那天多留一点空间。</li>
+    </ul>
+    <div class="hint" style="margin-top:14px">本工具只做日期计算与提醒辅助，不发送任何通知，也不会把数据传给任何人。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_days";
+  var items = [];
+  try {
+    var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (Array.isArray(raw)) items = raw;
+  } catch (e) {}
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(items.slice(0, 60))); } catch (e) {} }
+  function uid() { return "d" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+
+  function parse(s) {
+    var p = String(s).split("-");
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+  function today0() {
+    var n = new Date();
+    return new Date(n.getFullYear(), n.getMonth(), n.getDate());
+  }
+  function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+
+  // 计算下一次发生日期与已过天数
+  function nextOf(it) {
+    var base = parse(it.date);
+    var t = today0();
+    if (!it.repeat) {
+      var dd = daysBetween(t, base);
+      return { date: base, days: dd, passed: daysBetween(base, t), once: true };
+    }
+    var n = new Date(t.getFullYear(), base.getMonth(), base.getDate());
+    // 2 月 29 日在平年顺延到 3 月 1 日
+    if (base.getMonth() === 1 && base.getDate() === 29 && n.getMonth() !== 1) {
+      n = new Date(t.getFullYear(), 2, 1);
+    }
+    if (daysBetween(t, n) < 0) {
+      n = new Date(t.getFullYear() + 1, base.getMonth(), base.getDate());
+      if (base.getMonth() === 1 && base.getDate() === 29 && n.getMonth() !== 1) {
+        n = new Date(t.getFullYear() + 1, 2, 1);
+      }
+    }
+    return { date: n, days: daysBetween(t, n), passed: daysBetween(base, t), once: false };
+  }
+
+  function render() {
+    var box = document.getElementById("listbox");
+    if (!items.length) {
+      box.style.display = "none";
+      document.getElementById("out").style.display = "none";
+      return;
+    }
+    box.style.display = "block";
+    document.getElementById("out").style.display = "block";
+
+    var arr = [];
+    for (var i = 0; i < items.length; i++) {
+      var n = nextOf(items[i]);
+      arr.push({ it: items[i], n: n });
+    }
+    arr.sort(function (a, b) { return a.n.days - b.n.days; });
+
+    // 最近一个
+    var top = arr[0];
+    var t = top.n;
+    var head = "";
+    if (t.once) {
+      head = t.days > 0
+        ? "还有 <b>" + t.days + "</b> 天到「" + esc(top.it.name) + "」"
+        : "「" + esc(top.it.name) + "」已过去 <b>" + t.passed + "</b> 天";
+    } else {
+      var isToday = t.days === 0;
+      head = isToday
+        ? "今天是「" + esc(top.it.name) + "」，第 <b>" + (t.passed + 1) + "</b> 年"
+        : "距离「" + esc(top.it.name) + "」还有 <b>" + t.days + "</b> 天（" + ymd(t.date) + "）";
+      if (!isToday && t.passed > 0) head += "，已一起走过 <b>" + t.passed + "</b> 天";
+    }
+    var warn = "";
+    if (!t.once && t.days > 0 && t.days <= 7) {
+      warn = '<div class="note" style="margin-top:14px;background:#fdf8f1">还有 ' + t.days + " 天。现在准备还来得及——提前说一句，比当天临时补救有用得多。</div>";
+    }
+    document.getElementById("next").innerHTML = '<div style="font-size:17px;line-height:1.8;color:#3f3a34">' + head + "</div>" + warn;
+
+    var html = '<table><thead><tr><th>日子</th><th style="width:112px">原始日期</th><th style="width:104px">下次</th><th style="width:88px">天数</th><th style="width:56px"></th></tr></thead><tbody>';
+    for (var j = 0; j < arr.length; j++) {
+      var a = arr[j];
+      var d = a.n;
+      var cls = d.days === 0 ? "color:#c0705c;font-weight:600" : "#6b6259";
+      html += "<tr><td>" + esc(a.it.name) + (a.it.repeat ? "" : '<span class="hint" style="margin-left:6px;font-size:11.5px">一次性</span>') + "</td>" +
+        "<td>" + esc(a.it.date) + "</td>" +
+        "<td>" + ymd(d.date) + "</td>" +
+        '<td style="' + cls + '">' + (d.days === 0 ? "就是今天" : (d.days > 0 ? d.days + " 天后" : Math.abs(d.days) + " 天前")) + "</td>" +
+        '<td><button data-del="' + esc(a.it.id) + '" style="background:none;border:0;color:#b3aa9e;cursor:pointer;font-size:15px;padding:0 2px" title="删除">×</button></td></tr>';
+    }
+    html += "</tbody></table>";
+    html += '<div class="btns"><button id="clear-days" class="ghost">清空全部</button></div>';
+    document.getElementById("list").innerHTML = html;
+
+    var ds = document.querySelectorAll("button[data-del]");
+    for (var k = 0; k < ds.length; k++) {
+      ds[k].addEventListener("click", function (e) {
+        var id = e.target.getAttribute("data-del");
+        items = items.filter(function (x) { return x.id !== id; });
+        save(); render();
+      });
+    }
+    document.getElementById("clear-days").addEventListener("click", function () {
+      if (!confirm("确定清空全部日子吗？此操作不可恢复。")) return;
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      items = [];
+      render();
+    });
+  }
+
+  document.getElementById("add").addEventListener("click", function () {
+    var n = (document.getElementById("d-name").value || "").trim();
+    var d = document.getElementById("d-date").value;
+    if (!n) { alert("请填写这是什么日子。"); return; }
+    if (!d) { alert("请选择日期。"); return; }
+    items.push({
+      id: uid(),
+      name: n.slice(0, 24),
+      date: d,
+      repeat: document.getElementById("d-repeat").value === "1"
+    });
+    document.getElementById("d-name").value = "";
+    save(); render();
+  });
+
+  document.getElementById("d-date").value = ymd(new Date());
+  render();
+})();
+</script>

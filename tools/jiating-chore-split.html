@@ -1,0 +1,159 @@
+<div class="tool">
+  <div class="panel">
+    <h2>先列出家里的家务项</h2>
+    <div class="hint" style="margin-bottom:14px">
+      勾选你家实际存在的项目，然后给每一项定一个「算完成」的标准。争论往往不是做不做，而是做到什么程度。
+    </div>
+    <div id="chores"></div>
+    <div class="btns">
+      <button id="calc">生成分工表</button>
+      <button id="reset" class="ghost">清空重来</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>家务分工与负荷参考</h2>
+    <div class="stat">
+      <span>选中 <b id="s-total">0</b> 项</span>
+      <span>每周合计 <b id="s-hours">0</b> 小时</span>
+      <span>最重的一项 <b id="s-top">—</b></span>
+    </div>
+    <div id="result"></div>
+  </div>
+
+  <div class="panel">
+    <h2>定标准时可以参考的说法</h2>
+    <ul class="plain">
+      <li><strong>把「干净」换成可观察的状态。</strong>「厨房台面没有油污和杂物」比「厨房收拾干净」明确得多。</li>
+      <li><strong>定最低标准，不要求最高标准。</strong>「地板上没有明显碎屑」是底线；「一根头发都没有」是给自己找麻烦。</li>
+      <li><strong>接受两种做法都算完成。</strong>衣服叠成方块还是卷成筒，不影响它已经收好了。</li>
+      <li><strong>标准要写下来。</strong>口头说过一次，两周后谁都不记得。写在表里，争论的时候可以直接看。</li>
+      <li><strong>标准可以不一样。</strong>有人在意灶台、有人在意卫生间，各认领自己在意的那部分，比平均分配更省事。</li>
+    </ul>
+    <div class="hint" style="margin-top:14px">所有内容只保存在本机浏览器，不会上传，也不共享给任何人。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_chores";
+  // 每项：名称 / 参考频次（每周几次）/ 单次参考耗时（分钟）
+  var LIST = [
+    ["做饭（含备菜）", 7, 45],
+    ["洗碗、清理灶台", 7, 20],
+    ["扫地拖地", 3, 30],
+    ["卫生间清洁", 1, 40],
+    ["洗衣晾衣叠衣", 4, 25],
+    ["倒垃圾", 7, 5],
+    ["买菜与日用采购", 2, 50],
+    ["接送孩子上下学", 5, 30],
+    ["辅导作业", 5, 40],
+    ["陪玩 / 亲子时间", 7, 40],
+    ["哄睡", 7, 30],
+    ["整理收纳与断舍离", 1, 60],
+    ["家庭账目与缴费", 2, 25],
+    ["照顾老人相关事务", 2, 45],
+    ["宠物照料", 7, 15],
+    ["家电维修与报修跟进", 1, 30],
+    ["节假日安排与人情往来", 1, 50],
+    ["开车接送其他家庭成员", 3, 25]
+  ];
+
+  var state = {};
+  try {
+    var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (raw && typeof raw === "object") state = raw;
+  } catch (e) {}
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function hoursOf(i) { return (LIST[i][1] * LIST[i][2]) / 60; }
+
+  function renderList() {
+    var box = document.getElementById("chores");
+    var html = '<table><thead><tr><th style="width:44px">选</th><th>项目</th><th style="width:82px">每周</th><th style="width:96px">单次约</th><th>「算完成」的标准</th></tr></thead><tbody>';
+    for (var i = 0; i < LIST.length; i++) {
+      var on = !!state["on" + i];
+      var std = state["std" + i] || "";
+      html += "<tr>" +
+        '<td><input type="checkbox" data-on="' + i + '"' + (on ? " checked" : "") + ' style="width:16px;height:16px;accent-color:var(--accent)" /></td>' +
+        "<td>" + esc(LIST[i][0]) + "</td>" +
+        '<td style="color:#8f8578;font-size:13px">' + LIST[i][1] + " 次</td>" +
+        '<td style="color:#8f8578;font-size:13px">' + LIST[i][2] + " 分钟</td>" +
+        '<td><input type="text" data-std="' + i + '" value="' + esc(std) + '" maxlength="50" placeholder="写下你的最低标准" style="width:100%;padding:6px 9px;border:1px solid #e6ded2;border-radius:6px;font-size:13px;font-family:inherit;box-sizing:border-box" /></td>' +
+        "</tr>";
+    }
+    html += "</tbody></table>";
+    box.innerHTML = html;
+
+    var cbs = box.querySelectorAll("input[data-on]");
+    for (var a = 0; a < cbs.length; a++) {
+      cbs[a].addEventListener("change", function (e) {
+        state["on" + e.target.getAttribute("data-on")] = e.target.checked;
+        save();
+      });
+    }
+    var ins = box.querySelectorAll("input[data-std]");
+    for (var b = 0; b < ins.length; b++) {
+      ins[b].addEventListener("input", function (e) {
+        state["std" + e.target.getAttribute("data-std")] = e.target.value.slice(0, 50);
+        save();
+      });
+    }
+  }
+
+  function calc() {
+    var picked = [];
+    for (var i = 0; i < LIST.length; i++) if (state["on" + i]) picked.push(i);
+    if (!picked.length) { alert("请先勾选至少一项家务。"); return; }
+
+    var totalH = 0, top = picked[0];
+    for (var j = 0; j < picked.length; j++) {
+      totalH += hoursOf(picked[j]);
+      if (hoursOf(picked[j]) > hoursOf(top)) top = picked[j];
+    }
+    document.getElementById("s-total").textContent = picked.length;
+    document.getElementById("s-hours").textContent = totalH.toFixed(1);
+    document.getElementById("s-top").textContent = LIST[top][0];
+
+    picked.sort(function (a, b) { return hoursOf(b) - hoursOf(a); });
+
+    var html = '<table><thead><tr><th>项目</th><th style="width:96px">每周耗时</th><th style="width:72px">占比</th><th>算完成的标准</th></tr></thead><tbody>';
+    for (var k = 0; k < picked.length; k++) {
+      var idx = picked[k];
+      var h = hoursOf(idx);
+      var pct = totalH ? Math.round((h / totalH) * 100) : 0;
+      html += "<tr><td>" + esc(LIST[idx][0]) + "</td>" +
+        '<td style="color:#6b6259">' + h.toFixed(1) + " 小时</td>" +
+        '<td style="color:#6b6259">' + pct + "%</td>" +
+        "<td>" + (state["std" + idx] ? esc(state["std" + idx]) : '<span style="color:#b3aa9e">未填写</span>') + "</td></tr>";
+    }
+    html += "</tbody></table>";
+
+    html += '<div class="note" style="margin-top:16px">' +
+      "<strong>怎么看这张表：</strong>耗时只是参考，不代表谁该做哪一项。" +
+      "更值得看的是两个问题——① 有没有哪一两项几乎全落在一个人身上？" +
+      "② 有没有「标准没写清楚」的项？后者才是分歧最集中的地方。<br><br>" +
+      "如果某几项的标准一直谈不拢，可以先各自写下来，比对差异在哪一句，而不是争论谁做得对。" +
+      "</div>";
+    html += '<div class="hint" style="margin-top:12px">耗时为常见情况的粗略估计，各家差别很大，按自己的实际情况调整即可。</div>';
+
+    document.getElementById("result").innerHTML = html;
+    document.getElementById("out").style.display = "block";
+    document.getElementById("out").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  document.getElementById("calc").addEventListener("click", calc);
+  document.getElementById("reset").addEventListener("click", function () {
+    if (!confirm("确定清空勾选与标准吗？")) return;
+    state = {};
+    save();
+    renderList();
+    document.getElementById("out").style.display = "none";
+  });
+
+  renderList();
+})();
+</script>

@@ -16,6 +16,70 @@
       "category": "🧸 婴幼儿养育",
       "icon": "🥣",
       "published": true
+    },
+    {
+      "slug": "jiaoyu-focus-timer",
+      "name": "儿童专注计时器",
+      "desc": "按年龄选一段合适的专注时长，写清这次要做的事，完成后自动留下记录。",
+      "category": "📖 儿童教育",
+      "icon": "⏱️",
+      "published": true
+    },
+    {
+      "slug": "jiaoyu-reading-tracker",
+      "name": "亲子阅读打卡本",
+      "desc": "记录一起读过的书和每天有没有读，用 28 天日历看习惯，不设任务指标。",
+      "category": "📖 儿童教育",
+      "icon": "📚",
+      "published": true
+    },
+    {
+      "slug": "nvxing-mood-journal",
+      "name": "情绪记录本",
+      "desc": "选一个最接近的情绪词，写两句想说的话，给一个小建议。不做评估、不用打卡。",
+      "category": "🌷 女性成长",
+      "icon": "🌤️",
+      "published": true
+    },
+    {
+      "slug": "nvxing-quadrant-todo",
+      "name": "四象限待办分类器",
+      "desc": "把今天的事按「有没有时间要求」和「是否必须我做」分四格，并给出参考处理顺序。",
+      "category": "🌷 女性成长",
+      "icon": "🗂️",
+      "published": true
+    },
+    {
+      "slug": "jiating-chore-split",
+      "name": "家务分工与负荷参考表",
+      "desc": "勾选家里的家务项、写下每项「算完成」的标准，自动估算每周耗时与占比分布。",
+      "category": "🏠 家庭关系",
+      "icon": "🧹",
+      "published": true
+    },
+    {
+      "slug": "jiating-budget-planner",
+      "name": "家庭开支分配参考",
+      "desc": "输入月收入，按常见分类框架估算各项金额与占比，并给出储蓄率与结构提示。",
+      "category": "🏠 家庭关系",
+      "icon": "📊",
+      "published": true
+    },
+    {
+      "slug": "qinmi-sentence-converter",
+      "name": "沟通句式转换器",
+      "desc": "把带指责的话拆成「事实—感受—需要—请求」四段，并给出可以直接说的版本。",
+      "category": "💞 两性亲密成长",
+      "icon": "💬",
+      "published": true
+    },
+    {
+      "slug": "qinmi-anniversary",
+      "name": "纪念日与相处天数",
+      "desc": "记下对你们重要的日子，算出距离下一次还有多久、一起走过多少天。",
+      "category": "💞 两性亲密成长",
+      "icon": "📅",
+      "published": true
     }
   ]
 }

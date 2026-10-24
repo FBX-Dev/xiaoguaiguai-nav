@@ -1,0 +1,157 @@
+<div class="tool">
+  <div class="panel">
+    <h2>把今天的事分个类</h2>
+    <div class="hint" style="margin-bottom:14px">
+      在下面输入框里写下今天要做的事，一条一行。不确定放哪一类就放「待定」，分类可以随时改。
+    </div>
+    <div class="field">
+      <label class="lbl" for="inbox">待分类（一行一条）</label>
+      <textarea id="inbox" rows="4" placeholder="例如：&#10;交水电费&#10;给孩子约体检&#10;回复同事消息"
+        style="width:100%;padding:11px 13px;border:1px solid #e6ded2;border-radius:8px;font-size:14.5px;font-family:inherit;line-height:1.7;resize:vertical;box-sizing:border-box"></textarea>
+    </div>
+    <div class="btns">
+      <button id="add-inbox">加入待定</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>四象限</h2>
+    <div class="hint" style="margin-bottom:14px">
+      判断标准只有两个：<strong>这件事有没有明确的时间要求</strong>、<strong>它是否只能由我来做</strong>。
+      两个都「是」放第一格，两个都「否」放第四格。
+    </div>
+    <div id="quad" style="display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))"></div>
+  </div>
+
+  <div class="panel">
+    <h2>今天的建议顺序</h2>
+    <div id="order" class="note" style="margin-bottom:0">先添加几件事，这里会给出一个参考顺序。</div>
+  </div>
+
+  <div class="panel">
+    <h2>怎么用不容易放弃</h2>
+    <ul class="plain">
+      <li><strong>「紧急」不等于「吵得响」。</strong>有人催、消息在响，不代表这件事真的有时间要求。</li>
+      <li><strong>第四格不是垃圾桶。</strong>「不紧急也不必须我做」的事，删掉比拖着更轻松。</li>
+      <li><strong>别指望一次分对。</strong>先随便放，做的时候发现不对再拖过去，比反复犹豫快得多。</li>
+      <li><strong>每天只挑一件事当重点。</strong>四格都排满，等于没有重点。</li>
+      <li><strong>允许空着。</strong>有事没事都可以用，不用天天填。</li>
+    </ul>
+    <div class="hint" style="margin-top:14px">所有内容只保存在本机浏览器，不上传。换设备或清理浏览器数据后会消失。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_quad";
+  var QUADS = [
+    { k: "q1", name: "① 有时间要求 · 需要我做", color: "#c0705c", hint: "先做这些。但要留意：这一格如果长期堆满，说明别的地方在漏。" },
+    { k: "q2", name: "② 没有时间要求 · 需要我做", color: "#6f9a7c", hint: "这些决定长期状态，最容易一直往后拖。每天留一点固定时间给它。" },
+    { k: "q3", name: "③ 有时间要求 · 不一定我做", color: "#a58a5c", hint: "想想能不能请人帮忙、往后挪，或者干脆简化掉。" },
+    { k: "q4", name: "④ 没有时间要求 · 不一定我做", color: "#8f8578", hint: "可以删。真的想做就放到②，别放在这里积灰。" }
+  ];
+
+  var items = [];
+  try {
+    var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (Array.isArray(raw)) items = raw;
+  } catch (e) {}
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(items.slice(0, 120))); } catch (e) {} }
+
+  function render() {
+    var html = "";
+    for (var i = 0; i < QUADS.length; i++) {
+      var q = QUADS[i];
+      var list = items.filter(function (x) { return x.q === q.k; });
+      html += '<div style="border:1px solid #eee6db;border-radius:10px;padding:14px;background:#fff">' +
+        '<div style="font-size:13.5px;font-weight:600;color:' + q.color + ';margin-bottom:4px">' + q.name + "</div>" +
+        '<div class="hint" style="margin:0 0 10px;font-size:12px">' + q.hint + "</div>";
+      if (!list.length) {
+        html += '<div class="empty" style="padding:8px 0;font-size:13px">空</div>';
+      } else {
+        for (var j = 0; j < list.length; j++) {
+          var it = list[j];
+          html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid #f5f0e8">' +
+            '<input type="checkbox" data-done="' + esc(it.id) + '"' + (it.done ? " checked" : "") + ' style="margin-top:4px;flex:none;width:15px;height:15px;accent-color:var(--accent)" />' +
+            '<span style="flex:1;font-size:14px;' + (it.done ? "text-decoration:line-through;color:#b3aa9e" : "") + '">' + esc(it.text) + "</span>" +
+            '<select data-mv="' + esc(it.id) + '" style="flex:none;font-size:12px;padding:2px 4px;border:1px solid #e6ded2;border-radius:5px;background:#fff;color:#6b6259">' +
+            QUADS.map(function (z) { return '<option value="' + z.k + '"' + (z.k === it.q ? " selected" : "") + ">" + z.k.toUpperCase() + "</option>"; }).join("") +
+            "</select>" +
+            '<button data-del="' + esc(it.id) + '" style="flex:none;background:none;border:0;color:#b3aa9e;cursor:pointer;font-size:15px;padding:0 2px" title="删除">×</button>' +
+            "</div>";
+        }
+      }
+      html += "</div>";
+    }
+    document.getElementById("quad").innerHTML = html;
+
+    var cbs = document.querySelectorAll("input[data-done]");
+    for (var a = 0; a < cbs.length; a++) {
+      cbs[a].addEventListener("change", function (e) {
+        var id = e.target.getAttribute("data-done");
+        for (var b = 0; b < items.length; b++) if (items[b].id === id) items[b].done = e.target.checked;
+        save(); render();
+      });
+    }
+    var sels = document.querySelectorAll("select[data-mv]");
+    for (var c = 0; c < sels.length; c++) {
+      sels[c].addEventListener("change", function (e) {
+        var id = e.target.getAttribute("data-mv");
+        for (var d = 0; d < items.length; d++) if (items[d].id === id) items[d].q = e.target.value;
+        save(); render();
+      });
+    }
+    var dels = document.querySelectorAll("button[data-del]");
+    for (var e2 = 0; e2 < dels.length; e2++) {
+      dels[e2].addEventListener("click", function (e) {
+        var id = e.target.getAttribute("data-del");
+        items = items.filter(function (x) { return x.id !== id; });
+        save(); render();
+      });
+    }
+
+    // 建议顺序
+    var out = document.getElementById("order");
+    var pend = items.filter(function (x) { return !x.done; });
+    if (!pend.length) {
+      out.innerHTML = "当前没有待办。可以写几件今天的事试试。";
+    } else {
+      var lines = [];
+      var n1 = pend.filter(function (x) { return x.q === "q1"; }).length;
+      var n2 = pend.filter(function (x) { return x.q === "q2"; }).length;
+      var n3 = pend.filter(function (x) { return x.q === "q3"; }).length;
+      var n4 = pend.filter(function (x) { return x.q === "q4"; }).length;
+      if (n1) lines.push("先处理①里的 " + n1 + " 件，按截止时间排。");
+      if (n1 > 3) lines.push("①有 " + n1 + " 件，偏多。看看哪几件其实可以请人帮、或者往后挪一档。");
+      if (n2) lines.push("从②里挑 1 件放到今天固定时段做，不用全做。");
+      if (n3) lines.push("③里 " + n3 + " 件，想一下哪些能委托出去或简化。");
+      if (n4) lines.push("④里 " + n4 + " 件没有时间要求也不必须你做，可以先删掉。");
+      out.innerHTML = "<strong>待办共 " + pend.length + " 件。</strong><br>" + lines.join("<br>");
+    }
+  }
+
+  function uid() { return "i" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  document.getElementById("add-inbox").addEventListener("click", function () {
+    var v = (document.getElementById("inbox").value || "").trim();
+    if (!v) { alert("请先输入内容"); return; }
+    var lines = v.split("\n");
+    var n = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var t = lines[i].trim();
+      if (!t) continue;
+      items.unshift({ id: uid(), text: t.slice(0, 60), q: "q2", done: false });
+      n++;
+    }
+    document.getElementById("inbox").value = "";
+    save(); render();
+    if (n) alert("已加入 " + n + " 件到「② 没有时间要求 · 需要我做」，可在下方拖到正确的格子。");
+  });
+
+  render();
+})();
+</script>

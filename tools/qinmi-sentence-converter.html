@@ -1,0 +1,213 @@
+<div class="tool">
+  <div class="panel">
+    <h2>第一步：写下你想说的那句话</h2>
+    <div class="field">
+      <label class="lbl" for="raw">心里那句话是怎么说的？</label>
+      <textarea id="raw" rows="3" placeholder="例如：你从来不管孩子，回家就抱着手机。"
+        style="width:100%;padding:11px 13px;border:1px solid #e6ded2;border-radius:8px;font-size:14.5px;font-family:inherit;line-height:1.7;resize:vertical;box-sizing:border-box"></textarea>
+      <div class="hint">怎么想的就怎么写，不用修饰。这一步只是把话从脑子里拿出来。</div>
+    </div>
+    <div class="btns">
+      <button id="analyze">看看可以怎么说</button>
+      <button id="clear" class="ghost">清空</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>这句话里有什么</h2>
+    <div id="detect"></div>
+  </div>
+
+  <div class="panel" id="build" style="display:none">
+    <h2>换成四段式表达</h2>
+    <div class="hint" style="margin-bottom:14px">
+      顺序是：<strong>说事实 → 说感受 → 说需要 → 提请求</strong>。四段缺哪段都可以补，但别跳过「感受」直接提要求，
+      那样听起来还是命令。
+    </div>
+    <div class="field">
+      <label class="lbl" for="f-fact">① 事实（具体、可观察、不带评价）</label>
+      <input type="text" id="f-fact" maxlength="80" placeholder="例如：这周有三个晚上，你回家后一直在看手机" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="f-feel">② 感受（我……，不是「你让我……」）</label>
+      <input type="text" id="f-feel" maxlength="60" placeholder="例如：我有点累，也有点孤单" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="f-need">③ 需要（我真正在意的是什么）</label>
+      <input type="text" id="f-need" maxlength="60" placeholder="例如：我需要有人一起分担，也需要一点相处的时间" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="f-ask">④ 请求（具体、可做到、可以商量）</label>
+      <input type="text" id="f-ask" maxlength="80" placeholder="例如：今晚能不能由你来哄睡，我去洗个澡休息一下" />
+    </div>
+    <div class="btns">
+      <button id="make">生成这句话</button>
+      <button id="copy" class="ghost">复制</button>
+    </div>
+  </div>
+
+  <div class="panel" id="result" style="display:none">
+    <h2>可以这样说</h2>
+    <div id="final" class="note" style="font-size:15px;line-height:1.9"></div>
+    <div class="hint" style="margin-top:14px">
+      这只是个草稿。真说的时候不用照着念，语气比措辞重要。如果对方正在气头上，先等情绪过去再说，
+      说什么都比不上「选对时机」。
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>四段式为什么有效</h2>
+    <ul class="plain">
+      <li><strong>说事实，不贴标签。</strong>「你这周有三天十点后回家」是事实；「你根本不管这个家」是评价。评价一出口，对方就要先自卫，听不到后面的话。</li>
+      <li><strong>说感受，不加「你让我」。</strong>「我很累」是在描述自己；「你让我很累」是在定罪。前者能被听见，后者只能引发反驳。</li>
+      <li><strong>说需要，不停在抱怨。</strong>抱怨的落点是「你不好」，需要的落点是「我想要什么」。后者才有下一步。</li>
+      <li><strong>提请求，不要求。</strong>请求允许对方说「不」或者「换个方式」。不允许拒绝的，本质上是命令。</li>
+      <li><strong>一次只谈一件事。</strong>把三个月的事攒在一起说，对方只会记住「又被翻旧账了」。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      这个工具只是帮你把话说清楚，不判断谁对谁错，也不能替代婚姻咨询或心理辅导。
+      如果两人之间长期存在冷暴力、控制、威胁或任何形式的暴力，请优先保护自己和孩子的安全，
+      并联系专业机构或当地妇联、公安求助——那不是沟通技巧能解决的问题。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_nvc";
+  var state = { raw: "", f: ["", "", "", ""] };
+  try {
+    var r = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (r && typeof r === "object") {
+      state.raw = r.raw || "";
+      state.f = Array.isArray(r.f) && r.f.length === 4 ? r.f : ["", "", "", ""];
+    }
+  } catch (e) {}
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+  // 常见的「评价/指责」词表，只做提示不做判定
+  var BLAME = [
+    ["从来", "绝对化说法，把某几次说成了全部"],
+    ["总是", "绝对化说法，对方会立刻去找反例"],
+    ["永远", "绝对化说法，堵死了变化的空间"],
+    ["根本", "加强否定，容易触发对抗"],
+    ["你这个人", "从行为上升到了人格"],
+    ["你就是", "把行为定义成了身份"],
+    ["有病", "人身攻击，谈不下去"],
+    ["你妈", "把第三方拉进来，话题会立刻跑偏"],
+    ["不像话", "评价而非描述"],
+    ["没出息", "贬低式评价"],
+    ["神经", "人身攻击"],
+    ["都是你", "归罪式表达"],
+    ["又来了", "预设对方一定会重复，等于提前关门"],
+    ["懒得", "动机揣测"]
+  ];
+
+  var FEEL = ["累", "委屈", "难过", "孤单", "生气", "烦", "失望", "着急", "害怕", "无力", "堵", "撑不住"];
+
+  function analyze() {
+    var t = (document.getElementById("raw").value || "").trim();
+    if (!t) { alert("请先写下你想说的那句话。"); return; }
+    state.raw = t;
+    save();
+
+    var hits = [];
+    for (var i = 0; i < BLAME.length; i++) {
+      if (t.indexOf(BLAME[i][0]) >= 0) hits.push(BLAME[i]);
+    }
+    var feelHits = [];
+    for (var j = 0; j < FEEL.length; j++) {
+      if (t.indexOf(FEEL[j]) >= 0) feelHits.push(FEEL[j]);
+    }
+
+    var html = '<table><thead><tr><th style="width:104px">检查项</th><th>情况</th></tr></thead><tbody>';
+    html += "<tr><td>长度</td><td>" + (t.length > 40
+      ? "偏长（" + t.length + " 字）。一句话太长，对方容易只记住最后半句。"
+      : "合适（" + t.length + " 字）。") + "</td></tr>";
+    html += "<tr><td>事实</td><td>" + (hits.length
+      ? '发现 ' + hits.length + " 处可能带评价的表达，建议改成具体的时间、次数或行为。"
+      : "没有明显带评价的词。再确认一下：这句里说的是「他做了什么」，还是「他是什么人」？") + "</td></tr>";
+    html += "<tr><td>感受</td><td>" + (feelHits.length
+      ? "提到了「" + feelHits.join("、") + "」，这是好的开头，可以再往具体处说一点。"
+      : "没有说出自己的感受。对方听到的只有指责，很难知道你到底怎么了。") + "</td></tr>";
+    html += "<tr><td>需要</td><td>" + (/我(需要|想要|希望|在意)/.test(t)
+      ? "有表达自己的需要。"
+      : "没看到「我需要……」的句子，抱怨容易停在原地。") + "</td></tr>";
+    html += "<tr><td>请求</td><td>" + (/(能不能|可以|要不要|帮我|我们试试|你愿意)/.test(t)
+      ? "有可以商量的请求。"
+      : "没看到具体请求。对方可能不知道你要他做什么。") + "</td></tr>";
+    html += "</tbody></table>";
+
+    if (hits.length) {
+      html += '<div class="note" style="margin-top:14px"><strong>建议留意的几个词：</strong><br>' +
+        hits.map(function (h) { return "· 「" + h[0] + "」—— " + h[1]; }).join("<br>") + "</div>";
+    }
+
+    document.getElementById("detect").innerHTML = html;
+    document.getElementById("out").style.display = "block";
+    document.getElementById("build").style.display = "block";
+    document.getElementById("detect").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function make() {
+    var f = [
+      (document.getElementById("f-fact").value || "").trim(),
+      (document.getElementById("f-feel").value || "").trim(),
+      (document.getElementById("f-need").value || "").trim(),
+      (document.getElementById("f-ask").value || "").trim()
+    ];
+    if (!f[0] && !f[1]) { alert("至少填写①事实和②感受。"); return; }
+    state.f = f;
+    save();
+
+    var parts = [];
+    if (f[0]) parts.push("最近" + (/^(最近|这|今天|昨天|前)/.test(f[0]) ? "" : "") + f[0].replace(/^最近/, "") + "。");
+    if (f[1]) parts.push("我的感受是" + (/^我/.test(f[1]) ? f[1].replace(/^我/, "") : f[1]) + "。");
+    if (f[2]) parts.push(f[2].replace(/^我/, "我需要") === f[2] ? f[2] + "。" : f[2] + "。");
+    if (f[3]) parts.push(f[3] + "？");
+
+    var text = parts.join("");
+    // 修一下「我需要」重复
+    text = text.replace(/我需要我需要/g, "我需要").replace(/我的感受是我的/g, "我的感受是");
+
+    document.getElementById("final").innerHTML = esc(text) +
+      '<div style="margin-top:12px;font-size:13px;color:#a8a096">—— ' + text.length + " 字。短一点通常更好，能删掉的一句就删掉。</div>";
+    document.getElementById("result").style.display = "block";
+    document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  document.getElementById("analyze").addEventListener("click", analyze);
+  document.getElementById("make").addEventListener("click", make);
+
+  document.getElementById("copy").addEventListener("click", function () {
+    var t = document.getElementById("final").textContent.replace(/——.*$/, "").trim();
+    if (!t) { alert("请先生成这句话。"); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(function () { alert("已复制到剪贴板。"); }, function () { alert(t); });
+    } else {
+      alert(t);
+    }
+  });
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!confirm("确定清空全部内容吗？")) return;
+    state = { raw: "", f: ["", "", "", ""] };
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    document.getElementById("raw").value = "";
+    var ids = ["f-fact", "f-feel", "f-need", "f-ask"];
+    for (var i = 0; i < ids.length; i++) document.getElementById(ids[i]).value = "";
+    document.getElementById("out").style.display = "none";
+    document.getElementById("build").style.display = "none";
+    document.getElementById("result").style.display = "none";
+  });
+
+  // 回填
+  document.getElementById("raw").value = state.raw;
+  var ids2 = ["f-fact", "f-feel", "f-need", "f-ask"];
+  for (var k = 0; k < ids2.length; k++) document.getElementById(ids2[k]).value = state.f[k] || "";
+})();
+</script>
