@@ -666,7 +666,8 @@ function build() {
 
   /* ---- 静态文件拷贝 ---- */
   // 注：不再拷贝 nav.json —— 站点已转为纯内容站，外部资源导航已下线。
-  for (const f of ["favicon.svg", "_headers", "README.md"]) {
+  // _redirects 负责把已下线的 /nav.json 301 收口到首页。
+  for (const f of ["favicon.svg", "_headers", "_redirects", "README.md"]) {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(OUT, f));
   }
