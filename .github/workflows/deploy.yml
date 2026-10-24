@@ -24,15 +24,22 @@ permissions:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    # 钉住具体版本而非 ubuntu-latest：GitHub 会随 ubuntu-latest 的指向自动迁移 runner
+    # （2026-10-19 起迁往 Ubuntu 26），迁移前后 Node 运行时/镜像差异可能影响构建，
+    # 且每次迁移都会产生一条 notice 注解。钉住后构建环境可预测，注解也不再出现。
+    # 维护点：Ubuntu 24.04 被弃用时（GitHub 会提前数月公告）改成新的 LTS 编号即可。
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
+      # 三个 action 均使用 node24 运行时（checkout v7 / setup-node v7 / wrangler-action v4）。
+      # 旧版 v4/v4/v3 声明的是 node20，在 Node 24 runner 上会被强制提权并产生
+      # "Node.js 20 is deprecated" 警告注解，故统一升到 node24 版本。
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
 
@@ -91,11 +98,11 @@ jobs:
           echo "✅ 部署凭据已配置"
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # 显式指定 wrangler 4：v3 自带 3.90，对「只有静态资源、无 Worker 入口」
-          # 的项目会报 Missing entry-point（项目铁律 1）
+          # 显式指定 wrangler 4：本项目的 Pages 部署走 wrangler CLI 而非 action 内置版本，
+          # 固定大版本可避免 wrangler 升级带来的行为漂移（项目铁律 1）
           wranglerVersion: '4'
           command: pages deploy _dist --project-name=xiaoguaiguai-nav --branch=main
