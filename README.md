@@ -166,6 +166,9 @@ draft: false         # true 则完全不发布
 
 > ⚠️ 现有 `.cf_token`（`cfut_` 前缀）**没有 Pages 权限**（实测 403），不能直接用于 CI，需新建带 Pages:Edit 的 Token。
 
+**判断 CI 失败原因**：workflow 里 Build / Verify 全绿而只有 Deploy 红 ⇒ 逻辑没问题，缺 Secrets。
+`node _trash_check_ci.mjs` 可打印本次 commit 的步骤级结论（含每个 step 的 OK/FAIL）。
+
 ### 手动部署（兜底）
 
 ```bash
