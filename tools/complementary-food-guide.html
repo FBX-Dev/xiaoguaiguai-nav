@@ -1,0 +1,171 @@
+<div class="tool">
+  <div class="panel">
+    <h2>按月龄查看参考顺序</h2>
+    <div class="tabs" id="tabs">
+      <button data-m="6" class="on">满 6 个月</button>
+      <button data-m="7">7～8 个月</button>
+      <button data-m="9">9～11 个月</button>
+      <button data-m="12">12 个月以上</button>
+    </div>
+    <div class="hint" id="stage-hint"></div>
+  </div>
+
+  <div class="panel">
+    <h2>食物清单（可勾选记录）</h2>
+    <div class="stat">
+      <span>已尝试 <b id="cnt-done">0</b> 项</span>
+      <span>共 <b id="cnt-all">0</b> 项</span>
+      <span>进度 <b id="cnt-pct">0%</b></span>
+    </div>
+    <div id="food-list"></div>
+    <div class="btns">
+      <button id="reset" class="ghost">清空本阶段记录</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>添加时的几个通用原则</h2>
+    <ul class="plain">
+      <li><strong>一次只加一种。</strong>新食物单独引入，观察 2～3 天再加下一种，出现不适时便于判断来源。</li>
+      <li><strong>从稀到稠、从细到粗。</strong>质地跟着月龄走，不长期停在泥糊状，也不跳得太快。</li>
+      <li><strong>由少到多。</strong>第一次给一小勺试口感和反应，之后再逐步加量。</li>
+      <li><strong>奶仍是主食。</strong>1 岁前辅食是补充，不替代奶量。</li>
+      <li><strong>不额外加盐和糖。</strong>1 岁内不加盐，糖尽量推迟，让味觉保持清淡。</li>
+      <li><strong>原味为主、现做现吃。</strong>少用成品调味，做好尽快吃完。</li>
+      <li><strong>坐稳了再喂。</strong>有支撑地坐好，大人全程在旁边看着，避免边跑边吃。</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>需要就医的情况</h2>
+    <div class="note">
+      出现以下情况请及时就医，不要自行判断：进食后出现明显皮疹、嘴唇或眼周肿胀、呕吐、呼吸异常；
+      持续拒食或体重增长明显放缓；反复呛咳。有家族过敏史、早产或已有基础疾病的宝宝，
+      添加方案请先咨询儿科医生或儿童保健门诊。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var STAGES = {
+    6: {
+      hint: "满 6 个月左右，多数宝宝开始具备吃辅食的条件：能靠坐、对食物感兴趣、挺舌反射减弱。先从强化铁的米粉或肉泥起步，重点是补铁。",
+      foods: [
+        ["强化铁米粉", "调成稀糊，第一口从一小勺开始"],
+        ["红肉泥", "猪肉、牛肉煮烂打泥，铁含量高"],
+        ["南瓜泥", "蒸熟打泥，口感甜、接受度高"],
+        ["胡萝卜泥", "蒸软打泥，可与米粉混合"],
+        ["西兰花泥", "焯熟打泥，注意去掉粗梗"],
+        ["土豆泥", "蒸熟压泥，用奶或水调稀"],
+        ["苹果泥", "蒸熟更温和，生苹果泥可稍后再试"],
+        ["蛋黄", "从四分之一个开始，观察 2～3 天"]
+      ]
+    },
+    7: {
+      hint: "7～8 个月，可以开始增加种类和稠度，从细泥过渡到带颗粒的泥糊，逐步引入更多蔬菜、水果和蛋白质来源。",
+      foods: [
+        ["稠粥 / 烂面", "比 6 个月时更稠，保留细小颗粒"],
+        ["鸡肉泥", "煮熟打泥，可与蔬菜混合"],
+        ["鱼肉泥", "选刺少的鱼，仔细挑净鱼刺"],
+        ["猪肝泥", "每周 1～2 次，量不宜多"],
+        ["豌豆泥", "煮烂去皮打泥，注意过筛"],
+        ["菠菜泥", "焯水后打泥，去掉草酸"],
+        ["香蕉泥", "熟透后直接压泥，不用加热"],
+        ["牛油果泥", "熟软后压泥，脂肪含量较高"],
+        ["豆腐", "嫩豆腐压碎，观察耐受情况"]
+      ]
+    },
+    9: {
+      hint: "9～11 个月，可以尝试手指食物，让宝宝自己抓着吃。质地可以到软块状，鼓励咀嚼和自主进食。",
+      foods: [
+        ["软饭", "比稠粥更进一步，颗粒感明显"],
+        ["手指食物条", "蒸软的胡萝卜条、南瓜条、土豆条"],
+        ["碎肉末", "肉末炒熟或煮进粥里"],
+        ["全蛋", "蛋黄适应良好后可试整蛋"],
+        ["小块水果", "香蕉块、熟桃块，切成容易抓的条"],
+        ["软面条", "剪短后煮软，便于抓取"],
+        ["无糖酸奶", "原味、不加糖，观察奶制品耐受"],
+        ["各类蔬菜碎", "绿叶菜、瓜类切碎煮软"]
+      ]
+    },
+    12: {
+      hint: "12 个月以上，可以逐步向家庭餐靠拢。食物形态接近成人，但仍要少盐少糖、切小切软，注意进食安全。",
+      foods: [
+        ["软米饭", "作为主食之一，逐步增加比例"],
+        ["家庭菜切碎版", "大人吃的菜少盐版，切碎后给"],
+        ["鸡蛋类", "蒸蛋、炒蛋、蛋饼均可"],
+        ["全脂奶制品", "1 岁后可引入全脂牛奶，观察耐受"],
+        ["多种肉类", "猪牛鸡鱼轮换，保证铁和蛋白质"],
+        ["整颗软果", "去核切块，注意圆形水果切半防噎"],
+        ["面食", "馒头、软饼、饺子等切小块"],
+        ["自主用勺", "开始练习自己拿勺进食"]
+      ]
+    }
+  };
+
+  var KEY = "xgg_food";
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { state = {}; }
+  if (typeof state !== "object" || !state) state = {};
+
+  var cur = 6;
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function render() {
+    var st = STAGES[cur];
+    document.getElementById("stage-hint").textContent = st.hint;
+
+    var list = document.getElementById("food-list");
+    var done = 0;
+    var html = "";
+    for (var i = 0; i < st.foods.length; i++) {
+      var name = st.foods[i][0];
+      var note = st.foods[i][1];
+      var key = cur + "|" + name;
+      var on = !!state[key];
+      if (on) done++;
+      html += '<label class="chk"><input type="checkbox" data-k="' + key + '"' + (on ? " checked" : "") + ' />' +
+              '<span class="nm">' + name + '<em>' + note + '</em></span>' +
+              '<span class="st">' + (on ? "已尝试" : "") + '</span></label>';
+    }
+    list.innerHTML = html;
+
+    var all = st.foods.length;
+    document.getElementById("cnt-done").textContent = done;
+    document.getElementById("cnt-all").textContent = all;
+    document.getElementById("cnt-pct").textContent = all ? Math.round((done / all) * 100) + "%" : "0%";
+
+    var boxes = list.querySelectorAll("input[type=checkbox]");
+    for (var j = 0; j < boxes.length; j++) {
+      boxes[j].addEventListener("change", function (e) {
+        state[e.target.getAttribute("data-k")] = e.target.checked;
+        save();
+        render();
+      });
+    }
+  }
+
+  var tabs = document.querySelectorAll("#tabs button");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].addEventListener("click", function (e) {
+      for (var k = 0; k < tabs.length; k++) tabs[k].classList.remove("on");
+      e.target.classList.add("on");
+      cur = parseInt(e.target.getAttribute("data-m"), 10);
+      render();
+    });
+  }
+
+  document.getElementById("reset").addEventListener("click", function () {
+    var st = STAGES[cur];
+    for (var i = 0; i < st.foods.length; i++) delete state[cur + "|" + st.foods[i][0]];
+    save();
+    render();
+  });
+
+  render();
+})();
+</script>
