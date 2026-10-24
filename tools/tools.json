@@ -1,0 +1,21 @@
+{
+  "_readme": "本站自研小工具索引。构建时 build.mjs 读取本文件，生成 /tools/ 列表页与 /tools.json。每个 slug 需在同目录下存在同名 .html 片段文件（只写 .tool 区块与内联 script，外壳由构建脚本统一注入）。category 必须与 nav.json 的一级分类名完全一致（含 emoji 与空格）。",
+  "tools": [
+    {
+      "slug": "baby-age-calculator",
+      "name": "宝宝月龄计算器",
+      "desc": "输入出生日期，算出精确到天的月龄、周龄，并提示下一个发育观察节点还有多久。",
+      "category": "🧸 婴幼儿养育",
+      "icon": "🍼",
+      "published": true
+    },
+    {
+      "slug": "complementary-food-guide",
+      "name": "辅食添加顺序参考表",
+      "desc": "按月龄查看辅食种类、质地与频次的参考顺序，可逐项勾选已尝试的食物并记录进度。",
+      "category": "🧸 婴幼儿养育",
+      "icon": "🥣",
+      "published": true
+    }
+  ]
+}
