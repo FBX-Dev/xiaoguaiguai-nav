@@ -45,7 +45,7 @@ jobs:
       - name: Verify build output
         run: |
           set -e
-          for f in _dist/index.html _dist/nav.json _dist/posts.json _dist/tools.json \
+          for f in _dist/index.html _dist/posts.json _dist/tools.json \
                    _dist/posts/index.html _dist/tools/index.html _dist/admin/config.yml; do
             if [ ! -f "$f" ]; then echo "::error::缺少构建产物 $f"; exit 1; fi
           done
@@ -60,6 +60,14 @@ jobs:
           for s in $(node -e "require('./_dist/tools.json').tools.forEach(t=>console.log(t.slug))"); do
             if [ ! -f "_dist/tools/$s/index.html" ]; then echo "::error::缺工具页 $s"; exit 1; fi
           done
+          # 5 个固定分类页必须齐全（顶部导航直接指向它们）
+          for s in yuer jiaoyu nvxing jiating qinmi; do
+            if [ ! -f "_dist/category/$s/index.html" ]; then echo "::error::缺分类页 $s"; exit 1; fi
+          done
+          # 首页必须真的含内容（防止生成空壳）
+          if ! grep -q 'class="hero-pick"' _dist/index.html; then
+            echo "::error::首页缺少置顶精选区块"; exit 1
+          fi
           echo "✅ 产物完整性校验通过"
 
       # 凭据前置检查：把「部署失败」翻译成「你需要做什么」。
