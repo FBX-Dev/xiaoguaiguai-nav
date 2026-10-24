@@ -126,3 +126,60 @@ collections:
         hint: >-
           支持 Markdown。一级标题由系统自动生成，正文请从二级标题（##）写起。
           涉及健康、育儿、心理话题时，请保留文末的免责表述。
+
+  # ----------------------------------------------------------
+  # 站点合规页（关于 / 隐私 / 免责 / 条款 / 联系）
+  # 这些页面是 Google AdSense 审核与搜索引擎质量评估的必需项。
+  # 改动后同样会自动构建上线。
+  # ⚠️ 不要删除这些页面，也不要给它们加 noindex。
+  # ----------------------------------------------------------
+  - name: pages
+    label: 站点页面
+    label_singular: 页面
+    description: >-
+      隐私政策、免责声明、使用条款、关于我们、联系我们。
+      这几页是 Google AdSense 审核与搜索引擎收录的必需项，请保持内容完整、联系方式有效。
+    folder: pages
+    extension: md
+    format: frontmatter
+    create: true
+    delete: false
+    slug: "{{fields.slug}}"
+    summary: "{{title}}（更新 {{updated}}）"
+    sortable_fields: [order, title, updated]
+    fields:
+      - name: title
+        label: 页面标题
+        widget: string
+      - name: slug
+        label: 访问路径
+        widget: string
+        hint: 决定页面地址，如填 privacy 则地址为 /privacy/。修改会导致旧地址失效，请谨慎。
+      - name: desc
+        label: 页面描述
+        widget: text
+        hint: 显示在页面标题下方，同时用于搜索引擎摘要
+      - name: updated
+        label: 最近更新日期
+        widget: datetime
+        date_format: YYYY-MM-DD
+        time_format: false
+        format: YYYY-MM-DD
+        hint: 政策类页面更新内容时请同步修改此日期
+      - name: order
+        label: 排序权重
+        widget: number
+        value_type: int
+        required: false
+        hint: 数字越小越靠前，用于页脚与「相关页面」的顺序
+      - name: pri
+        label: sitemap 优先级
+        widget: number
+        value_type: float
+        required: false
+        default: 0.3
+        hint: 0.0～1.0，影响 sitemap.xml 中的 priority
+      - name: body
+        label: 正文
+        widget: markdown
+        hint: 支持 Markdown，标题请从二级（##）写起
