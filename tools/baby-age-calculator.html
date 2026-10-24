@@ -1,0 +1,142 @@
+<div class="tool">
+  <div class="panel">
+    <h2>填写出生日期</h2>
+    <div class="field">
+      <label class="lbl" for="birth">宝宝出生日期</label>
+      <input type="date" id="birth" />
+      <div class="hint">早产宝宝可按矫正月龄另行计算，本工具按实际出生日期计算。</div>
+    </div>
+    <div class="btns">
+      <button id="calc">开始计算</button>
+      <button id="today" class="ghost">用今天作对比日期</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>计算结果</h2>
+    <div class="kv">
+      <div class="cell"><div class="k">月龄</div><div class="v" id="r-month">—</div></div>
+      <div class="cell"><div class="k">周龄</div><div class="v" id="r-week">—</div></div>
+      <div class="cell"><div class="k">出生天数</div><div class="v" id="r-day">—</div></div>
+      <div class="cell"><div class="k">距下一次生日</div><div class="v" id="r-bday">—</div></div>
+    </div>
+    <div class="hint" id="r-text" style="margin-top:14px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>发育观察节点</h2>
+    <div class="hint" style="margin-bottom:14px">下表是常见的观察时间点，仅作提醒用。每个孩子的节奏差别很大，提前或推后都属正常。</div>
+    <table>
+      <thead>
+        <tr><th style="width:88px">月龄</th><th>常见观察点</th><th style="width:110px">状态</th></tr>
+      </thead>
+      <tbody id="ms-body">
+        <tr><td>2 个月</td><td>能短暂抬头、对声音有反应</td><td class="st" data-m="2">—</td></tr>
+        <tr><td>4 个月</td><td>能稳定抬头、会伸手抓物、会笑出声</td><td class="st" data-m="4">—</td></tr>
+        <tr><td>6 个月</td><td>能独坐片刻、开始对食物感兴趣</td><td class="st" data-m="6">—</td></tr>
+        <tr><td>9 个月</td><td>能扶站、会模仿动作、能理解简单指令</td><td class="st" data-m="9">—</td></tr>
+        <tr><td>12 个月</td><td>能扶走或独走、会说简单词</td><td class="st" data-m="12">—</td></tr>
+        <tr><td>18 个月</td><td>能独立行走、能说十几个词、会指认物品</td><td class="st" data-m="18">—</td></tr>
+        <tr><td>24 个月</td><td>能跑、能说短句、能自己用勺</td><td class="st" data-m="24">—</td></tr>
+      </tbody>
+    </table>
+    <div class="note" style="margin-top:16px">
+      本表只用于提醒「大概什么时候该留意什么」，<strong>不能替代体检和医生判断</strong>。
+      如果对孩子的发育有具体担心，请直接咨询儿科医生或儿童保健门诊。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var birthEl = document.getElementById("birth");
+  var out = document.getElementById("out");
+  var KEY = "xgg_birth";
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function fmt(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function days(a, b) { return Math.floor((b - a) / 86400000); }
+
+  // 精确月龄：按日历月推算，余数按天补
+  function ageParts(birth, ref) {
+    var y = ref.getFullYear() - birth.getFullYear();
+    var m = ref.getMonth() - birth.getMonth();
+    var d = ref.getDate() - birth.getDate();
+    if (d < 0) {
+      m -= 1;
+      var prev = new Date(ref.getFullYear(), ref.getMonth(), 0).getDate();
+      d += prev;
+    }
+    if (m < 0) { y -= 1; m += 12; }
+    return { y: y, m: m, d: d, totalMonths: y * 12 + m };
+  }
+
+  function render(birth, ref) {
+    var total = days(birth, ref);
+    if (total < 0) {
+      out.style.display = "block";
+      document.getElementById("r-text").textContent = "所选日期还没到，请重新选择。";
+      document.getElementById("r-month").textContent = "—";
+      document.getElementById("r-week").textContent = "—";
+      document.getElementById("r-day").textContent = "—";
+      document.getElementById("r-bday").textContent = "—";
+      return;
+    }
+
+    var a = ageParts(birth, ref);
+    var weeks = Math.floor(total / 7);
+    var restDays = total % 7;
+
+    document.getElementById("r-month").innerHTML = a.totalMonths + '<small>个月</small>' + (a.d ? a.d + '<small>天</small>' : "");
+    document.getElementById("r-week").innerHTML = weeks + '<small>周</small>' + (restDays ? restDays + '<small>天</small>' : "");
+    document.getElementById("r-day").innerHTML = total + '<small>天</small>';
+
+    // 下一次生日
+    var nb = new Date(ref.getFullYear(), birth.getMonth(), birth.getDate());
+    if (nb < ref) nb = new Date(ref.getFullYear() + 1, birth.getMonth(), birth.getDate());
+    document.getElementById("r-bday").innerHTML = days(ref, nb) + '<small>天</small>';
+
+    var txt = "以 " + fmt(ref) + " 为对比日期：" + a.y + " 岁 " + a.m + " 个月 " + a.d + " 天。";
+    if (a.totalMonths < 6) txt += " 这个阶段通常以奶为主食，重点观察抬头、抓握和睡眠规律。";
+    else if (a.totalMonths < 12) txt += " 这个阶段一般已开始添加辅食，重点观察坐、爬和手部动作。";
+    else if (a.totalMonths < 24) txt += " 这个阶段处于学步与语言起步期，重点观察行走、模仿和发音。";
+    else txt += " 这个阶段语言与自理能力发展较快，重点观察表达、跑跳和自主进食。";
+    document.getElementById("r-text").textContent = txt;
+
+    // 节点状态
+    var nodes = document.querySelectorAll(".st");
+    for (var i = 0; i < nodes.length; i++) {
+      var mm = parseInt(nodes[i].getAttribute("data-m"), 10);
+      var gap = mm - a.totalMonths;
+      if (gap > 0) nodes[i].textContent = "还有 " + gap + " 个月";
+      else nodes[i].textContent = "已到达";
+      nodes[i].style.color = gap > 0 ? "#b3aa9e" : "#5d8a6c";
+    }
+
+    out.style.display = "block";
+  }
+
+  function go() {
+    var v = birthEl.value;
+    if (!v) { alert("请先选择出生日期"); return; }
+    var p = v.split("-");
+    var birth = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    var now = new Date();
+    var ref = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    localStorage.setItem(KEY, v);
+    render(birth, ref);
+  }
+
+  document.getElementById("calc").addEventListener("click", go);
+  document.getElementById("today").addEventListener("click", function () {
+    var now = new Date();
+    birthEl.value = fmt(now);
+    go();
+  });
+  birthEl.addEventListener("change", go);
+
+  // 回填上次填写的日期
+  var saved = localStorage.getItem(KEY);
+  if (saved) { birthEl.value = saved; go(); }
+})();
+</script>
