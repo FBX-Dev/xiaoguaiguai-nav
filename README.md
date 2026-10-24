@@ -9,7 +9,14 @@
 
 > **站点定位（2026-10-24 调整）**：由「资源导航站」转为**纯内容站**，**已彻底删除外部资源导航**
 > （原 `nav.json` 的 40 条第三方链接与后台 nav 集合均已下线）。
-> 现在首页只呈现：置顶精选 + 最新文章 + 分类入口 + 自研小工具，**零站外跳转**。
+>
+> **版式改版（2026-10-24 第二轮）**：列表呈现方式由「大图卡片」改为**门户式纯文字索引**
+> —— 首页与全部栏目列表页统一按 CMS 索引方式排版（左侧分类色条 + 标题 + 摘要 + 元信息），
+> 宽屏双栏、窄屏单栏。**大图只保留在首页焦点区（全站唯一）与文章详情页**。
+>
+> 同时补齐 **Google AdSense 审核 / Google 搜索收录**所需页面：
+> 关于我们、隐私政策（含第三方广告 Cookie 与个性化广告退出说明）、免责声明、使用条款、联系我们（含 FAQ），
+> 并在根目录输出 **`sitemap.xml`** 与 **`robots.txt`**。
 >
 > 首期**不启用任何子域名**，全部配置收敛于主域名。
 > 配图公开地址形如 `https://xiaoguaiguai.cn/media/covers/<分类拼音>-<content|tool>.webp`，
@@ -26,14 +33,16 @@
 | 💞 两性亲密成长 | `/category/qinmi/` | 4 | 0（待补） |
 | **合计** | **5 个分类页** | **20** | **2** |
 
-## 二、内容体系（两套）
+## 二、内容体系（三套）
 
 | 体系 | 目录 | 数量要求 | 发布方式 |
 |---|---|---|---|
 | **原创文章** | `posts/*.md` | 每分类 ≥4 篇 | 后台「内容文章」新建/编辑/删除 |
 | **自研小工具** | `tools/` | 每分类 ≥2 个（当前样板 2 个） | 加 json + 片段 html，构建部署 |
+| **站点页面** | `pages/*.md` | 5 个合规页（固定） | 后台「站点页面」编辑 |
 
 文章是本站原创正文，小工具是本站自研交互页面（**不跳转任何外部网站**）。
+`pages/*.md` 承载 AdSense / 搜索审核必需的信息页：关于我们、隐私政策、免责声明、使用条款、联系我们。
 
 ## 三、目录结构
 
@@ -42,6 +51,8 @@
 ├─ build.mjs           # 零依赖静态构建脚本（生成 _dist/）
 ├─ posts/              # 原创文章，每篇一个 .md（Sveltia CMS 读写）
 │  └─ <slug>.md
+├─ pages/              # 站点页面（合规页），每页一个 .md（Sveltia CMS 读写）
+│  ├─ about.md  privacy.md  disclaimer.md  terms.md  contact.md
 ├─ tools/
 │  ├─ tools.json       # 工具索引
 │  └─ <slug>.html      # 各工具页「片段」，外壳由 build.mjs 注入
@@ -52,7 +63,7 @@
 │  └─ deploy.yml       # 推 main 自动构建 + 部署 CF Pages
 ├─ admin/
 │  ├─ index.html       # Sveltia CMS 后台入口
-│  └─ config.yml       # Sveltia CMS 配置（仅 posts 集合）
+│  └─ config.yml       # Sveltia CMS 配置（posts + pages 两个集合）
 ├─ oauth-proxy/        # GitHub OAuth 回调代理 Worker
 ├─ media-proxy/        # R2 配图反代 Worker（主域名 /media/*）
 └─ _dist/              # 构建产物（不入库）
@@ -70,22 +81,28 @@ node build.mjs
 
 | 产物 | 说明 |
 |---|---|
-| `index.html` | **【生成】** 首页：置顶精选 + 最新文章(9) + 分类入口 + 小工具 |
+| `index.html` | **【生成】** 首页：焦点区(1 张大图) + 最新内容索引(12 条纯文字) + 分类入口 + 小工具 |
 | `favicon.svg` / `_headers` / `admin/` | 原样拷贝 |
 | `posts.json` | 文章索引，按日期倒序（供站内检索/降级） |
-| `posts/index.html` | 文章列表页，按分类分组 |
+| `posts/index.html` | 全部内容页：门户式页头 + 分类快捷锚点 + 5 个分类区块（纯文字索引） |
 | `posts/<slug>/index.html` | 文章详情页（含「同类内容」推荐） |
-| `category/<slug>/index.html` | **【生成】** 分类页 × 5（顶部导航直达） |
+| `category/<slug>/index.html` | **【生成】** 分类页 × 5：页头统计 + 双栏纯文字索引 + 其他分类入口 |
 | `tools.json` | 工具索引 |
 | `tools/index.html` | 工具列表页 |
 | `tools/<slug>/index.html` | 工具页（片段 + 统一外壳） |
+| `about/` `privacy/` `disclaimer/` `terms/` `contact/` | **【生成】** 合规页 × 5（含「相关页面」区块） |
+| `sitemap.xml` | **【生成】** 35 条 URL（首页/列表/5 分类/工具/20 文章/5 合规页） |
+| `robots.txt` | **【生成】** `Allow: /` + `Disallow: /admin/` + Sitemap 声明 |
+| `404.html` | **【生成】** 自定义 404 页（`noindex`） |
 
 **设计取舍**：
 - 自带最小 markdown 渲染器，不引入 markdown 库 —— 构建链不会因依赖升级而碎
 - 页面样式全部内联 —— 本 zone 忽略 query string 且无 purge 权限，外部 CSS 改版必须换路径（铁律 7）；内联则零子资源、零缓存问题
-- **首页构建时静态生成**（非运行时 fetch）—— 内容站依赖 SEO，静态 HTML 可被爬虫直接抓取；同时彻底消除 fetch 失败导致的空白页
+- **首页与全部列表页构建时静态生成**（非运行时 fetch）—— 内容站依赖 SEO，静态 HTML 可被爬虫直接抓取；同时彻底消除 fetch 失败导致的空白页
+- **列表用纯文字索引而非大图卡片** —— 本轮改版要求「大气、CMS 索引感」；同时减少图片请求、加快首屏、避免大图与文字比例失衡
 - 顶部站头 + 导航栏由 `topbar()` 统一注入，所有页面共用一套，改一次全站生效
 - 工具源文件只写「片段」，外壳统一注入
+- `shell()` 统一输出 SEO 元信息：非 `noindex` 页面自动带 `robots: index, follow, max-image-preview:large`、canonical、OG 标签、`rel=sitemap`
 
 ## 五、文章写法（`posts/<slug>.md`）
 
@@ -107,13 +124,39 @@ draft: false         # true 则完全不发布
 
 `category` 必须是 5 个固定分类之一（含 emoji 与空格）。构建时按「正文最小标题层级」自动对齐到 `h2`，因此从 `##` 或 `#` 起写都能得到正确层级。
 
-## 六、顶部导航栏（全站统一）
+## 五之二、站点页面写法（`pages/<slug>.md`）
+
+合规页（关于/隐私/免责/条款/联系）走同一套 frontmatter，可在后台「站点页面」编辑：
+
+```yaml
+---
+title: 隐私政策
+slug: privacy          # 决定 URL：/privacy/
+desc: 页面副标题，会渲染为页头 .sub
+updated: 2026-10-24
+order: 2               # 页脚与「相关页面」的排序
+pri: 0.5               # sitemap 里的 priority
+---
+
+## 章节标题（正文从 ## 起写）
+
+正文写法与文章一致。
+```
+
+> ⚠️ 隐私政策是 AdSense 审核的核心，改动时务必保留：第三方广告 Cookie 说明、
+> 个性化广告退出方式（`adssettings.google.com` / `aboutads.info`）、数据保留与用户权利章节。
+> `_selfcheck.py` 与 CI 的 Verify 步骤均会对这些关键词做断言，删掉会直接构建失败。
+
+## 六、顶部导航栏（全站统一，8 项）
 
 | 顺序 | 文字 | 指向 |
 |---|---|---|
 | 1 | 首页 | `/` |
 | 2–6 | 婴幼儿养育 / 儿童教育 / 女性成长 / 家庭关系 / 两性亲密成长 | `/category/<slug>/` |
 | 7 | 小工具 | `/tools/` |
+| 8 | 关于 | `/about/` |
+
+页脚另设 7 项导航：关于我们 / 联系我们 / 隐私政策 / 免责声明 / 使用条款 / 全部内容 / 小工具，并展示联系邮箱 `contact@xiaoguaiguai.cn`。
 
 ## 七、数据模型（`tools/tools.json`）
 
@@ -242,6 +285,32 @@ CSP 的作用是拦掉 CF 边缘自动注入的 RUM 信标（`static.cloudflarei
 `observability.enabled=false` 与字符串剥离都无效，只有 CSP 能拦住。其中 `script-src` 必须含 `'unsafe-inline'`，
 否则首页与工具页的内联 `<script>` 会被全部拦死。
 
+## 十一之二、挂 Google AdSense 时需回改 CSP
+
+`_headers` 顶部已留出详细注释块。届时需在当前 CSP 基础上放行：
+
+| 指令 | 需追加 |
+|---|---|
+| `script-src` / `script-src-elem` | `https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com https://adservice.google.com` |
+| `frame-src` | `https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com` |
+| `connect-src` | `https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net` |
+| `img-src` | `https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net data:` |
+
+> ⚠️ 放行后 CF RUM 信标拦截不受影响（`script-src-elem` 里仍只列白名单域名，不含 `cloudflareinsights.com`），
+> 但 `script-src 'self'` 若被改成通配符就会同时放过 RUM。改完务必用 `_trash_e2e.cjs` 的「RUM 拦截」项复验。
+
+## 十一之三、SEO 与收录
+
+| 产物 | 作用 | 关键点 |
+|---|---|---|
+| `/sitemap.xml` | 供 Google/Bing 索引 | 35 条 URL，含 `lastmod`/`changefreq`/`priority`；**不含** `/admin`、`404`、`*.json` |
+| `/robots.txt` | 抓取指引 | `Allow: /`；`Disallow: /admin/`、`/posts.json`、`/tools.json`、`/404.html`；末尾声明 Sitemap |
+| `rel="sitemap"` | HTML 内声明 | `shell()` 自动注入 |
+| canonical | 去重 | 每页唯一，`https://xiaoguaiguai.cn<路径>` |
+| OG 标签 | 分享卡片 | `og:type/site_name/title/description/url` + `twitter:card` |
+
+提交入口：Google Search Console → 添加资源 `xiaoguaiguai.cn` → 提交 `https://xiaoguaiguai.cn/sitemap.xml`。
+
 ## 十二、待人工处理项
 
 1. ~~创建 GitHub OAuth App 并写入 Worker 环境变量~~ —— ✅ 已完成（2026-10-23）
@@ -255,6 +324,27 @@ CSP 的作用是拦掉 CF 边缘自动注入的 RUM 信标（`static.cloudflarei
    建议清单：📖 儿童教育（儿童专注计时器 / 亲子阅读打卡）、🌷 女性成长（情绪日记 / 四象限待办）、
    🏠 家庭关系（家务分工表 / 家庭开支记录）、💞 两性亲密成长（沟通句式转换器 / 纪念日计算）。
    复制 `tools/baby-age-calculator.html` 的片段结构即可，`build.mjs` 会自动生成外壳与列表项。
+8. **挂 Google AdSense** —— ⏳ 待办（信息页与 sitemap 已就绪，等审核通过后按「十一之二」放行 CSP）
+9. **提交 sitemap 到 Google Search Console / Bing Webmaster** —— ⏳ 待办（需站点所有者在浏览器登录操作）
+
+## 十二之二、本地验收脚本
+
+| 脚本 | 覆盖 | 基线 |
+|---|---|---|
+| `_selfcheck.py` | 产物文件存在性、域名收敛、合规页、sitemap/robots 内容 | 全部通过 |
+| `_trash_e2e.cjs` | 端到端 60 项：导航/首页/列表页/分类页/文章页/工具交互/合规页/SEO 产物/零外链 | **60/60** |
+| `_trash_layout.cjs` | 版式 DOM 度量 69 项：索引条目结构、双栏、字号行高、无横向溢出、图片位置 | **69/69** |
+
+本地跑法（需先起静态服务，**用 `_trash_serve.py` 而非 `python -m http.server`**——
+前者是多线程且模拟 Pages 的 404 回落，后者会产生连接重置与 404 判据假失败）：
+
+```bash
+python _trash_serve.py 8899 _dist        # 终端 A
+node _trash_e2e.cjs                      # 终端 B（NODE_PATH 指向 playwright）
+node _trash_layout.cjs
+```
+
+线上验收用 `_trash_e2e_live.cjs`（BASE 指向 `https://xiaoguaiguai.cn`）。
 
 ## 十三、许可
 
