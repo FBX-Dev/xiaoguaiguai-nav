@@ -1,21 +1,55 @@
+# ══════════════════════════════════════════════════════════
+# Cloudflare Pages 响应头
+# 语法（项目铁律 5）：# 注释、路径行顶格、头部行缩进两格。
+#
+# ⚠️ 关键约束：**同一个路径模式只能出现一次**。
+# 曾把 /posts/* 写两次（一次给 CSP、一次给 Cache-Control），
+# 实测两条都不生效（CSP 静默丢失）。所有头部必须写在同一块内。
+# 路径模式不同的块可以共存，CF 会把匹配到的块头部合并。
+# ══════════════════════════════════════════════════════════
+
 # ── 全站基础安全头 ─────────────────────────────
+# 刻意不放 CSP：/admin/ 需从 unpkg.com 加载 Sveltia CMS 的 CSS/JS
+# 并访问 api.github.com，一旦被 CSP 约束后台会直接打不开。
+# CSP 只针对内容页单独下发（见下）。
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
 
-# ── 页面不缓存，保证内容与后台即时生效 ─────────
+# ── 内容页 CSP ────────────────────────────────
+# 目的：关掉 Cloudflare 边缘自动注入的 RUM 信标
+#   （static.cloudflareinsights.com/beacon.min.js + /cdn-cgi/rum）。
+#   项目铁律 4：observability.enabled=false 与字符串剥离都无效，只有 CSP 能拦住。
+# 约束：
+#   - script-src 必须含 'unsafe-inline'，否则首页与工具页的内联 <script>
+#     会被全部拦死（工具将失去一切交互）。
+#   - connect-src 'self' 满足首页 fetch nav.json / posts.json / tools.json。
+#   - img-src 放行 https:，以便后台可填任意图床的封面地址。
+#
+# 注意：本 zone 忽略 query string 且 token 无 purge 权限，
+# 改完若未即时生效需等边缘缓存过期（铁律 7）。
 /
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
   Cache-Control: max-age=0, must-revalidate
 
+/posts/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Cache-Control: max-age=0, must-revalidate
+
+/tools/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Cache-Control: max-age=0, must-revalidate
+
+# ── 后台：不缓存，刻意不加 CSP ──────────────────
 /admin/
   Cache-Control: max-age=0, must-revalidate
 
 /admin
   Cache-Control: max-age=0, must-revalidate
 
-# ── 数据源与图标：短缓存但强制校验 ─────────────
+# ── 数据源：JSON 类型 + 不缓存 ──────────────────
 /nav.json
   Cache-Control: max-age=0, must-revalidate
   Content-Type: application/json; charset=utf-8
@@ -28,12 +62,6 @@
   Cache-Control: max-age=0, must-revalidate
   Content-Type: application/json; charset=utf-8
 
-# ── 内容与工具页：不缓存，保证后台发布后即时可见 ──
-/posts/*
-  Cache-Control: max-age=0, must-revalidate
-
-/tools/*
-  Cache-Control: max-age=0, must-revalidate
-
+# ── 图标：长缓存但强制校验 ─────────────────────
 /favicon.svg
   Cache-Control: max-age=86400, must-revalidate
