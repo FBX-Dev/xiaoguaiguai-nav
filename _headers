@@ -18,6 +18,31 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
 
+# ⚠️ 挂 Google AdSense 时必须回来改这里（现在还不用改）
+# 现有 CSP 会拦死 AdSense：
+#   1) 脚本：pagead2.googlesyndication.com / *.google.com 需进 script-src
+#      且必须含 'unsafe-inline'（AdSense 注入内联初始化脚本）
+#   2) 广告 iframe：需在 frame-src 放行 googleads.g.doubleclick.net 等
+#   3) 上报：connect-src 需放行 *.google.com / *.doubleclick.net
+#   4) 图片：img-src 需放行 *.google.com / *.gstatic.com
+# 届时应把下面每条 CSP 改成（示意）：
+#   default-src 'self';
+#   script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com
+#              https://partner.googleadservices.com https://*.google.com
+#              https://*.googlesyndication.com;
+#   script-src-elem 'self' 'unsafe-inline' https://pagead2.googlesyndication.com
+#              https://*.googlesyndication.com https://*.google.com;
+#   style-src 'self' 'unsafe-inline';
+#   img-src 'self' data: https:;
+#   connect-src 'self' https://*.google.com https://*.doubleclick.net
+#              https://*.googlesyndication.com;
+#   frame-src https://googleads.g.doubleclick.net https://*.google.com
+#              https://*.googlesyndication.com;
+#   font-src 'self' data:; frame-ancestors 'self'; base-uri 'self';
+#   form-action 'self'; object-src 'none'
+# 另外：本 zone 忽略 query string 且无 purge 权限 → 改完若未即时生效，
+# 需等边缘缓存过期（项目铁律 7）。
+
 # ── 内容页 CSP ────────────────────────────────
 # 目的：关掉 Cloudflare 边缘自动注入的 RUM 信标
 #   （static.cloudflareinsights.com/beacon.min.js + /cdn-cgi/rum）。
@@ -43,6 +68,40 @@
 
 /tools/*
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Cache-Control: max-age=0, must-revalidate
+
+# ── 合规页（关于 / 隐私 / 免责 / 条款 / 联系）──────────
+# 与内容页同一套 CSP。这几页是 AdSense 审核与搜索评估的必需项，
+# 必须可被正常抓取，不能加 noindex。
+# 用 `/xxx*` 通配：同时覆盖 `/about` 与 `/about/` 两种访问形式
+# （Pages 对目录索引两种都能出页，只写一种会漏掉另一种的头部）。
+/about*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Cache-Control: max-age=0, must-revalidate
+
+/privacy*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Cache-Control: max-age=0, must-revalidate
+
+/disclaimer*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Cache-Control: max-age=0, must-revalidate
+
+/terms*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Cache-Control: max-age=0, must-revalidate
+
+/contact*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Cache-Control: max-age=0, must-revalidate
+
+# ── SEO 文件：明确 Content-Type + 不缓存，便于搜索引擎及时读到 ──
+/sitemap.xml
+  Content-Type: application/xml; charset=utf-8
+  Cache-Control: max-age=0, must-revalidate
+
+/robots.txt
+  Content-Type: text/plain; charset=utf-8
   Cache-Control: max-age=0, must-revalidate
 
 # ── 后台：不缓存，刻意不加 CSP ──────────────────
