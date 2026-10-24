@@ -8,7 +8,8 @@
 - 图片存储：Cloudflare R2（桶 `xiaoguaiguai-media`），经 Worker 反代到 **`/media/*`**，**不上传 Git 仓库**
 
 > 首期**不启用任何子域名**，全部配置收敛于主域名。
-> 配图公开地址形如 `https://xiaoguaiguai.cn/media/<分类>/<文件名>`，详见 `_deliverables/R2配图上传指引.md`。
+> 配图公开地址形如 `https://xiaoguaiguai.cn/media/covers/<分类拼音>-<content|tool>.webp`，
+> 清单见 `_deliverables/R2配图清单.md`。配图已由 Agent 生成并上传（2026-10-24）。
 
 ## 一、一级分类（固定 5 个，不可新增/删减）
 
@@ -125,7 +126,7 @@ npx --yes wrangler@4 deploy
 上传配图（**`--remote` 不能省**，否则只写本地模拟桶）：
 
 ```bash
-npx --yes wrangler@4 r2 object put "xiaoguaiguai-media/yuer/01-growth-curve.webp" \
+npx --yes wrangler@4 r2 object put "xiaoguaiguai-media/covers/yuer-content.webp" \
   --file "本地路径.webp" --content-type "image/webp" --remote
 ```
 
@@ -142,9 +143,12 @@ npx --yes wrangler@4 r2 bucket cors set xiaoguaiguai-media --file cors.json
 ## 七、待人工处理项
 
 1. ~~创建 GitHub OAuth App 并写入 Worker 环境变量~~ —— ✅ 已完成（2026-10-23）
-2. 上传配图到 R2 并回填 `cover` 字段（指引见 `_deliverables/R2配图上传指引.md`，通道已就绪可直接传）
+2. ~~上传配图到 R2 并回填 `cover` 字段~~ —— ✅ 已完成（2026-10-24，Agent 代生成上传，10 张）
 3. ~~人工核验所有第三方外链~~ —— ✅ 已完成（40/40 可达，报告见 `_deliverables/外链复核报告.md`）
 4. ~~在 Cloudflare 为 `xiaoguaiguai.cn` 绑定 Pages 自定义域~~ —— ✅ 已完成
+
+> 截至 2026-10-24，原规划的 4 项人工项**已全部完成**（第 1/3/4 项此前完成，第 2 项经规划调整后由 Agent 代做）。
+> 后续如需更换配图，重新跑「生成 → 后处理 → 上传 → `_gen.py` 重生成 `nav.json` → 部署」即可。
 
 ## 八、许可
 
