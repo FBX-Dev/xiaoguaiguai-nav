@@ -62,6 +62,22 @@ jobs:
           done
           echo "✅ 产物完整性校验通过"
 
+      # 凭据前置检查：把「部署失败」翻译成「你需要做什么」。
+      # 未配置时明确失败而不是静默跳过 —— 静默跳过会让人误以为已上线。
+      - name: Check deploy credentials
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          missing=""
+          [ -z "$CF_TOKEN" ] && missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -z "$CF_ACCOUNT" ] && missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error title=缺少部署凭据::未配置:$missing。请到仓库 Settings → Secrets and variables → Actions → New repository secret 添加这两个 Secret，然后重新运行本工作流。CLOUDFLARE_API_TOKEN 需要 Account → Cloudflare Pages → Edit 权限。"
+            exit 1
+          fi
+          echo "✅ 部署凭据已配置"
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
