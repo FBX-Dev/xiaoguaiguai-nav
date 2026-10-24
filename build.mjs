@@ -568,7 +568,7 @@ ${items.map((i) => `      <a href="${i.href}"${i.key === active ? ' class="on" a
 </header>`;
 }
 
-function shell({ title, desc, body, canonical, active }) {
+function shell({ title, desc, body, canonical, active, noindex }) {
   const full = title === SITE.title ? `${SITE.title} · ${SITE.subtitle}` : `${title} ｜ ${SITE.title} · ${SITE.subtitle}`;
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -577,6 +577,7 @@ function shell({ title, desc, body, canonical, active }) {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${escapeHtml(full)}</title>
 <meta name="description" content="${escapeHtml(desc || SITE.desc)}" />
+${noindex ? `<meta name="robots" content="noindex" />` : ""}
 ${canonical ? `<link rel="canonical" href="${SITE.origin}${canonical}" />` : ""}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <style>${BASE_CSS}</style>
@@ -948,6 +949,29 @@ ${g.items
   .join("\n")}`;
   fs.writeFileSync(path.join(OUT, "tools", "index.html"), shell({ title: "自研小工具", desc: "小乖乖自研的家庭实用小工具，纯前端运行，不上传任何数据。", body: toolBody, canonical: "/tools/", active: "tools" }), "utf8");
   log("  工具列表页 /tools/");
+
+  // 404 页：CF Pages 只要产物根存在 404.html 就会对未知路径返回真 404。
+  // 缺它时未知路径会回落成「200 + 首页」，形成软 404 —— 对内容站 SEO 有害。
+  const notFoundBody = `
+<header class="page">
+  <h1>页面走丢了</h1>
+  <div class="meta"><span>404 Not Found</span></div>
+</header>
+<section class="block">
+  <p class="lead">这个地址在站内不存在，可能是链接过期或输入有误。</p>
+  <div class="grid">
+    <a class="card" href="/"><div class="row"><span class="title">回到首页</span></div><p class="desc">置顶精选与最新文章都在这里</p></a>
+    <a class="card" href="/posts/"><div class="row"><span class="title">全部文章</span></div><p class="desc">按分类浏览 ${posts.length} 篇原创内容</p></a>
+    <a class="card" href="/tools/"><div class="row"><span class="title">自研小工具</span></div><p class="desc">共 ${tools.length} 个，纯前端运行</p></a>
+  </div>
+</section>
+<p class="backlink"><a href="/">← 返回首页</a></p>`;
+  fs.writeFileSync(
+    path.join(OUT, "404.html"),
+    shell({ title: "页面走丢了", desc: "页面不存在。", body: notFoundBody, noindex: true }),
+    "utf8"
+  );
+  log("  404 页 /404.html");
 
   log(`\n✅ 构建完成 → ${OUT}`);
   log(`   文章 ${posts.length} 篇 ｜ 分类 ${CATS.length} 个 ｜ 工具 ${tools.length} 个`);
