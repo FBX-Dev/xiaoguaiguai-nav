@@ -20,5 +20,20 @@
   Cache-Control: max-age=0, must-revalidate
   Content-Type: application/json; charset=utf-8
 
+/posts.json
+  Cache-Control: max-age=0, must-revalidate
+  Content-Type: application/json; charset=utf-8
+
+/tools.json
+  Cache-Control: max-age=0, must-revalidate
+  Content-Type: application/json; charset=utf-8
+
+# ── 内容与工具页：不缓存，保证后台发布后即时可见 ──
+/posts/*
+  Cache-Control: max-age=0, must-revalidate
+
+/tools/*
+  Cache-Control: max-age=0, must-revalidate
+
 /favicon.svg
   Cache-Control: max-age=86400, must-revalidate
