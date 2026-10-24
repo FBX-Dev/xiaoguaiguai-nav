@@ -1234,12 +1234,50 @@ Disallow: /posts.json
 Disallow: /tools.json
 Disallow: /404.html
 
-# 明确允许主流搜索引擎抓取正文与图片
+# ── 显式放行主流搜索引擎 ──────────────────────────────────────
+# 注意：Cloudflare 的托管 robots.txt（Content Signals Policy）会在此文件
+# 之前追加一段 "BEGIN/END Cloudflare Managed content" 块，其中把
+# Baiduspider / PetalBot 误当作「训练爬虫」写了 Disallow: /。
+# 那是 CF 的已知问题（这两个是中国百度与华为的搜索爬虫，不是训练爬虫）。
+# 关闭开关在 Dashboard → 对应 zone → Security → Settings（免费版可用）。
+# 在关闭之前，这里显式声明 Allow，按 RFC 9309 第 2.2.2 节：
+# 同一 User-agent 的多个分组须合并，同等具体度的 Allow / Disallow 取较宽松者。
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: PetalBot
+Allow: /
+
+User-agent: Sogou web spider
+Allow: /
+
+User-agent: 360Spider
+Allow: /
+
+User-agent: YisouSpider
+Allow: /
+
+# ── 明确拒绝生成式 AI 训练爬虫 ────────────────────────────────
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
 
 Sitemap: ${SITE.origin}/sitemap.xml
 `;
