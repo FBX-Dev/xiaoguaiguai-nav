@@ -23,9 +23,8 @@
 #   （static.cloudflareinsights.com/beacon.min.js + /cdn-cgi/rum）。
 #   项目铁律 4：observability.enabled=false 与字符串剥离都无效，只有 CSP 能拦住。
 # 约束：
-#   - script-src 必须含 'unsafe-inline'，否则首页与工具页的内联 <script>
-#     会被全部拦死（工具将失去一切交互）。
-#   - connect-src 'self' 满足首页 fetch nav.json / posts.json / tools.json。
+#   - script-src 必须含 'unsafe-inline'，否则工具页的内联 <script>
+#     会被拦死（工具将失去一切交互）。首页已改为构建时静态生成，无内联脚本。
 #   - img-src 放行 https:，以便后台可填任意图床的封面地址。
 #
 # 注意：本 zone 忽略 query string 且 token 无 purge 权限，
@@ -35,6 +34,10 @@
   Cache-Control: max-age=0, must-revalidate
 
 /posts/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Cache-Control: max-age=0, must-revalidate
+
+/category/*
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-elem 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'
   Cache-Control: max-age=0, must-revalidate
 
@@ -50,10 +53,6 @@
   Cache-Control: max-age=0, must-revalidate
 
 # ── 数据源：JSON 类型 + 不缓存 ──────────────────
-/nav.json
-  Cache-Control: max-age=0, must-revalidate
-  Content-Type: application/json; charset=utf-8
-
 /posts.json
   Cache-Control: max-age=0, must-revalidate
   Content-Type: application/json; charset=utf-8
