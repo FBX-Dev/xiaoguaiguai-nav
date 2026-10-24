@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-25",
+  "base": "https://xiaoguaiguai.cn",
+  "commit": "8b6bc7c5bf3cccbef8c1324d59f28cfa30c5be45",
+  "total": 56,
+  "passed": 56,
+  "failed": 0,
+  "note": "含 11 个固定页 + 5 个分类页 + 20 个工具页 + 20 篇工具引导文。/404.html 返回 308 属 CF Pages 的 trailing-slash 规范化重定向，视为正常。",
+  "groups": {
+    "fixed": ["/", "/posts/", "/tools/", "/about/", "/privacy/", "/disclaimer/", "/terms/", "/contact/", "/sitemap.xml", "/robots.txt", "/404.html"],
+    "category": ["/category/yuer/", "/category/jiaoyu/", "/category/nvxing/", "/category/jiating/", "/category/qinmi/"],
+    "tools": 20,
+    "guidePosts": 20
+  },
+  "extra": {
+    "unknownPath": { "url": "/zzz-not-exist-xyz/", "code": 404, "expected": 404, "ok": true },
+    "sitemapUrlCount": 93,
+    "postsCount": 60,
+    "toolsCount": 20,
+    "withToolField": 20,
+    "withGuideField": 20
+  }
+}
