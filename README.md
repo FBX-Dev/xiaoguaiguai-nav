@@ -334,22 +334,33 @@ CSP 的作用是拦掉 CF 边缘自动注入的 RUM 信标（`static.cloudflarei
 
 ## 十二之二、本地验收脚本
 
+> ⚠️ 这些脚本**不纳入版本控制**（`.gitignore` 的 `_trash_*` 与 `_selfcheck.py`）。
+> 它们只存在于本机工作目录，克隆仓库拿不到——本节是**契约文档**：换机器时按此表重建，判据必须一致。
+
 | 脚本 | 覆盖 | 基线 |
 |---|---|---|
-| `_selfcheck.py` | 产物文件存在性、域名收敛、合规页、sitemap/robots 内容 | 全部通过 |
+| `_selfcheck.py` | 产物文件存在性、域名收敛、合规页、sitemap/robots 内容、**每分类工具配额** | 全部通过 |
 | `_trash_e2e.cjs` | 端到端 78 项：导航/首页/列表页/分类页/文章页/工具交互（全部 10 个）/合规页/SEO 产物/零外链 | **78/78** |
 | `_trash_layout.cjs` | 版式 DOM 度量 79 项：索引条目结构、双栏、字号行高、无横向溢出、图片位置、全部 10 个工具页版式 | **79/79** |
 
-本地跑法（需先起静态服务，**用 `_trash_serve.py` 而非 `python -m http.server`**——
-前者是多线程且模拟 Pages 的 404 回落，后者会产生连接重置与 404 判据假失败）：
+**同一份脚本跑本地与线上**，用 `BASE` 切换（不要再建 `_live` 副本——两份必然漂移，
+线上那份曾长期停在「20 篇 / 2 工具」，直接跑会把线上全绿误判成大面积失败）：
 
 ```bash
-python _trash_serve.py 8899 _dist        # 终端 A
-node _trash_e2e.cjs                      # 终端 B（NODE_PATH 指向 playwright）
-node _trash_layout.cjs
+# 本地：需先起静态服务。用 _trash_serve.py 而非 python -m http.server ——
+# 前者是多线程且模拟 Pages 的 404 回落，后者会产生连接重置与 404 判据假失败
+python _trash_serve.py 8899 _dist              # 终端 A
+NODE_PATH=<playwright 所在> node _trash_e2e.cjs      # 终端 B，默认 BASE=127.0.0.1:8899
+NODE_PATH=<playwright 所在> node _trash_layout.cjs
+
+# 线上
+BASE=https://xiaoguaiguai.cn NODE_PATH=<playwright 所在> node _trash_e2e.cjs
+BASE=https://xiaoguaiguai.cn NODE_PATH=<playwright 所在> node _trash_layout.cjs
 ```
 
-线上验收用 `_trash_e2e_live.cjs`（BASE 指向 `https://xiaoguaiguai.cn`）。
+**Playwright 两个坑**：① `alert`/`confirm` 用全局 `page.on("dialog", d => d.accept().catch(()=>{}))`
+统一接管，不要在各用例里注册 `page.once("dialog")`——残留监听器会在下一个弹窗上重复 accept，
+抛 `already handled` 中断整个脚本。② ESM 不认 `NODE_PATH`，脚本须用 `.cjs`。
 
 ## 十三、许可
 
