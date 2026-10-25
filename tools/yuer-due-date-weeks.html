@@ -1,0 +1,193 @@
+<div class="tool">
+  <div class="panel">
+    <h2>填一个日期</h2>
+    <div class="field">
+      <label class="lbl" for="lmp">末次月经第一天</label>
+      <input type="date" id="lmp" />
+      <div class="hint">如果记不清具体日期，早孕 B 超推算出的孕周通常更准。本工具用的是通用算法，实际以产检医生的判断为准。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="cycle">平时月经周期长度（天）</label>
+      <input type="number" id="cycle" min="21" max="40" step="1" value="28" />
+      <div class="hint">周期规律的人填自己的天数即可。周期越不规律，这个算法的误差越大。</div>
+    </div>
+    <div class="btns">
+      <button id="calc">开始推算</button>
+      <button id="clear" class="ghost">清空</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>推算结果</h2>
+    <div class="kv" id="kv"></div>
+    <div id="bar-wrap" style="margin-top:18px"></div>
+    <div class="hint" id="note-bar" style="margin-top:10px"></div>
+  </div>
+
+  <div class="panel" id="sched" style="display:none">
+    <h2>常见产检节点</h2>
+    <div class="hint" style="margin-bottom:14px">
+      下面按孕周列出常见的检查节点，并标出你现在走到哪一步。不同医院、不同孕妇的安排并不相同，以产检医院给的时间为准。
+    </div>
+    <div id="sched-list"></div>
+  </div>
+
+  <div class="panel">
+    <h2>几个常见问题</h2>
+    <ul class="plain">
+      <li><strong>预产期是一个「范围的中点」，不是一个截止日。</strong>真正在预产期当天出生的宝宝只是一小部分。医学上把 37 周整到 41 周加 6 天都算足月，提前或推后一两周都很常见。</li>
+      <li><strong>为什么周期长的人要往后推。</strong>这个算法的原理是「排卵发生在下次月经前约 14 天」。周期 35 天的人，排卵比 28 天的人晚约 7 天，所以预产期也相应往后推 7 天。</li>
+      <li><strong>算出来的孕周和 B 超不一样，听谁的。</strong>一般以早孕期的 B 超为准，尤其是 12 周之前做的。中晚期的 B 超会受到宝宝发育快慢的影响，用来核对孕周不如早期准。</li>
+      <li><strong>孕周从哪天开始算。</strong>从末次月经第一天开始算，不是从受孕那天算。所以发现自己怀孕时，通常已经算 4 到 5 周了。</li>
+      <li><strong>预产期推后了要催产吗。</strong>这属于医疗决定，医生会综合胎动、羊水、胎盘功能、胎心监护等多项指标来判断。不要自己按日历做决定。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具只做日期层面的推算，不判断胎儿大小、发育情况或分娩时机，也不构成任何医学建议。
+      任何关于孕周核对、产检安排、分娩方式的问题，请咨询产检医生。所有输入数据只保存在你的浏览器里，不上传。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_due_date";
+
+  // 常见产检节点（按孕周），仅作参考提示，不作医学安排
+  var NODES = [
+    [6, 8, "首次超声", "确认宫内妊娠、看胎心胎芽，同时核对孕周。"],
+    [11, 13, "NT 检查（早唐）", "通过超声测量颈后透明层厚度，一般在 13 周加 6 天前完成。"],
+    [15, 20, "中期唐筛或无创 DNA", "具体做哪一项、要不要做，由医生根据年龄和筛查结果建议。"],
+    [20, 24, "系统超声（大排畸）", "较全面地观察各器官结构，是孕期最重要的一次超声。"],
+    [24, 28, "糖耐量试验（OGTT）", "筛查妊娠期糖尿病，需要空腹，通常要抽三次血。"],
+    [28, 36, "每 2 到 4 周产检一次", "进入孕晚期，开始关注胎动、血压、水肿等变化。"],
+    [36, 40, "每周产检", "评估胎位、骨盆条件与分娩方式，随时可能进入待产状态。"],
+    [40, 42, "预产期前后", "过了预产期仍未发动，医生会加密监护，必要时讨论引产。"]
+  ];
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+  function parseD(s) {
+    var a = String(s || "").split("-");
+    if (a.length !== 3) return null;
+    var d = new Date(parseInt(a[0], 10), parseInt(a[1], 10) - 1, parseInt(a[2], 10));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function addDays(d, n) { var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
+  function fmtD(d) { return d.getFullYear() + " 年 " + (d.getMonth() + 1) + " 月 " + d.getDate() + " 日"; }
+  function fmtShort(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function diffDays(a, b) { return Math.round((b.getTime() - a.getTime()) / 86400000); }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        lmp: document.getElementById("lmp").value,
+        cycle: document.getElementById("cycle").value
+      }));
+    } catch (e) {}
+  }
+
+  function restore() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (raw) {
+        if (raw.lmp) document.getElementById("lmp").value = raw.lmp;
+        if (raw.cycle) document.getElementById("cycle").value = raw.cycle;
+      }
+    } catch (e) {}
+  }
+
+  function calc() {
+    var lmp = parseD(document.getElementById("lmp").value);
+    if (!lmp) { alert("请先选择末次月经的第一天。"); return; }
+
+    var cycle = parseInt(document.getElementById("cycle").value, 10);
+    if (!isFinite(cycle) || cycle < 21 || cycle > 40) cycle = 28;
+
+    // 周期修正：以 28 天为基准，每多一天，排卵与预产期相应后移一天
+    var adjust = cycle - 28;
+    var origin = addDays(lmp, adjust);          // 修正后的计算起点
+    var due = addDays(origin, 280);             // 预产期 = 起点 + 280 天（40 周）
+
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    var totalDays = diffDays(origin, today);
+    if (totalDays < 0) {
+      document.getElementById("kv").innerHTML =
+        '<div class="cell"><div class="k">提示</div><div class="v" style="font-size:15px">这个日期还没到</div></div>';
+      document.getElementById("out").style.display = "block";
+      document.getElementById("bar-wrap").innerHTML = "";
+      document.getElementById("note-bar").textContent = "";
+      document.getElementById("sched").style.display = "none";
+      return;
+    }
+
+    var weeks = Math.floor(totalDays / 7);
+    var days = totalDays % 7;
+    var left = diffDays(today, due);
+    var pct = Math.max(0, Math.min(100, (totalDays / 280) * 100));
+
+    var trimester = totalDays < 14 * 7 ? "孕早期" : (totalDays < 28 * 7 ? "孕中期" : "孕晚期");
+
+    var leftTxt;
+    if (left > 0) leftTxt = "还有 " + left + " 天";
+    else if (left === 0) leftTxt = "就是今天";
+    else leftTxt = "已过 " + Math.abs(left) + " 天";
+
+    document.getElementById("kv").innerHTML =
+      '<div class="cell"><div class="k">当前孕周</div><div class="v">' + weeks + ' <small>周</small> ' + days + ' <small>天</small></div></div>' +
+      '<div class="cell"><div class="k">预产期</div><div class="v" style="font-size:17px">' + fmtD(due) + '</div></div>' +
+      '<div class="cell"><div class="k">距离预产期</div><div class="v" style="font-size:17px">' + leftTxt + '</div></div>' +
+      '<div class="cell"><div class="k">所处阶段</div><div class="v" style="font-size:17px">' + trimester + '</div></div>' +
+      '<div class="cell"><div class="k">已怀孕天数</div><div class="v">' + totalDays + ' <small>天</small></div></div>' +
+      '<div class="cell"><div class="k">修正后的起点</div><div class="v" style="font-size:15px">' + fmtShort(origin) + '</div></div>';
+
+    document.getElementById("bar-wrap").innerHTML =
+      '<div class="hint" style="margin-bottom:6px">孕期进度（按 40 周计）</div>' +
+      '<div style="height:10px;background:#f2ece3;border-radius:99px;overflow:hidden">' +
+      '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:var(--accent);transition:width .3s"></div></div>';
+
+    var noteBar = "";
+    if (cycle !== 28) {
+      noteBar = "已按你填写的 " + cycle + " 天周期，把起点整体后移 " + adjust + " 天。周期不规律时误差会更大，建议以早孕 B 超为准。";
+    } else {
+      noteBar = "按标准 28 天周期计算。如果平时周期偏长或偏短，把上面的周期改成实际天数会更贴近。";
+    }
+    document.getElementById("note-bar").textContent = noteBar;
+
+    // 产检节点：标出已过 / 当前 / 未到
+    var html = "";
+    for (var i = 0; i < NODES.length; i++) {
+      var n = NODES[i];
+      var st, cls;
+      if (weeks > n[1]) { st = "已过"; cls = "color:#b3aa9e"; }
+      else if (weeks >= n[0] - 1 && weeks <= n[1]) { st = "当前阶段"; cls = "color:var(--accent);font-weight:600"; }
+      else { st = "未到"; cls = "color:#b3aa9e"; }
+
+      var span = n[0] === n[1] ? (n[0] + " 周") : (n[0] + " 到 " + n[1] + " 周");
+      html += '<div class="chk"><div class="nm">' +
+        '<strong>' + span + '　' + n[2] + '</strong>' +
+        '<em>' + n[3] + '</em>' +
+        '</div><div class="st" style="' + cls + '">' + st + '</div></div>';
+    }
+    document.getElementById("sched-list").innerHTML = html;
+    document.getElementById("sched").style.display = "block";
+    document.getElementById("out").style.display = "block";
+  }
+
+  document.getElementById("calc").addEventListener("click", function () { save(); calc(); });
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!confirm("确定清空已填的日期吗？")) return;
+    document.getElementById("lmp").value = "";
+    document.getElementById("cycle").value = "28";
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    document.getElementById("out").style.display = "none";
+    document.getElementById("sched").style.display = "none";
+  });
+
+  document.getElementById("lmp").addEventListener("change", save);
+  document.getElementById("cycle").addEventListener("change", save);
+
+  restore();
+})();
+</script>

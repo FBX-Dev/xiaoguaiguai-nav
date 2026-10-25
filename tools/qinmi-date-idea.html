@@ -1,0 +1,231 @@
+<div class="tool">
+  <div class="panel">
+    <h2>先说清楚条件</h2>
+    <div class="field">
+      <label class="lbl" for="budget">这次大概能花多少（元）</label>
+      <input type="number" id="budget" min="0" step="10" value="100" />
+      <div class="hint">填 0 也行，会给你不需要花钱的方案。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="time">能空出多久</label>
+      <div class="tabs" id="time-tabs">
+        <button data-h="0.5">半小时以内</button>
+        <button data-h="2" class="on">两三个小时</button>
+        <button data-h="5">半天</button>
+        <button data-h="10">一整天</button>
+      </div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="when">什么时候去</label>
+      <div class="tabs" id="when-tabs">
+        <button data-w="day" class="on">白天</button>
+        <button data-w="night">晚上</button>
+      </div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="withkid">孩子</label>
+      <div class="tabs" id="kid-tabs">
+        <button data-k="none" class="on">不带孩子</button>
+        <button data-k="with">带着孩子</button>
+      </div>
+    </div>
+    <div class="btns">
+      <button id="gen">给我几个方案</button>
+      <button id="again" class="ghost">换一批</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>可以试试这些</h2>
+    <div class="hint" style="margin-bottom:14px" id="cond-line"></div>
+    <div id="list"></div>
+  </div>
+
+  <div class="panel">
+    <h2>比「去哪」更重要的几件事</h2>
+    <ul class="plain">
+      <li><strong>约会不是必须出门、必须花钱。</strong>很多夫妻的问题不是没时间，而是「在一起的时候也没真的在一起」——各自刷手机，坐同一张沙发，两小时没说过一句完整的话。先解决这个，比安排一场大活动管用。</li>
+      <li><strong>时间要像开会一样先定下来。</strong>「等有空再说」通常等于永远没空。哪怕只是每周固定一个晚上九点以后不看手机，写进日历里，也比随机发生要可靠。</li>
+      <li><strong>别把约会变成「复盘大会」。</strong>难得单独待一会儿，用来谈孩子学费、谈家务分工、谈上次吵架谁对谁错，气氛就没了。要谈正事，另约一个时间专门谈。</li>
+      <li><strong>有孩子的家庭，关键是把孩子安顿好。</strong>要么请人帮带，要么等孩子睡了之后在自己家安排。别指望「一边带孩子一边约会」，那只会两头都做不好。</li>
+      <li><strong>新鲜感来自做点没做过的事，不来自花多少钱。</strong>一起走一条没走过的路、一起做一顿没做过的菜、一起看一部谁都没看过的老电影——这些都不贵，但和日常不一样。</li>
+      <li><strong>如果两个人已经很久没话说了，从「一起做点什么」开始，比从「谈谈我们」开始容易。</strong>并排做一件事时说的话，往往比面对面谈心时更自然。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具只提供活动灵感，不评估你们的关系状况。如果你们正处在长期的冷战、频繁冲突，
+      或任何一方感到被伤害、被控制的状态，一次约会解决不了根本问题，建议寻求专业的婚姻家庭咨询帮助。
+      所有输入数据只保存在你的浏览器里，不上传。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_date_idea";
+
+  var budget = 100, timeH = 2, when = "day", kid = "none";
+
+  // 活动库：名称 / 适用时长(小时) / 大致花费(元) / 时段 / 可否带娃 / 说明
+  var POOL = [
+    ["一起做一顿平时不做的饭", 2, 60, "night", "with", "选一道两个人都没做过的菜，一起买菜、一起做。重点不是好不好吃，是一起完成一件事。"],
+    ["沿一条没走过的路散步", 1, 0, "day", "with", "定一个方向，走四十分钟再回来。路上不许聊孩子和钱，聊点别的。"],
+    ["去菜市场逛一圈", 1.5, 50, "day", "with", "不为了买什么，就是一起看看、挑挑、讲讲价。烟火气本身就是一种陪伴。"],
+    ["找家没去过的早餐店", 1, 30, "day", "none", "早起一小时，去一个没去过的早点铺。早上的时间安静，说话也不赶。"],
+    ["一起看一部老电影", 2.5, 0, "night", "none", "挑一部两个人年轻时都看过的，看看现在再看是什么感觉。"],
+    ["翻旧照片和聊天记录", 1, 0, "night", "none", "把刚在一起时的照片翻出来看。很多话会自己冒出来。"],
+    ["去公园坐着，什么也不干", 1.5, 0, "day", "with", "带两杯喝的，找张长椅坐下。可以说话，也可以就坐着。"],
+    ["一起逛一次书店", 2, 80, "day", "with", "各挑一本想看的，回家交换着看。下次见面聊聊各自看到哪了。"],
+    ["去附近的湖边或河边", 3, 20, "day", "with", "带点吃的，找块草地。比商场安静，也比商场便宜。"],
+    ["打一局桌游或扑克", 1.5, 0, "night", "with", "在家里就能玩。输赢有点小赌注更有意思，比如输了负责洗碗。"],
+    ["一起整理一个角落", 2, 0, "day", "with", "挑一个柜子或一个抽屉，一起清空、分类、放回去。做完了会有种奇怪的满足感。"],
+    ["去逛一次花鸟市场", 2, 50, "day", "with", "不一定买，看看花草鱼鸟。挑一盆最便宜的回家养，也算有了共同的东西。"],
+    ["骑车沿河堤走一段", 2.5, 0, "day", "with", "共享单车就行。骑到哪儿算哪儿，累了就停。"],
+    ["去一趟博物馆或展览", 3, 0, "day", "with", "多数城市的公共博物馆免费。看什么不重要，重要的是两个人一起看。"],
+    ["给对方剪一次指甲 / 做个简单按摩", 0.5, 0, "night", "none", "听起来很琐碎，但这种身体接触的日常照料，比刻意安排浪漫更管用。"],
+    ["一起列一个「明年想做的事」清单", 1.5, 0, "night", "none", "各自写十条，然后交换，挑出三个都想要的。比空谈未来具体得多。"],
+    ["去吃一家从来没吃过的路边摊", 1.5, 40, "night", "none", "不看点评、不挑环境，看到什么吃什么。冒险本身就有意思。"],
+    ["一起去剪头发", 2, 60, "day", "none", "各剪各的，剪完一起看看对方的新样子。小事，但会有新鲜感。"],
+    ["找一个高处看城市", 1.5, 0, "night", "none", "天桥、山坡、楼顶都行。看看灯，聊聊天。"],
+    ["一起做一次「不用手机的晚饭」", 2, 80, "night", "with", "吃饭这一个小时，手机放在另一个房间。开始会不习惯，十分钟后就正常了。"],
+    ["去一趟旧货市场或跳蚤市场", 3, 100, "day", "with", "一起淘点没用的东西。判断「值不值」的过程，比买什么有趣。"],
+    ["一起学一道新菜的视频", 2, 50, "night", "with", "跟着视频做，中间肯定会出岔子。笑一场也是收获。"],
+    ["去附近的寺庙或老街走走", 3, 0, "day", "with", "不烧香也行，就是走走看看。安静的地方话更容易说出口。"],
+    ["一起看一场现场演出", 3, 150, "night", "none", "小剧场、livehouse、相声、话剧都算。现场的感受和在家看屏幕完全不同。"]
+  ];
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ budget: budget, timeH: timeH, when: when, kid: kid }));
+    } catch (e) {}
+  }
+  function restore() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (!raw) return;
+      if (raw.budget != null) { budget = raw.budget; document.getElementById("budget").value = raw.budget; }
+      if (raw.timeH != null) {
+        timeH = raw.timeH;
+        var tb = document.querySelectorAll("#time-tabs button");
+        for (var i = 0; i < tb.length; i++) tb[i].className = parseFloat(tb[i].getAttribute("data-h")) === timeH ? "on" : "";
+      }
+      if (raw.when) {
+        when = raw.when;
+        var wb = document.querySelectorAll("#when-tabs button");
+        for (var j = 0; j < wb.length; j++) wb[j].className = wb[j].getAttribute("data-w") === when ? "on" : "";
+      }
+      if (raw.kid) {
+        kid = raw.kid;
+        var kb = document.querySelectorAll("#kid-tabs button");
+        for (var m = 0; m < kb.length; m++) kb[m].className = kb[m].getAttribute("data-k") === kid ? "on" : "";
+      }
+    } catch (e) {}
+  }
+
+  function pick() {
+    var b = parseFloat(document.getElementById("budget").value);
+    if (!isFinite(b) || b < 0) b = 0;
+
+    var cands = [];
+    for (var i = 0; i < POOL.length; i++) {
+      var p = POOL[i];
+      if (p[2] > b) continue;                          // 花费超出预算
+      if (p[1] > timeH + 0.01) continue;               // 时长超出可空出的时间
+      if (when === "night" && p[3] !== "night") continue;
+      if (when === "day" && p[3] !== "day") continue;
+      if (kid === "with" && p[4] !== "with") continue;
+      if (kid === "none" && p[4] !== "none") continue;
+      cands.push(p);
+    }
+
+    // 放宽条件：如果严筛后不足 3 条，依次放松 时段 → 时长 → 预算
+    if (cands.length < 3) {
+      cands = [];
+      for (var q = 0; q < POOL.length; q++) {
+        var x = POOL[q];
+        if (x[2] > b) continue;
+        if (kid === "with" && x[4] !== "with") continue;
+        if (kid === "none" && x[4] !== "none") continue;
+        cands.push(x);
+      }
+    }
+    if (cands.length < 3) {
+      cands = [];
+      for (var r = 0; r < POOL.length; r++) {
+        if (POOL[r][4] === kid || kid === "with") cands.push(POOL[r]);
+      }
+    }
+    if (!cands.length) cands = POOL.slice();
+
+    // 随机取 3 条，避免每次顺序一样
+    var out = [];
+    var pool = cands.slice();
+    while (out.length < 3 && pool.length) {
+      out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    }
+
+    var cond = "预算 " + b + " 元以内 ｜ 时间 " +
+      (timeH <= 0.5 ? "半小时以内" : timeH <= 2 ? "两三个小时" : timeH <= 5 ? "半天" : "一整天") +
+      " ｜ " + (when === "day" ? "白天" : "晚上") +
+      " ｜ " + (kid === "with" ? "带孩子" : "不带孩子");
+    document.getElementById("cond-line").textContent = cond;
+
+    var html = "";
+    for (var o = 0; o < out.length; o++) {
+      var it = out[o];
+      html += '<div class="chk" style="align-items:flex-start">' +
+        '<div class="nm"><strong>' + esc(it[0]) + '</strong>' +
+        '<em>' + esc(it[5]) + '</em>' +
+        '<div class="hint" style="margin-top:6px">约 ' + it[1] + ' 小时　·　花费约 ' + (it[2] === 0 ? "0 元" : it[2] + " 元") +
+        '　·　' + (it[3] === "day" ? "白天" : "晚上") +
+        '　·　' + (it[4] === "with" ? "可以带孩子" : "适合两个人单独去") + '</div>' +
+        '</div></div>';
+    }
+    html += '<div class="note" style="margin-top:16px">' +
+      '这三条是按你给的条件随机挑的。<strong>如果一条都提不起兴趣，说明条件可能设得太紧了</strong>——' +
+      '试着把预算或时间放宽一点，或者换一批看看。' +
+      '另外，真正让一次约会不一样的，往往不是选了什么，而是这期间有没有把手机放下。' +
+      '</div>';
+
+    document.getElementById("list").innerHTML = html;
+    document.getElementById("out").style.display = "block";
+  }
+
+  var timeTabs = document.querySelectorAll("#time-tabs button");
+  for (var i = 0; i < timeTabs.length; i++) {
+    timeTabs[i].addEventListener("click", function () {
+      for (var k = 0; k < timeTabs.length; k++) timeTabs[k].className = "";
+      this.className = "on";
+      timeH = parseFloat(this.getAttribute("data-h"));
+      save();
+    });
+  }
+  var whenTabs = document.querySelectorAll("#when-tabs button");
+  for (var j = 0; j < whenTabs.length; j++) {
+    whenTabs[j].addEventListener("click", function () {
+      for (var k = 0; k < whenTabs.length; k++) whenTabs[k].className = "";
+      this.className = "on";
+      when = this.getAttribute("data-w");
+      save();
+    });
+  }
+  var kidTabs = document.querySelectorAll("#kid-tabs button");
+  for (var m = 0; m < kidTabs.length; m++) {
+    kidTabs[m].addEventListener("click", function () {
+      for (var k = 0; k < kidTabs.length; k++) kidTabs[k].className = "";
+      this.className = "on";
+      kid = this.getAttribute("data-k");
+      save();
+    });
+  }
+
+  document.getElementById("gen").addEventListener("click", function () { save(); pick(); });
+  document.getElementById("again").addEventListener("click", pick);
+  document.getElementById("budget").addEventListener("change", save);
+
+  restore();
+})();
+</script>

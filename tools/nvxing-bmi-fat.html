@@ -1,0 +1,238 @@
+<div class="tool">
+  <div class="panel">
+    <h2>填几个数字</h2>
+    <div class="field">
+      <label class="lbl" for="height">身高（厘米）</label>
+      <input type="number" id="height" min="120" max="210" step="0.5" placeholder="例如 162" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="weight">体重（公斤）</label>
+      <input type="number" id="weight" min="30" max="200" step="0.1" placeholder="例如 58" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="waist">腰围（厘米，可不填）</label>
+      <input type="number" id="waist" min="40" max="150" step="0.5" placeholder="例如 72" />
+      <div class="hint">量肚脐水平一圈，呼气末量。填了会给一个腰围相关的提示，不填也能算。</div>
+    </div>
+    <div class="btns">
+      <button id="calc">开始计算</button>
+      <button id="clear" class="ghost">清空</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>结果</h2>
+    <div class="kv" id="kv"></div>
+    <div id="scale-wrap" style="margin-top:20px"></div>
+    <div class="hint" id="bmi-tip" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel" id="fat" style="display:none">
+    <h2>体脂率的估算</h2>
+    <div class="hint" style="margin-bottom:14px">
+      体脂率没法只靠身高体重算准，下面的估算用的是美国海军常用的围度公式的简化版，
+      <strong>需要你额外量几个围度</strong>。量不准的话，误差会比较大。
+    </div>
+    <div class="field">
+      <label class="lbl" for="neck">颈围（厘米）</label>
+      <input type="number" id="neck" min="20" max="60" step="0.5" placeholder="例如 32" />
+      <div class="hint">喉结下方最细处水平一圈。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="hip">臀围（厘米）</label>
+      <input type="number" id="hip" min="50" max="160" step="0.5" placeholder="例如 92" />
+      <div class="hint">臀部最宽处水平一圈。</div>
+    </div>
+    <div class="btns">
+      <button id="calc-fat">估算体脂率</button>
+    </div>
+  </div>
+
+  <div class="panel" id="fat-out" style="display:none">
+    <h2>体脂率估算结果</h2>
+    <div class="kv" id="fat-kv"></div>
+    <div class="hint" id="fat-tip" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>关于这几个数字，有几句话要说在前面</h2>
+    <ul class="plain">
+      <li><strong>BMI 只是一个身高体重的比值，它不知道你身上长的是什么。</strong>肌肉多的人可能被算成「超重」，体脂高但四肢细的人可能被算成「正常」。同一个数字放在运动员和久坐的人身上，意义完全不同。</li>
+      <li><strong>它的参考标准是人群统计值，不是个人健康判据。</strong>标准来自大样本的人群分布，落在「正常」区间不代表一定健康，落在区间外也不代表一定有问题。</li>
+      <li><strong>孕期不适用。</strong>怀孕期间体重本来就该增长，用 BMI 判断没有意义。产后也不用急着对照孕前的数字。</li>
+      <li><strong>不适用于儿童青少年。</strong>孩子的 BMI 要按年龄和性别对照生长曲线看，用成人标准会误判。</li>
+      <li><strong>腰围有时比 BMI 更有信息量。</strong>同样的 BMI，脂肪堆在腰腹和堆在臀腿，健康影响并不一样。腰围是更直接的观察角度。</li>
+      <li><strong>体脂率的家庭估算误差很大。</strong>围度公式对身材比例敏感，量错一两厘米结果就差几个百分点。想准确了解体脂，要用体成分仪或 DEXA，医院的营养科通常可以做。</li>
+      <li><strong>不要为了这几个数字焦虑。</strong>体重一天之内波动一两公斤是正常的，受喝水、吃饭、生理期影响。看趋势，别看单次。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具只做算术换算，<strong>不评估健康状况、不判断胖瘦是否合适、不提供减重建议</strong>。
+      任何关于体重管理、代谢疾病、营养方案的问题，请咨询医生或注册营养师。
+      如果你正在经历进食方面的困扰，或对体重有强烈的焦虑，请寻求专业帮助，这比任何计算器都重要。
+      所有输入数据只保存在你的浏览器里，不上传。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_bmi_fat";
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        height: document.getElementById("height").value,
+        weight: document.getElementById("weight").value,
+        waist: document.getElementById("waist").value,
+        neck: document.getElementById("neck").value,
+        hip: document.getElementById("hip").value
+      }));
+    } catch (e) {}
+  }
+  function restore() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (raw) {
+        for (var k in raw) { var el = document.getElementById(k); if (el && raw[k]) el.value = raw[k]; }
+      }
+    } catch (e) {}
+  }
+
+  // 成人 BMI 参考分界（中国成人常用标准）
+  var BANDS = [
+    { max: 18.5, name: "偏低", color: "#8fa8c0" },
+    { max: 24,   name: "正常范围", color: "#8fb59b" },
+    { max: 28,   name: "偏高", color: "#d8a24a" },
+    { max: 999,  name: "较高", color: "#c96f4a" }
+  ];
+
+  function bandOf(bmi) {
+    for (var i = 0; i < BANDS.length; i++) if (bmi < BANDS[i].max) return BANDS[i];
+    return BANDS[BANDS.length - 1];
+  }
+
+  function calc() {
+    var h = parseFloat(document.getElementById("height").value);
+    var w = parseFloat(document.getElementById("weight").value);
+    if (!isFinite(h) || h < 120 || h > 210) { alert("请填写身高（120 到 210 厘米）。"); return; }
+    if (!isFinite(w) || w < 30 || w > 200) { alert("请填写体重（30 到 200 公斤）。"); return; }
+
+    var m = h / 100;
+    var bmi = w / (m * m);
+    var band = bandOf(bmi);
+
+    // 正常范围的体重区间
+    var lowW = 18.5 * m * m;
+    var highW = 23.9 * m * m;
+
+    var waist = parseFloat(document.getElementById("waist").value);
+    var hasWaist = isFinite(waist) && waist > 0;
+
+    var cells =
+      '<div class="cell"><div class="k">BMI</div><div class="v">' + bmi.toFixed(1) + '</div></div>' +
+      '<div class="cell"><div class="k">所处区间</div><div class="v" style="font-size:19px;color:' + band.color + '">' + band.name + '</div></div>' +
+      '<div class="cell"><div class="k">该身高对应区间体重</div><div class="v" style="font-size:17px">' + lowW.toFixed(1) + '–' + highW.toFixed(1) + ' <small>kg</small></div></div>';
+
+    if (hasWaist) {
+      // 中国成人中心型肥胖参考：女性腰围 ≥85cm 需留意
+      var waistBand = waist < 80 ? "偏小" : (waist < 85 ? "一般" : "偏大");
+      var waistColor = waist < 80 ? "#8fb59b" : (waist < 85 ? "#d8a24a" : "#c96f4a");
+      cells += '<div class="cell"><div class="k">腰围</div><div class="v" style="font-size:19px;color:' + waistColor + '">' + waist + ' <small>cm · ' + waistBand + '</small></div></div>';
+    }
+
+    document.getElementById("kv").innerHTML = cells;
+
+    // 标尺：14 到 36 的 BMI 区间
+    var minB = 14, maxB = 36;
+    var pct = ((bmi - minB) / (maxB - minB)) * 100;
+    pct = Math.max(0, Math.min(100, pct));
+
+    var grad = "linear-gradient(to right,#8fa8c0 0%,#8fa8c0 20.5%,#8fb59b 20.5%,#8fb59b 45.5%,#d8a24a 45.5%,#d8a24a 63.6%,#c96f4a 63.6%,#c96f4a 100%)";
+    var scaleHtml = '<div class="hint" style="margin-bottom:8px">BMI 参考标尺（14 到 36）</div>' +
+      '<div style="position:relative;height:12px;border-radius:99px;background:' + grad + '">' +
+      '<div style="position:absolute;left:' + pct.toFixed(1) + '%;top:-5px;transform:translateX(-50%);width:3px;height:22px;background:#554e46;border-radius:2px"></div>' +
+      '<div style="position:absolute;left:' + pct.toFixed(1) + '%;top:24px;transform:translateX(-50%);font-size:12.5px;color:#554e46;white-space:nowrap">你 ' + bmi.toFixed(1) + '</div>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:12px;color:#a8a096;margin-top:34px">' +
+      '<span>18.5</span><span>24</span><span>28</span></div>';
+
+    document.getElementById("scale-wrap").innerHTML = scaleHtml;
+
+    var tip = "参考分界为 18.5 / 24 / 28，这是中国成人常用的划分方式。不同国家和机构的标准略有差别。";
+    if (hasWaist) {
+      if (waist >= 85) tip += " 另外，女性腰围达到 85 厘米以上，通常建议关注一下腹部脂肪的堆积情况，这个信息比 BMI 更直接。";
+      else tip += " 腰围在 80 厘米以下一般属于常见范围。";
+    } else {
+      tip += " 补上腰围，能得到一个和 BMI 互补的观察角度。";
+    }
+    tip += " 再强调一次：这几个数字只是换算结果，不能用来判断你的健康状态。";
+    document.getElementById("bmi-tip").innerHTML = esc(tip);
+
+    document.getElementById("out").style.display = "block";
+    document.getElementById("fat").style.display = "block";
+  }
+
+  function calcFat() {
+    var h = parseFloat(document.getElementById("height").value);
+    var neck = parseFloat(document.getElementById("neck").value);
+    var hip = parseFloat(document.getElementById("hip").value);
+    var waist = parseFloat(document.getElementById("waist").value);
+
+    if (!isFinite(h) || h <= 0) { alert("请先填写身高。"); return; }
+    if (!isFinite(waist) || waist <= 0) { alert("估算体脂率需要先填写腰围。"); return; }
+    if (!isFinite(neck) || neck <= 0) { alert("请填写颈围。"); return; }
+    if (!isFinite(hip) || hip <= 0) { alert("请填写臀围。"); return; }
+
+    // 美国海军女性围度公式（英制），先换算成英寸
+    var toIn = function (cm) { return cm / 2.54; };
+    var waistIn = toIn(waist), neckIn = toIn(neck), hipIn = toIn(hip), hIn = toIn(h);
+
+    var arg = waistIn + hipIn - neckIn;
+    if (arg <= 0) { alert("输入的围度组合不合理，请检查一下数字。"); return; }
+
+    var fat = 495 / (1.29579 - 0.35004 * Math.log(arg) + 0.22100 * Math.log(hIn)) - 450;
+    if (!isFinite(fat) || fat <= 0 || fat > 70) { alert("按这组围度算不出合理结果，请检查输入是否有误。"); return; }
+    fat = Math.round(fat * 10) / 10;
+
+    var band, color;
+    if (fat < 21) { band = "偏低"; color = "#8fa8c0"; }
+    else if (fat < 25) { band = "常见范围（运动人群）"; color = "#8fb59b"; }
+    else if (fat < 32) { band = "常见范围"; color = "#8fb59b"; }
+    else if (fat < 38) { band = "偏高"; color = "#d8a24a"; }
+    else { band = "较高"; color = "#c96f4a"; }
+
+    document.getElementById("fat-kv").innerHTML =
+      '<div class="cell"><div class="k">估算体脂率</div><div class="v">' + fat.toFixed(1) + ' <small>%</small></div></div>' +
+      '<div class="cell"><div class="k">大致区间</div><div class="v" style="font-size:19px;color:' + color + '">' + band + '</div></div>' +
+      '<div class="cell"><div class="k">估算方式</div><div class="v" style="font-size:15px">围度公式</div></div>';
+
+    document.getElementById("fat-tip").innerHTML = esc(
+      "这个结果由腰围、颈围、臀围、身高四个数字算出来，误差通常在 3 到 5 个百分点，量得不准时可能更大。" +
+      "腰围和颈围量的时候不要收腹、不要勒紧，贴皮量但别压出印子。如果想得到可靠数字，医院的体成分检测或 DEXA 是更合适的选择。" +
+      "女性体脂率会随生理周期、年龄自然波动，单次结果说明不了什么。"
+    );
+    document.getElementById("fat-out").style.display = "block";
+  }
+
+  document.getElementById("calc").addEventListener("click", function () { save(); calc(); });
+  document.getElementById("calc-fat").addEventListener("click", function () { save(); calcFat(); });
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!confirm("确定清空已填的数字吗？")) return;
+    ["height", "weight", "waist", "neck", "hip"].forEach(function (id) { document.getElementById(id).value = ""; });
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    document.getElementById("out").style.display = "none";
+    document.getElementById("fat").style.display = "none";
+    document.getElementById("fat-out").style.display = "none";
+  });
+
+  ["height", "weight", "waist", "neck", "hip"].forEach(function (id) {
+    document.getElementById(id).addEventListener("change", save);
+  });
+
+  restore();
+})();
+</script>

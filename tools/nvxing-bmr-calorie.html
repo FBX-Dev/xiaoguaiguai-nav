@@ -1,0 +1,210 @@
+<div class="tool">
+  <div class="panel">
+    <h2>填基本情况和活动量</h2>
+    <div class="field">
+      <label class="lbl" for="sex">性别</label>
+      <select id="sex">
+        <option value="f">女</option>
+        <option value="m">男</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="lbl" for="age">年龄（岁）</label>
+      <input type="number" id="age" min="14" max="90" step="1" placeholder="例如 32" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="height">身高（厘米）</label>
+      <input type="number" id="height" min="120" max="210" step="0.5" placeholder="例如 162" />
+    </div>
+    <div class="field">
+      <label class="lbl" for="weight">体重（公斤）</label>
+      <input type="number" id="weight" min="30" max="200" step="0.1" placeholder="例如 58" />
+    </div>
+    <div class="field">
+      <label class="lbl">日常活动量</label>
+      <div class="tabs" id="act-tabs">
+        <button data-k="1.2">久坐少动</button>
+        <button data-k="1.375" class="on">轻度活动</button>
+        <button data-k="1.55">中度活动</button>
+        <button data-k="1.725">高度活动</button>
+      </div>
+      <div class="hint" id="act-hint">轻度活动：日常通勤加每周 1 到 3 次轻度运动，或工作本身需要经常走动。</div>
+    </div>
+    <div class="btns">
+      <button id="calc">开始计算</button>
+      <button id="clear" class="ghost">清空</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>结果</h2>
+    <div class="kv" id="kv"></div>
+    <div class="hint" id="formula-tip" style="margin-top:14px"></div>
+  </div>
+
+  <div class="panel" id="macro" style="display:none">
+    <h2>三大营养素的大致分配</h2>
+    <div class="hint" style="margin-bottom:14px">
+      下面按常见比例给一个参考分配，<strong>不是让你照着称重吃</strong>，只是让你对「一天大概吃多少」有个概念。
+    </div>
+    <div id="macro-body"></div>
+  </div>
+
+  <div class="panel">
+    <h2>这些数字是什么，以及为什么别太当真</h2>
+    <ul class="plain">
+      <li><strong>基础代谢（BMR）</strong>是你在完全静息状态下维持生命所需的热量，比如呼吸、心跳、体温。它占一天总消耗的六到七成，但这个比例因人而异。</li>
+      <li><strong>每日总消耗（TDEE）</strong>是基础代谢乘以活动系数。活动系数是最粗略的部分——它只有四档，而真实生活远比四档复杂。同一个「中度活动」，不同人差别可以很大。</li>
+      <li><strong>公式算出来的是人群平均值，不是你的实际值。</strong>常用公式的误差范围在 ±10% 到 ±15%。同身高体重年龄的两个人，实际代谢可能差几百千卡，这跟肌肉量、激素、肠道菌群都有关。</li>
+      <li><strong>想更准，只能实测。</strong>间接测热法是医院或运动实验室做的，比较准但麻烦。可穿戴设备的心率估算误差也不小，只能看趋势。</li>
+      <li><strong>不要用它来指导严格节食。</strong>长期吃低于基础代谢的热量，身体会下调消耗、流失肌肉，恢复正常饮食后容易反弹更多。这种「越减越难减」的循环很常见。</li>
+      <li><strong>孕期、哺乳期、疾病恢复期都不适用。</strong>这些阶段的热量需求有专门的指导，不能用普通公式套。</li>
+      <li><strong>增肌减脂的热量差不需要很大。</strong>常见建议是每天在总消耗上下浮动 200 到 500 千卡，再多通常只是让身体更难受，效果未必更好。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具只做公式换算，<strong>不构成任何营养或医学建议</strong>。
+      任何具体的饮食方案、体重管理目标、代谢相关问题，请咨询医生或注册营养师。
+      如果你有糖尿病、甲状腺疾病、进食障碍等情况，更不能用这里的数字自行调整饮食。
+      所有输入数据只保存在你的浏览器里，不上传。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_bmr";
+  var ACT = 1.375;
+
+  var ACT_HINT = {
+    "1.2": "久坐少动：几乎不运动，工作以坐着为主，日常步数很少。",
+    "1.375": "轻度活动：日常通勤加每周 1 到 3 次轻度运动，或工作本身需要经常走动。",
+    "1.55": "中度活动：每周 3 到 5 次中等强度运动，或工作体力消耗较大。",
+    "1.725": "高度活动：每周 6 到 7 次高强度运动，或从事重体力劳动。"
+  };
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        sex: document.getElementById("sex").value,
+        age: document.getElementById("age").value,
+        height: document.getElementById("height").value,
+        weight: document.getElementById("weight").value,
+        act: ACT
+      }));
+    } catch (e) {}
+  }
+  function restore() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (!raw) return;
+      if (raw.sex) document.getElementById("sex").value = raw.sex;
+      if (raw.age) document.getElementById("age").value = raw.age;
+      if (raw.height) document.getElementById("height").value = raw.height;
+      if (raw.weight) document.getElementById("weight").value = raw.weight;
+      if (raw.act) {
+        ACT = parseFloat(raw.act);
+        var btns = document.querySelectorAll("#act-tabs button");
+        for (var i = 0; i < btns.length; i++) {
+          var on = parseFloat(btns[i].getAttribute("data-k")) === ACT;
+          btns[i].className = on ? "on" : "";
+        }
+        document.getElementById("act-hint").textContent = ACT_HINT[String(ACT)] || "";
+      }
+    } catch (e) {}
+  }
+
+  function calc() {
+    var sex = document.getElementById("sex").value;
+    var age = parseFloat(document.getElementById("age").value);
+    var h = parseFloat(document.getElementById("height").value);
+    var w = parseFloat(document.getElementById("weight").value);
+
+    if (!isFinite(age) || age < 14 || age > 90) { alert("请填写年龄（14 到 90 岁）。"); return; }
+    if (!isFinite(h) || h < 120 || h > 210) { alert("请填写身高（120 到 210 厘米）。"); return; }
+    if (!isFinite(w) || w < 30 || w > 200) { alert("请填写体重（30 到 200 公斤）。"); return; }
+
+    // Mifflin-St Jeor 公式，目前公认较准的估算式之一
+    var bmr = 10 * w + 6.25 * h - 5 * age + (sex === "m" ? 5 : -161);
+    var tdee = bmr * ACT;
+
+    document.getElementById("kv").innerHTML =
+      '<div class="cell"><div class="k">基础代谢（BMR）</div><div class="v">' + Math.round(bmr) + ' <small>千卡/天</small></div></div>' +
+      '<div class="cell"><div class="k">每日总消耗（TDEE）</div><div class="v">' + Math.round(tdee) + ' <small>千卡/天</small></div></div>' +
+      '<div class="cell"><div class="k">活动系数</div><div class="v">' + ACT.toFixed(3) + '</div></div>' +
+      '<div class="cell"><div class="k">常见浮动范围</div><div class="v" style="font-size:17px">' + Math.round(tdee * 0.9) + '–' + Math.round(tdee * 1.1) + ' <small>千卡</small></div></div>';
+
+    document.getElementById("formula-tip").innerHTML = esc(
+      "用的是 Mifflin-St Jeor 公式，这是目前营养学里比较常用的一种估算方式。" +
+      "「常见浮动范围」是按 ±10% 给的，实际误差可能更大。这个数字可以用来理解「一天大概需要多少」，" +
+      "但不适合拿来精确控制每一餐。"
+    );
+
+    // 三大营养素
+    var protein = w * 1.2;          // 克，按每公斤体重 1.2 克
+    var fatCal = tdee * 0.27;       // 脂肪占 27%
+    var fat = fatCal / 9;           // 每克脂肪 9 千卡
+    var carbCal = tdee - protein * 4 - fatCal;
+    var carb = Math.max(0, carbCal / 4);
+
+    var rows = [
+      ["蛋白质", Math.round(protein) + " 克", Math.round(protein * 4) + " 千卡", "约 " + Math.round((protein * 4 / tdee) * 100) + "%", "每公斤体重 1.2 克。蛋、奶、肉、鱼、豆制品都是来源。"],
+      ["脂肪", Math.round(fat) + " 克", Math.round(fatCal) + " 千卡", "约 27%", "不必刻意吃得很低脂，适量的油脂对激素和吸收都有用。"],
+      ["碳水化合物", Math.round(carb) + " 克", Math.round(carbCal) + " 千卡", "约 " + Math.round((carbCal / tdee) * 100) + "%", "剩下的额度给主食、水果、蔬菜。优先选少加工的。"],
+      ["膳食纤维", "25–30 克", "—", "—", "蔬菜、水果、全谷物、豆类。大多数人实际吃得比这个少。"]
+    ];
+
+    var html = '<table><thead><tr><th>项目</th><th style="width:88px">参考量</th><th style="width:88px">热量</th><th style="width:64px">占比</th></tr></thead><tbody>';
+    for (var i = 0; i < rows.length; i++) {
+      html += '<tr><td>' + esc(rows[i][0]) +
+        '<div class="hint" style="margin:2px 0 0;font-size:12px">' + esc(rows[i][4]) + '</div></td>' +
+        '<td style="color:var(--accent);font-weight:600">' + esc(rows[i][1]) + '</td>' +
+        '<td>' + esc(rows[i][2]) + '</td>' +
+        '<td>' + esc(rows[i][3]) + '</td></tr>';
+    }
+    html += "</tbody></table>";
+    html += '<div class="note" style="margin-top:14px">' +
+      '蛋白质按每公斤体重 1.2 克给，这是一般成年人的常见参考。如果你在规律进行力量训练，可能需要更高；' +
+      '如果有肾脏方面的问题，则需要在医生指导下控制。这个分配只是一个大致的框架，' +
+      '<strong>日常吃饭不需要按克数称，按「一拳头主食、一巴掌蛋白质、两拳头蔬菜」这种粗略比例来就够用了</strong>。' +
+      '</div>';
+
+    document.getElementById("macro-body").innerHTML = html;
+    document.getElementById("out").style.display = "block";
+    document.getElementById("macro").style.display = "block";
+  }
+
+  var tabs = document.querySelectorAll("#act-tabs button");
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].addEventListener("click", function (e) {
+      for (var k = 0; k < tabs.length; k++) tabs[k].className = "";
+      e.target.className = "on";
+      ACT = parseFloat(e.target.getAttribute("data-k"));
+      document.getElementById("act-hint").textContent = ACT_HINT[String(ACT)] || "";
+      save();
+      if (document.getElementById("out").style.display === "block") calc();
+    });
+  }
+
+  document.getElementById("calc").addEventListener("click", function () { save(); calc(); });
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!confirm("确定清空已填的信息吗？")) return;
+    document.getElementById("age").value = "";
+    document.getElementById("height").value = "";
+    document.getElementById("weight").value = "";
+    document.getElementById("sex").value = "f";
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    document.getElementById("out").style.display = "none";
+    document.getElementById("macro").style.display = "none";
+  });
+
+  ["sex", "age", "height", "weight"].forEach(function (id) {
+    document.getElementById(id).addEventListener("change", save);
+  });
+
+  restore();
+})();
+</script>

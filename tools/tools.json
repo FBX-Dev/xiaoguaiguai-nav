@@ -1,5 +1,5 @@
 {
-  "_readme": "本站自研实用工具索引。构建时 build.mjs 读取本文件，生成 /tools/ 列表页与 /tools.json。每个 slug 需在同目录下存在同名 .html 片段文件（只写 .tool 区块与内联 script，外壳由构建脚本统一注入）。category 必须与 nav.json 的一级分类名完全一致（含 emoji 与空格）。guide 字段指向该工具的引导文章 slug（posts/<guide>.md），用于文章页与工具页双向互链。",
+  "_readme": "本站自研实用工具索引。构建时 build.mjs 读取本文件，生成 /tools/ 列表页与 /tools.json。每个 slug 需在同目录下存在同名 .html 片段文件（只写 .tool 区块与内联 script，外壳由构建脚本统一注入）。category 必须与 nav.json 的一级分类名完全一致（含 emoji 与空格）。guide 字段指向该工具的引导文章 slug（posts/<guide>.md），用于文章页与工具页双向互链。数量规则：每个分类的工具数必须是 3 的倍数（6、9、12…），以便列表页与首页网格按三列整齐排布、不留空缺；各分类不必相同。",
   "tools": [
     {
       "slug": "baby-age-calculator",
@@ -35,6 +35,24 @@
       "category": "🧸 婴幼儿养育",
       "icon": "💉",
       "guide": "guide-yuer-vaccine-plan",
+      "published": true
+    },
+    {
+      "slug": "yuer-due-date-weeks",
+      "name": "预产期与孕周推算",
+      "desc": "按末次月经推算预产期与当前孕周，支持周期修正，并列出常见产检节点。",
+      "category": "🧸 婴幼儿养育",
+      "icon": "🗓️",
+      "guide": "guide-yuer-due-date-weeks",
+      "published": true
+    },
+    {
+      "slug": "yuer-formula-guide",
+      "name": "奶量与冲调参考",
+      "desc": "按月龄和体重给出每日奶量参考区间，并按你用的奶粉比例换算每次和每天的勺数。",
+      "category": "🧸 婴幼儿养育",
+      "icon": "🍼",
+      "guide": "guide-yuer-formula-guide",
       "published": true
     },
     {
@@ -74,6 +92,24 @@
       "published": true
     },
     {
+      "slug": "jiaoyu-literacy-check",
+      "name": "识字量对照与选书参考",
+      "desc": "从三层常用字里勾出孩子认得的，粗略估算识字量区间，并按水平给出选书建议。",
+      "category": "📖 儿童教育",
+      "icon": "🈶",
+      "guide": "guide-jiaoyu-literacy-check",
+      "published": true
+    },
+    {
+      "slug": "jiaoyu-class-planner",
+      "name": "兴趣班时间费用规划",
+      "desc": "算清各类兴趣班每周占用的时间（含往返）、每年花费，以及孩子还剩多少可支配时间。",
+      "category": "📖 儿童教育",
+      "icon": "🎒",
+      "guide": "guide-jiaoyu-class-planner",
+      "published": true
+    },
+    {
       "slug": "nvxing-mood-journal",
       "name": "情绪记录本",
       "desc": "选一个最接近的情绪词，写两句想说的话，给一个小建议。不做评估、不用打卡。",
@@ -107,6 +143,24 @@
       "category": "🌷 女性成长",
       "icon": "🔋",
       "guide": "guide-nvxing-energy-audit",
+      "published": true
+    },
+    {
+      "slug": "nvxing-bmi-fat",
+      "name": "BMI 与体脂自测",
+      "desc": "算 BMI、对应区间体重与腰围参考；量颈围臀围还能粗估体脂率，并标出误差范围。",
+      "category": "🌷 女性成长",
+      "icon": "📐",
+      "guide": "guide-nvxing-bmi-fat",
+      "published": true
+    },
+    {
+      "slug": "nvxing-bmr-calorie",
+      "name": "基础代谢与热量参考",
+      "desc": "按性别年龄身高体重算基础代谢与每日总消耗，并给出三大营养素的大致分配。",
+      "category": "🌷 女性成长",
+      "icon": "🔥",
+      "guide": "guide-nvxing-bmr-calorie",
       "published": true
     },
     {
@@ -146,6 +200,24 @@
       "published": true
     },
     {
+      "slug": "jiating-maternity-leave",
+      "name": "产假与津贴估算",
+      "desc": "按产假天数算出起止日期与返岗日，并按单位平均工资估算生育津贴。",
+      "category": "🏠 家庭关系",
+      "icon": "👶",
+      "guide": "guide-jiating-maternity-leave",
+      "published": true
+    },
+    {
+      "slug": "jiating-kinship-name",
+      "name": "亲戚称呼推算",
+      "desc": "一层层点选关系链，推算该怎么称呼；超出常用范围时给逐级描述，不硬猜。",
+      "category": "🏠 家庭关系",
+      "icon": "🌳",
+      "guide": "guide-jiating-kinship-name",
+      "published": true
+    },
+    {
       "slug": "qinmi-sentence-converter",
       "name": "沟通句式转换器",
       "desc": "把带指责的话拆成「事实—感受—需要—请求」四段，并给出可以直接说的版本。",
@@ -179,6 +251,24 @@
       "category": "💞 两性亲密成长",
       "icon": "⏳",
       "guide": "guide-qinmi-time-check",
+      "published": true
+    },
+    {
+      "slug": "qinmi-date-idea",
+      "name": "低成本约会方案",
+      "desc": "按预算、时间、时段和是否带娃，从二十多个活动里挑出三个具体可执行的方案。",
+      "category": "💞 两性亲密成长",
+      "icon": "💡",
+      "guide": "guide-qinmi-date-idea",
+      "published": true
+    },
+    {
+      "slug": "qinmi-year-align",
+      "name": "两人目标对齐清单",
+      "desc": "五个方面的对话题目，两人各自填写后对照差异，看清哪些能兼容、哪些真冲突。",
+      "category": "💞 两性亲密成长",
+      "icon": "🧩",
+      "guide": "guide-qinmi-year-align",
       "published": true
     }
   ]

@@ -1,0 +1,281 @@
+<div class="tool">
+  <div class="panel">
+    <h2>选出他是你的什么人</h2>
+    <div class="hint" style="margin-bottom:16px">
+      按顺序点选每一层关系，工具会一路推下去，算出该怎么称呼。
+      比如「爸爸的姐姐的女儿」→ 先点「爸爸」，再点「姐姐」，再点「女儿」。
+    </div>
+    <div class="field">
+      <label class="lbl">起点</label>
+      <div class="tabs" id="root-tabs">
+        <button data-root="self" class="on">我</button>
+        <button data-root="father">爸爸</button>
+        <button data-root="mother">妈妈</button>
+      </div>
+      <div class="hint">通常从「我」开始。如果你想算「爸爸那边的亲戚之间怎么称呼」，也可以换个起点。</div>
+    </div>
+
+    <div id="chain-wrap"></div>
+
+    <div class="btns">
+      <button id="back" class="ghost">退一步</button>
+      <button id="clear" class="ghost">重新开始</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>称呼结果</h2>
+    <div id="result"></div>
+  </div>
+
+  <div class="panel">
+    <h2>各地叫法差别很大，这点要先说清</h2>
+    <ul class="plain">
+      <li><strong>同一个亲戚，不同地方叫法可能完全不同。</strong>比如爸爸的哥哥，北方多叫「大爷」，南方不少地方叫「伯伯」，还有地方叫「大伯」。工具给的是比较通用的普通话叫法。</li>
+      <li><strong>同辈之间按年龄排序。</strong>爸爸的哥哥和弟弟，称呼不一样（哥哥要带「大」，弟弟可以直呼名字或叫「叔叔」）。工具会区分长幼，但具体用哪个字，还是看你家的习惯。</li>
+      <li><strong>姻亲的称呼更灵活。</strong>配偶那边的亲戚怎么叫，很大程度上看你们两家的习惯，没有硬标准。工具给的是通行说法，改不改随你。</li>
+      <li><strong>称呼是为了让关系清楚，不是考试。</strong>真叫不准的时候，跟着家里最年长的人叫，基本不会错。或者直接问一句「我该叫您什么」，没人会觉得失礼。</li>
+      <li><strong>有些关系链太长，日常根本用不到。</strong>工具支持一直点下去，但超过三层的亲戚，多数人平时也不这么称呼。看看就好，别当标准答案背。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具按通用的汉语亲属称谓关系推算，不同地区的方言与家族习惯会有差异，
+      <strong>结果仅供参考</strong>。婚丧嫁娶等正式场合的称谓，建议按本家族的习惯来。
+      所有操作都在你的浏览器里完成，不记录、不上传。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_kinship";
+
+  // 关系链上的可选步骤（父系 / 母系 / 配偶 / 子女 / 兄弟姐妹）
+  var STEPS = [
+    { k: "father",   t: "爸爸" },
+    { k: "mother",   t: "妈妈" },
+    { k: "husband",  t: "丈夫" },
+    { k: "wife",     t: "妻子" },
+    { k: "son",      t: "儿子" },
+    { k: "daughter", t: "女儿" },
+    { k: "elderBro", t: "哥哥" },
+    { k: "youngerBro", t: "弟弟" },
+    { k: "elderSis", t: "姐姐" },
+    { k: "youngerSis", t: "妹妹" }
+  ];
+
+  var chain = [];
+  var root = "self";
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  try {
+    var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (raw && Array.isArray(raw.chain)) chain = raw.chain;
+    if (raw && raw.root) root = raw.root;
+  } catch (e) {}
+
+  function save() { try { localStorage.setItem(KEY, JSON.stringify({ chain: chain, root: root })); } catch (e) {} }
+
+  // 称谓推算表：按「关系链」匹配。
+  // 采用「前缀归一」的方式：把链条里与性别/长幼相关的部分合并成稳定的键。
+  // 无法匹配时回落到逐级描述的通用说法，不会给出错误的具体称谓。
+  function resolve(chainArr, rootKey) {
+    if (!chainArr.length) {
+      return { name: rootLabel(rootKey), note: "还没选关系。点上面的按钮，一层层往下选。", sure: true };
+    }
+
+    var key = chainArr.join(">");
+
+    // 完整匹配表（覆盖日常最常用的关系链）
+    var MAP = {
+      // ── 从「我」出发：直系 ──
+      "father": ["爸爸", "父亲"],
+      "mother": ["妈妈", "母亲"],
+      "son": ["儿子"],
+      "daughter": ["女儿"],
+      "elderBro": ["哥哥"],
+      "youngerBro": ["弟弟"],
+      "elderSis": ["姐姐"],
+      "youngerSis": ["妹妹"],
+      "husband": ["丈夫"],
+      "wife": ["妻子"],
+
+      // ── 祖辈 ──
+      "father>father": ["爷爷", "祖父"],
+      "father>mother": ["奶奶", "祖母"],
+      "mother>father": ["外公", "姥爷"],
+      "mother>mother": ["外婆", "姥姥"],
+      "father>elderBro": ["伯父（大伯）", "伯父的妻子叫伯母"],
+      "father>youngerBro": ["叔叔", "叔叔的妻子叫婶婶"],
+      "father>elderSis": ["姑妈（姑姑）", "姑妈的丈夫叫姑父"],
+      "father>youngerSis": ["姑姑", "姑姑的丈夫叫姑父"],
+      "mother>elderBro": ["舅舅（大舅）", "舅舅的妻子叫舅妈"],
+      "mother>youngerBro": ["舅舅", "舅舅的妻子叫舅妈"],
+      "mother>elderSis": ["姨妈（大姨）", "姨妈的丈夫叫姨父"],
+      "mother>youngerSis": ["小姨", "小姨的丈夫叫姨父"],
+
+      // ── 父母的兄弟姐妹的子女（表/堂）──
+      "father>elderBro>son": ["堂哥或堂弟", "按对方年龄，比你大叫堂哥，比你小叫堂弟"],
+      "father>elderBro>daughter": ["堂姐或堂妹", "按对方年龄，比你大叫堂姐，比你小叫堂妹"],
+      "father>youngerBro>son": ["堂哥或堂弟", "按对方年龄，比你大叫堂哥，比你小叫堂弟"],
+      "father>youngerBro>daughter": ["堂姐或堂妹", "按对方年龄，比你大叫堂姐，比你小叫堂妹"],
+      "father>elderSis>son": ["表哥或表弟", "姑姑的孩子是表亲"],
+      "father>elderSis>daughter": ["表姐或表妹", "姑姑的孩子是表亲"],
+      "father>youngerSis>son": ["表哥或表弟", "姑姑的孩子是表亲"],
+      "father>youngerSis>daughter": ["表姐或表妹", "姑姑的孩子是表亲"],
+      "mother>elderBro>son": ["表哥或表弟", "舅舅的孩子是表亲"],
+      "mother>elderBro>daughter": ["表姐或表妹", "舅舅的孩子是表亲"],
+      "mother>youngerBro>son": ["表哥或表弟", "舅舅的孩子是表亲"],
+      "mother>youngerBro>daughter": ["表姐或表妹", "舅舅的孩子是表亲"],
+      "mother>elderSis>son": ["表哥或表弟", "姨妈的孩子是表亲"],
+      "mother>elderSis>daughter": ["表姐或表妹", "姨妈的孩子是表亲"],
+      "mother>youngerSis>son": ["表哥或表弟", "姨妈的孩子是表亲"],
+      "mother>youngerSis>daughter": ["表姐或表妹", "姨妈的孩子是表亲"],
+
+      // ── 配偶的家人 ──
+      "wife>father": ["岳父", "也叫丈人、爸爸"],
+      "wife>mother": ["岳母", "也叫丈母娘、妈妈"],
+      "husband>father": ["公公", "跟丈夫一起叫爸爸也可以"],
+      "husband>mother": ["婆婆", "跟丈夫一起叫妈妈也可以"],
+      "wife>elderBro": ["大舅子", "当面一般跟着妻子叫哥"],
+      "wife>youngerBro": ["小舅子", "当面一般叫名字或跟着妻子叫"],
+      "wife>elderSis": ["大姨子", "当面一般跟着妻子叫姐"],
+      "wife>youngerSis": ["小姨子", "当面一般叫名字或跟着妻子叫"],
+      "husband>elderBro": ["大伯子", "当面一般跟着丈夫叫哥"],
+      "husband>youngerBro": ["小叔子", "当面一般叫名字或跟着丈夫叫"],
+      "husband>elderSis": ["大姑子", "当面一般跟着丈夫叫姐"],
+      "husband>youngerSis": ["小姑子", "当面一般叫名字或跟着丈夫叫"],
+
+      // ── 子女的配偶、孙辈 ──
+      "son>wife": ["儿媳"],
+      "daughter>husband": ["女婿"],
+      "son>son": ["孙子"],
+      "son>daughter": ["孙女"],
+      "daughter>son": ["外孙"],
+      "daughter>daughter": ["外孙女"],
+
+      // ── 兄弟姐妹的子女 ──
+      "elderBro>son": ["侄子", "哥哥的儿子"],
+      "elderBro>daughter": ["侄女", "哥哥的女儿"],
+      "youngerBro>son": ["侄子", "弟弟的儿子"],
+      "youngerBro>daughter": ["侄女", "弟弟的女儿"],
+      "elderSis>son": ["外甥", "姐姐的儿子"],
+      "elderSis>daughter": ["外甥女", "姐姐的女儿"],
+      "youngerSis>son": ["外甥", "妹妹的儿子"],
+      "youngerSis>daughter": ["外甥女", "妹妹的女儿"]
+    };
+
+    // 起点不是「我」时：把起点的称呼接到前面
+    if (rootKey !== "self") {
+      var hit = MAP[key];
+      if (hit) {
+        return { name: rootLabel(rootKey) + "的" + hit[0], note: hit[1] || "", sure: true };
+      }
+      return {
+        name: rootLabel(rootKey) + "的" + describe(chainArr),
+        note: "这是一条比较长的关系链，日常一般不会这么称呼。",
+        sure: false
+      };
+    }
+
+    var m = MAP[key];
+    if (m) return { name: m[0], note: m[1] || "", sure: true };
+
+    // 未命中：给出可读的逐级描述，不硬猜具体称谓
+    return {
+      name: describe(chainArr),
+      note: "这条关系链超出了常用称谓的范围，上面是按关系逐级描述的说法。日常遇到这种情况，跟着家里人叫或者直接问对方就行。",
+      sure: false
+    };
+  }
+
+  function rootLabel(k) {
+    if (k === "father") return "爸爸";
+    if (k === "mother") return "妈妈";
+    return "我";
+  }
+
+  function labelOf(k) {
+    for (var i = 0; i < STEPS.length; i++) if (STEPS[i].k === k) return STEPS[i].t;
+    return k;
+  }
+
+  function describe(arr) {
+    var parts = [];
+    for (var i = 0; i < arr.length; i++) parts.push(labelOf(arr[i]));
+    return parts.join("的");
+  }
+
+  function render() {
+    // 已选链条
+    var ch = "";
+    if (chain.length) {
+      ch += '<div class="stat"><span>已选关系：<b>' + rootLabel(root) + '</b>';
+      for (var i = 0; i < chain.length; i++) ch += ' → <b>' + labelOf(chain[i]) + '</b>';
+      ch += '</span></div>';
+    }
+
+    // 可选按钮
+    ch += '<div class="hint" style="margin:14px 0 8px">继续点选下一层关系：</div>';
+    ch += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+    for (var s = 0; s < STEPS.length; s++) {
+      ch += '<button data-add="' + STEPS[s].k + '" style="background:#fff;color:var(--accent);border:1px solid #e8c8b6;padding:8px 14px;border-radius:8px;font-size:13.5px;cursor:pointer">' + STEPS[s].t + '</button>';
+    }
+    ch += "</div>";
+    document.getElementById("chain-wrap").innerHTML = ch;
+
+    var addBtns = document.querySelectorAll("[data-add]");
+    for (var a = 0; a < addBtns.length; a++) {
+      addBtns[a].addEventListener("click", function () {
+        chain.push(this.getAttribute("data-add"));
+        save();
+        render();
+      });
+    }
+
+    var r = resolve(chain, root);
+    var html = '<div class="kv">' +
+      '<div class="cell"><div class="k">关系链</div><div class="v" style="font-size:15px">' + esc(rootLabel(root) + (chain.length ? "的" + describe(chain) : "")) + '</div></div>' +
+      '<div class="cell"><div class="k">该怎么称呼</div><div class="v" style="font-size:22px;color:' + (r.sure ? "var(--accent)" : "#8a8279") + '">' + esc(r.name) + '</div></div>' +
+      '</div>';
+    if (r.note) html += '<div class="note" style="margin-top:14px">' + esc(r.note) + '</div>';
+    if (!r.sure) html += '<div class="hint" style="margin-top:10px">未找到标准称谓，给的是逐级描述，不作为正式称呼。</div>';
+
+    document.getElementById("result").innerHTML = html;
+    document.getElementById("out").style.display = "block";
+  }
+
+  var rootTabs = document.querySelectorAll("#root-tabs button");
+  for (var t = 0; t < rootTabs.length; t++) {
+    if (rootTabs[t].getAttribute("data-root") === root) {
+      for (var z = 0; z < rootTabs.length; z++) rootTabs[z].className = "";
+      rootTabs[t].className = "on";
+    }
+    rootTabs[t].addEventListener("click", function () {
+      for (var z = 0; z < rootTabs.length; z++) rootTabs[z].className = "";
+      this.className = "on";
+      root = this.getAttribute("data-root");
+      save();
+      render();
+    });
+  }
+
+  document.getElementById("back").addEventListener("click", function () {
+    chain.pop();
+    save();
+    render();
+  });
+
+  document.getElementById("clear").addEventListener("click", function () {
+    chain = [];
+    root = "self";
+    for (var z = 0; z < rootTabs.length; z++) rootTabs[z].className = rootTabs[z].getAttribute("data-root") === "self" ? "on" : "";
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    render();
+  });
+
+  render();
+})();
+</script>

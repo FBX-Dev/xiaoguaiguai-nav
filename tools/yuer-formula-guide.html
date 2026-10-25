@@ -1,0 +1,191 @@
+<div class="tool">
+  <div class="panel">
+    <h2>先填宝宝的情况</h2>
+    <div class="field">
+      <label class="lbl" for="months">月龄（月）</label>
+      <input type="number" id="months" min="0" max="36" step="1" placeholder="例如 4" />
+      <div class="hint">不满 1 个月填 0。这个工具主要面向 0 到 12 个月的宝宝，1 岁以后奶已经退到辅助位置。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="weight">体重（公斤，可不填）</label>
+      <input type="number" id="weight" min="1" max="30" step="0.1" placeholder="例如 6.5" />
+      <div class="hint">填了体重，会额外按「每公斤体重每天需要多少奶」给一个参考区间。不填也能按月龄估算。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="scoop">奶粉冲调比例</label>
+      <input type="number" id="scoop" min="15" max="60" step="1" value="30" />
+      <div class="hint">单位是「一平勺兑多少毫升水」。默认 30 毫升，这是最常见的规格。<strong>请务必以奶粉罐上的说明为准</strong>，不同品牌差别很大，冲浓了或冲淡了都不合适。</div>
+    </div>
+    <div class="btns">
+      <button id="calc">生成参考</button>
+      <button id="clear" class="ghost">清空</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>参考奶量</h2>
+    <div class="kv" id="kv"></div>
+    <div class="hint" id="tip" style="margin-top:14px"></div>
+  </div>
+
+  <div class="panel" id="powder" style="display:none">
+    <h2>按你填的冲调比例换算</h2>
+    <div id="powder-body"></div>
+  </div>
+
+  <div class="panel">
+    <h2>冲调时容易做错的地方</h2>
+    <ul class="plain">
+      <li><strong>先放水，再放奶粉。</strong>先加奶粉再倒水，实际水量会偏少，奶液偏浓。顺序错了浓度就不对了。</li>
+      <li><strong>用平勺，不要压实。</strong>勺口刮平即可。压得实实的会多出不少奶粉，长期偏浓对宝宝肾脏是负担。</li>
+      <li><strong>不要自己加量或减量。</strong>觉得宝宝长得慢就多加一勺、觉得上火就少放一勺，这两种做法都不建议。真有问题要找医生。</li>
+      <li><strong>水温按罐上写的来。</strong>有的品牌建议 40 度左右，有的要求 70 度以上，以罐身说明为准。冲好后滴在手腕内侧试温。</li>
+      <li><strong>冲好的奶尽量一次喝完。</strong>常温下放置不要超过 2 小时，喝剩的不要留到下一顿。</li>
+      <li><strong>不要用米汤、果汁、矿泉水冲奶。</strong>用烧开后放凉的白开水就可以。</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>几个常见问题</h2>
+    <ul class="plain">
+      <li><strong>表格里的数字只是参考，不是标准答案。</strong>同一个月的宝宝，奶量差别可以很大。判断吃饱没吃饱，看的是尿量、体重增长和精神状态，不是有没有喝到某个毫升数。</li>
+      <li><strong>怎么知道吃饱了。</strong>一天有 6 片以上明显沉甸甸的尿布，体重按自己的曲线稳步增长，吃完能安静满足地睡一会儿，一般就说明吃够了。</li>
+      <li><strong>加了辅食之后奶量要不要减。</strong>6 个月以后辅食逐步增加，奶量会自然下降，但 1 岁前奶仍然是主要的营养来源，不建议主动大幅减少。</li>
+      <li><strong>宝宝突然吃得少了。</strong>先看有没有生病、出牙、鼻塞、打疫苗等常见原因。短期内食量波动很常见，持续几天明显不吃、尿量变少、精神差，就要去医院。</li>
+      <li><strong>需要严格按时喂吗。</strong>新生儿期更推荐按需喂养，看他饿的信号（咂嘴、转头找、吃手）而不是看钟。规律是慢慢形成的，不是一开始就定好的。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具按月龄与体重给出通用的奶量参考区间，<strong>不能替代医生的个体化喂养建议</strong>。
+      早产儿、低出生体重儿、有特殊疾病的宝宝，喂养方案必须由医生制定。
+      如果宝宝出现体重增长不理想、频繁吐奶、腹泻或精神不佳，请及时就医。所有输入数据只保存在你的浏览器里。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_formula";
+
+  // 按月龄的参考区间：月龄上限 / 每次奶量区间(ml) / 每日次数区间
+  var TABLE = [
+    [1,  60,  90,  8, 12],
+    [2,  90, 120,  7,  9],
+    [4, 120, 150,  6,  8],
+    [6, 150, 210,  5,  6],
+    [9, 180, 240,  4,  5],
+    [12, 180, 240, 3,  4]
+  ];
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function rowFor(m) {
+    for (var i = 0; i < TABLE.length; i++) if (m < TABLE[i][0] || i === TABLE.length - 1) return TABLE[i];
+    return TABLE[TABLE.length - 1];
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        months: document.getElementById("months").value,
+        weight: document.getElementById("weight").value,
+        scoop: document.getElementById("scoop").value
+      }));
+    } catch (e) {}
+  }
+  function restore() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (raw) {
+        if (raw.months) document.getElementById("months").value = raw.months;
+        if (raw.weight) document.getElementById("weight").value = raw.weight;
+        if (raw.scoop) document.getElementById("scoop").value = raw.scoop;
+      }
+    } catch (e) {}
+  }
+
+  function calc() {
+    var m = parseFloat(document.getElementById("months").value);
+    if (!isFinite(m) || m < 0) { alert("请先填写宝宝的月龄。"); return; }
+    m = Math.floor(m);
+
+    var w = parseFloat(document.getElementById("weight").value);
+    var scoop = parseFloat(document.getElementById("scoop").value);
+    if (!isFinite(scoop) || scoop < 15 || scoop > 60) scoop = 30;
+
+    var r = rowFor(m);
+    var perMin = r[1], perMax = r[2], nMin = r[3], nMax = r[4];
+
+    var dailyMin = perMin * nMin;
+    var dailyMax = perMax * nMax;
+
+    var cells =
+      '<div class="cell"><div class="k">每次参考奶量</div><div class="v">' + perMin + '–' + perMax + ' <small>ml</small></div></div>' +
+      '<div class="cell"><div class="k">每日参考次数</div><div class="v">' + nMin + '–' + nMax + ' <small>次</small></div></div>' +
+      '<div class="cell"><div class="k">每日总量参考</div><div class="v">' + dailyMin + '–' + dailyMax + ' <small>ml</small></div></div>';
+
+    var tips = [];
+    if (isFinite(w) && w > 0) {
+      // 0-6 月常见参考：每日每公斤 120-180 毫升
+      var kgMin = Math.round(w * 120), kgMax = Math.round(w * 180);
+      cells += '<div class="cell"><div class="k">按体重估算（每日）</div><div class="v">' + kgMin + '–' + kgMax + ' <small>ml</small></div></div>' +
+               '<div class="cell"><div class="k">按体重估算（每次）</div><div class="v">' + Math.round(kgMin / ((nMin + nMax) / 2)) + '–' + Math.round(kgMax / ((nMin + nMax) / 2)) + ' <small>ml</small></div></div>';
+      tips.push("按体重算出来的区间是「每公斤每天 120 到 180 毫升」这个常见参考，实际差异很大，只用来对照，不用来卡数字。");
+      if (m >= 6) tips.push("宝宝已经 6 个月以上，辅食开始占一部分热量，奶量会自然下降。上面按月龄的估算更贴近这个阶段。");
+    } else {
+      tips.push("填上体重可以多给一组「按体重估算」的参考。两个角度对照着看，比只看一个数字可靠。");
+    }
+    if (m >= 12) tips.push("1 岁以后奶退到辅助位置，重点转到三餐。这个表对 1 岁以上的参考意义已经不大。");
+    if (m < 1) tips.push("新生儿期推荐按需喂养，看饥饿信号而不是看钟表。表格里的次数只是一个大致范围。");
+
+    document.getElementById("kv").innerHTML = cells;
+    document.getElementById("tip").innerHTML = tips.map(function (t) { return "· " + esc(t); }).join("<br>");
+    document.getElementById("out").style.display = "block";
+
+    // 奶粉用量换算
+    var p = "";
+    var midPer = Math.round((perMin + perMax) / 2);
+    var midN = Math.round((nMin + nMax) / 2);
+    var spoonsPerFeed = midPer / scoop;
+    var spoonsDay = spoonsPerFeed * midN;
+
+    p += '<div class="stat">' +
+      '<span>取中间值 <b>' + midPer + '</b> ml × <b>' + midN + '</b> 次</span>' +
+      '<span>每天约 <b>' + (midPer * midN) + '</b> ml</span>' +
+      '</div>';
+
+    p += '<table><thead><tr><th>项目</th><th style="width:150px">换算结果</th></tr></thead><tbody>' +
+      '<tr><td>每次需要的奶粉勺数</td><td style="color:var(--accent);font-weight:600">约 ' + spoonsPerFeed.toFixed(1) + ' 平勺</td></tr>' +
+      '<tr><td>每天需要的奶粉勺数</td><td style="color:var(--accent);font-weight:600">约 ' + Math.round(spoonsDay) + ' 平勺</td></tr>' +
+      '<tr><td>每次用的水量</td><td>' + midPer + ' 毫升</td></tr>' +
+      '<tr><td>换算依据</td><td>1 平勺兑 ' + scoop + ' 毫升水</td></tr>' +
+      '</tbody></table>';
+
+    p += '<div class="note" style="margin-top:14px">' +
+      '勺数是按「取中间值」估算的，实际会有小数。真正冲的时候按罐上的比例取整就行，' +
+      '不要为了凑到整数去压实或刮掉奶粉。罐装奶粉的「一勺」指的是原装量勺刮平，不是随便一把勺子。' +
+      '</div>';
+
+    document.getElementById("powder-body").innerHTML = p;
+    document.getElementById("powder").style.display = "block";
+  }
+
+  document.getElementById("calc").addEventListener("click", function () { save(); calc(); });
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!confirm("确定清空已填的信息吗？")) return;
+    document.getElementById("months").value = "";
+    document.getElementById("weight").value = "";
+    document.getElementById("scoop").value = "30";
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    document.getElementById("out").style.display = "none";
+    document.getElementById("powder").style.display = "none";
+  });
+
+  document.getElementById("months").addEventListener("change", save);
+  document.getElementById("weight").addEventListener("change", save);
+  document.getElementById("scoop").addEventListener("change", save);
+
+  restore();
+})();
+</script>

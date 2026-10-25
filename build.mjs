@@ -62,7 +62,7 @@ const SITE = {
   // <title> 后缀用于搜索引擎（需要关键词），品牌主张用于社交分享（需要传播力），
   // 两者需求不同，因此分开处理，不硬塞进同一句。
   seoSuffix: "家庭与成长实用内容站",
-  desc: "小乖乖是一个不劝你忍的家庭实用内容站。原创文章覆盖婴幼儿养育、儿童教育、女性成长、家庭关系与两性亲密成长，帮你把说不出口的话说出口、把算不清的账算清楚；并提供 20 个免费实用工具，全部本地运行、不上传任何数据。",
+  desc: "小乖乖是一个不劝你忍的家庭实用内容站。原创文章覆盖婴幼儿养育、儿童教育、女性成长、家庭关系与两性亲密成长，帮你把说不出口的话说出口、把算不清的账算清楚；并提供 30 个免费实用工具，全部本地运行、不上传任何数据。",
   disclaimer:
     "本站内容仅为经验分享与知识科普，不提供医疗诊断、诊疗建议。" +
     "涉及健康、育儿、心理问题时请以专业人士意见为准。所有内容仅供学习参考。",
@@ -440,8 +440,12 @@ const BASE_CSS = `
 
   /* ══════════════════════════════════════════════════════════
    * 卡片网格（仅用于「实用工具」，以及文章页的同类内容推荐）
+   * 固定 3 列而非 auto-fill —— 工具数量规则要求每分类为 3 的倍数
+   * （6/9/12…），只有在列数稳定为 3 时才能整行排满、末行不留空缺。
+   * 用 auto-fill + minmax(268px) 时列数会随视口在 2/3 之间漂移，
+   * 3 的倍数在 2 列下反而会剩 1 个空位，规则就失效了。
    * ══════════════════════════════════════════════════════════ */
-  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   a.card {
     display: block; background: var(--panel); border: 1px solid var(--line);
     border-radius: var(--radius-lg); padding: 16px 18px; text-decoration: none;
@@ -647,6 +651,10 @@ const BASE_CSS = `
     ul.index.two { grid-template-columns: 1fr; column-gap: 0; }
     .cat-groups { grid-template-columns: 1fr; gap: 26px; }
     .cat-group:last-child ul.index { grid-template-columns: 1fr; column-gap: 0; }
+    /* 平板仍保持 3 列 —— 工具数为 3 的倍数这一规则依赖列数恒为 3。
+       收窄间距与内边距让卡片在 600~860px 也能放下，而不是降到 2 列。 */
+    .grid { gap: 10px; }
+    a.card { padding: 14px 14px; }
   }
 
   @media (max-width: 560px) {
@@ -1063,7 +1071,7 @@ function build() {
     const rest = pick ? all.filter((p) => p.slug !== pick.slug) : all;
     return { ...c, total: all.length, list: rest.slice(0, perCatOf(c.slug)) };
   });
-  // 首页工具区只列 12 个（全站 20 个，全列出来会让首页过长、冲淡内容权重）。
+  // 首页工具区只列 12 个（全站 30 个，全列出来会让首页过长、冲淡内容权重）。
   // 取法为「按分类轮流取」而非直接截取前 12 —— tools.json 是按分类顺序排列的，
   // 直接 slice(0,12) 只会拿到前 3 个分类，其余 2 个分类一个都看不到。
   const HOME_TOOLS = 12;

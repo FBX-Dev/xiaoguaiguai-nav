@@ -1,0 +1,253 @@
+<div class="tool">
+  <div class="panel">
+    <h2>先看几组字，勾出孩子认得的</h2>
+    <div class="hint" style="margin-bottom:16px">
+      下面有三组字，每组按常见程度分层抽取。<strong>勾出孩子能独立念出来、并大致知道意思的字</strong>——
+      需要提示才认得的、只会念不知道意思的，先不勾。
+    </div>
+    <div id="groups"></div>
+    <div class="btns">
+      <button id="calc">看估算结果</button>
+      <button id="clear" class="ghost">清空勾选</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>粗略估算</h2>
+    <div class="kv" id="kv"></div>
+    <div class="hint" id="band-tip" style="margin-top:14px"></div>
+  </div>
+
+  <div class="panel" id="books" style="display:none">
+    <h2>按这个水平，可以试试这些书</h2>
+    <div id="book-list"></div>
+    <div class="note" style="margin-top:16px" id="book-note"></div>
+  </div>
+
+  <div class="panel">
+    <h2>这个数字能说明什么，不能说明什么</h2>
+    <ul class="plain">
+      <li><strong>它只是一个粗估，不是测查。</strong>真正的识字量测查需要用经过标定的字表、由专业人员按统一流程做。这里用的是分层抽样：从不同常见程度的字里各抽一批，看你认得多少，再按比例推。抽样的误差不小，所以结果只给区间、不给精确值。</li>
+      <li><strong>「认得」的标准很关键。</strong>能念出来不等于理解。字放到句子里认得出、换个地方也认得出，才算真的掌握。只按「见过」来勾，数字会虚高。</li>
+      <li><strong>年龄差异远大于你想的。</strong>同是 6 岁，识字量从几百到两千都有可能，都属正常范围。学前阶段识字快慢和以后的语文成绩没有直接对应关系。</li>
+      <li><strong>它唯一的用处是选书。</strong>知道大概在哪个区间，能帮你挑难度合适的书，不至于买回来太简单（孩子嫌无聊）或太难（读两行就放弃）。</li>
+      <li><strong>不要拿这个数字去比较。</strong>亲戚家孩子认多少字，跟你的孩子没关系。识字不是比赛项目，也不是入学门槛。</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>识字这件事，几个更实际的建议</h2>
+    <ul class="plain">
+      <li><strong>在阅读里认字，比用字卡效率高。</strong>单独的字卡是孤立的符号，放进故事里才有意义。同一个字在不同故事里反复遇到，自然就记住了。</li>
+      <li><strong>不用追求「每天认几个」。</strong>定指标容易变成任务，孩子一抵触就得不偿失。保持每天有愉快的共读时间，比完成认字量重要。</li>
+      <li><strong>让他读给你听，比让他认字卡好。</strong>选一本他大部分字都认识的书，让他念，遇到不认识的你补上。这样他体验到的是「我能读」，而不是「我又不认识」。</li>
+      <li><strong>指读要适可而止。</strong>早期用手指着字读，能帮孩子建立「字—音」对应。但一直指读会让注意力全在字上，影响理解故事，等他上路了就自然放手。</li>
+      <li><strong>如果孩子明显抗拒，先停下来。</strong>学前阶段的识字，晚一点开始没有损失。把关系搞僵了，后面要花更大力气修回来。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具只做粗略估算，用于选书参考，<strong>不具备任何评估、诊断或鉴定功能</strong>。
+      如果孩子在学习上出现持续的明显困难（例如长期无法建立字形与读音的对应、读写明显落后于同龄且差距持续扩大），
+      请咨询学校老师或儿童保健、儿童心理专业人士，不要用本工具的结果做判断。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_literacy";
+
+  // 三层字表：每层 20 个，按常见程度从高到低分层抽样。
+  // 估算逻辑：各层勾选比例 × 该层代表字数，再相加得到一个粗略区间。
+  var GROUPS = [
+    {
+      name: "第一组（最常用的一批）",
+      note: "这一层是出现频率最高的一批字，覆盖日常读物的很大一部分。",
+      span: 500,
+      chars: "的一是了我不人在他有这上们来到时大地为子中你"
+    },
+    {
+      name: "第二组（比较常用的）",
+      note: "这一层在生活用语和儿童读物里也很常见。",
+      span: 500,
+      chars: "说生国年着就那和要她出也得里后自以会家可下"
+    },
+    {
+      name: "第三组（开始进阶的）",
+      note: "这一层在日常对话里出现得少一些，更多出现在书面阅读里。",
+      span: 1000,
+      chars: "过天去能对小多然于心学么之都好看起发当没成"
+    }
+  ];
+
+  var checked = {};
+  try {
+    var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (raw && typeof raw === "object") checked = raw;
+  } catch (e) {}
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(checked)); } catch (e) {} }
+
+  function renderGroups() {
+    var html = "";
+    for (var g = 0; g < GROUPS.length; g++) {
+      var grp = GROUPS[g];
+      var chars = grp.chars.split("");
+      html += '<div style="margin-bottom:20px">' +
+        '<div class="hint" style="margin-bottom:8px;color:var(--ink-soft);font-size:13.5px"><strong>' + esc(grp.name) + '</strong>　' + esc(grp.note) + '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+      for (var i = 0; i < chars.length; i++) {
+        var id = "c" + g + "_" + i;
+        var on = checked[id] ? " on" : "";
+        html += '<label data-chk="' + id + '" style="cursor:pointer;user-select:none;min-width:42px;text-align:center;padding:9px 10px;border:1px solid ' +
+          (checked[id] ? "var(--accent)" : "#e6ded2") + ';border-radius:8px;font-size:19px;line-height:1;background:' +
+          (checked[id] ? "var(--accent)" : "#fff") + ';color:' + (checked[id] ? "#fff" : "var(--ink)") + '">' +
+          esc(chars[i]) + '<input type="checkbox" data-id="' + id + '" ' + (checked[id] ? "checked" : "") +
+          ' style="position:absolute;opacity:0;pointer-events:none" /></label>';
+      }
+      html += "</div></div>";
+    }
+    document.getElementById("groups").innerHTML = html;
+
+    var labels = document.querySelectorAll("[data-chk]");
+    for (var k = 0; k < labels.length; k++) {
+      labels[k].addEventListener("click", function (e) {
+        var id = this.getAttribute("data-chk");
+        var box = this.querySelector("input[data-id]");
+        // 让 label 自己控制状态，避免原生 checkbox 与自定义样式不同步
+        e.preventDefault();
+        var now = !checked[id];
+        checked[id] = now;
+        box.checked = now;
+        this.style.background = now ? "var(--accent)" : "#fff";
+        this.style.color = now ? "#fff" : "var(--ink)";
+        this.style.borderColor = now ? "var(--accent)" : "#e6ded2";
+        save();
+      });
+    }
+  }
+
+  function calc() {
+    var estMin = 0, estMax = 0, detail = [];
+
+    for (var g = 0; g < GROUPS.length; g++) {
+      var grp = GROUPS[g];
+      var n = grp.chars.length;
+      var hit = 0;
+      for (var i = 0; i < n; i++) if (checked["c" + g + "_" + i]) hit++;
+      var ratio = hit / n;
+      var mid = ratio * grp.span;
+      // 抽样误差：按 ±0.6 个标准差量级给一个粗略浮动带
+      var pad = grp.span * 0.22;
+      estMin += Math.max(0, mid - pad);
+      estMax += mid + pad;
+      detail.push({ name: grp.name, hit: hit, n: n, span: grp.span, mid: Math.round(mid) });
+    }
+
+    var totalHit = 0, totalN = 0;
+    for (var q = 0; q < GROUPS.length; q++) { totalHit += countOf(q); totalN += GROUPS[q].chars.length; }
+
+    if (totalHit === 0) {
+      alert("还没有勾选任何字。先勾出孩子认得的字，再看估算结果。");
+      return;
+    }
+
+    estMin = Math.round(estMin / 50) * 50;
+    estMax = Math.round(estMax / 50) * 50;
+    if (estMax <= estMin) estMax = estMin + 200;
+
+    var band, bandTip;
+    if (estMax < 400) {
+      band = "启蒙阶段";
+      bandTip = "这个阶段的孩子更多是靠图画和听读来理解故事，识字量本身不是重点。保持每天有人读给他听，比认字更有价值。";
+    } else if (estMax < 800) {
+      band = "初级阅读";
+      bandTip = "已经能认下不少常见字，可以开始尝试字少图多的读物。这个阶段最怕的是书太难，读两行就卡住，反而打击积极性。";
+    } else if (estMax < 1400) {
+      band = "可以独立读简单读物";
+      bandTip = "这个水平已经能自己读一些短篇故事了。可以逐步从「你读给他听」过渡到「他读给你听」，你只补他不认识的字。";
+    } else if (estMax < 2200) {
+      band = "接近自主阅读";
+      bandTip = "常见字基本覆盖，读儿童章节书问题不大。这时候可以让他自己选书，兴趣比难度更重要。";
+    } else {
+      band = "自主阅读水平";
+      bandTip = "阅读已经基本不靠识字量限制了，重点转向理解和兴趣的广度。不用再刻意安排识字练习。";
+    }
+
+    var html =
+      '<div class="cell"><div class="k">估算区间</div><div class="v">' + estMin + '–' + estMax + ' <small>字</small></div></div>' +
+      '<div class="cell"><div class="k">大致阶段</div><div class="v" style="font-size:19px">' + band + '</div></div>' +
+      '<div class="cell"><div class="k">勾选情况</div><div class="v">' + totalHit + ' <small>/ ' + totalN + ' 字</small></div></div>';
+
+    document.getElementById("kv").innerHTML = html;
+    document.getElementById("band-tip").innerHTML =
+      esc(bandTip) + '<br><br>分层的具体情况：' +
+      esc(detail.map(function (d) { return d.name.replace(/（.*/, "") + " 认 " + d.hit + "/" + d.n + "，折算约 " + d.mid + " 字"; }).join("；") + "。");
+
+    // 选书建议
+    var books = [];
+    if (estMax < 400) {
+      books = [
+        ["无字书 / 图画为主", "整页只有图或极少的字，让孩子自己讲给你听。重点在理解和表达，不在认字。"],
+        ["韵律儿歌与童谣", "句子短、押韵、重复多，读几遍就能跟着念，是最轻松的入门材料。"],
+        ["生活主题翻翻书", "围绕吃饭、睡觉、上幼儿园等熟悉场景，字少、图大，容易建立阅读信心。"]
+      ];
+    } else if (estMax < 800) {
+      books = [
+        ["大字少字的绘本", "一页一两句、每句五到十个字，句式重复，孩子能连蒙带猜地读下去。"],
+        ["桥梁书入门级", "图仍占一半以上，故事分小章节，每章很短，适合刚开始自己读的孩子。"],
+        ["同一系列反复读", "系列书人物固定、用词重复，读第二本时会明显顺畅，成就感来得快。"]
+      ];
+    } else if (estMax < 1400) {
+      books = [
+        ["桥梁书进阶", "图的比例降到三成左右，章节变长，句子开始有从句，适合过渡期。"],
+        ["短篇童话与寓言集", "每篇独立、篇幅短，读完一篇就有完整收尾，不容易半途放弃。"],
+        ["科普类图画读物", "如果孩子喜欢问为什么，这类书能把阅读和兴趣接上，动机更足。"]
+      ];
+    } else if (estMax < 2200) {
+      books = [
+        ["儿童章节书", "整本以文字为主，插图少量。可以让孩子自己挑题材，冒险、侦探、校园都很受欢迎。"],
+        ["儿童文学经典简写本", "情节完整、语言不复杂，能读到「真正的长篇故事」的满足感。"],
+        ["系列长篇", "一旦喜欢上某个系列，会主动追着读，阅读量自然上去，不用大人推。"]
+      ];
+    } else {
+      books = [
+        ["整本儿童小说", "包括中长篇，题材可以放宽到历史、科幻、成长故事。"],
+        ["非虚构类读物", "传记、自然、百科类，帮孩子把阅读从故事扩展到知识。"],
+        ["让孩子自己选", "到这个水平，大人的选书权应该交出去。他喜欢的才读得下去。"]
+      ];
+    }
+
+    document.getElementById("book-list").innerHTML = books.map(function (b) {
+      return '<div class="chk"><div class="nm"><strong>' + esc(b[0]) + '</strong><em>' + esc(b[1]) + '</em></div></div>';
+    }).join("");
+    document.getElementById("book-note").innerHTML =
+      "选书时有个简单的判断法：<strong>随便翻开一页，如果孩子不认识的生字超过五个，这本书现在读起来会吃力</strong>，" +
+      "先放一放，过几个月再拿出来。反过来，如果整页字全认识、内容又太幼稚，他也会觉得没意思。" +
+      "难度合适的位置，大概是「大部分能读，每页有一两个需要你帮忙」。";
+    document.getElementById("out").style.display = "block";
+    document.getElementById("books").style.display = "block";
+  }
+
+  function countOf(g) {
+    var n = 0;
+    for (var i = 0; i < GROUPS[g].chars.length; i++) if (checked["c" + g + "_" + i]) n++;
+    return n;
+  }
+
+  document.getElementById("calc").addEventListener("click", calc);
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!confirm("确定清空全部勾选吗？")) return;
+    checked = {};
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    renderGroups();
+    document.getElementById("out").style.display = "none";
+    document.getElementById("books").style.display = "none";
+  });
+
+  renderGroups();
+})();
+</script>

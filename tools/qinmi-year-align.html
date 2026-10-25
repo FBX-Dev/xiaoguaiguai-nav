@@ -1,0 +1,276 @@
+<div class="tool">
+  <div class="panel">
+    <h2>这个工具怎么用</h2>
+    <div class="hint" style="line-height:1.8">
+      下面分成几个方面，每个方面列出一些值得对齐的问题。<br>
+      <strong>不要想着一次全填完。</strong>建议每次只挑一个方面，两个人各自填，然后交换看。<br>
+      重点是看<strong>差异</strong>——你们想法不一样的地方，才是真正需要聊的地方。想法一致的部分，跳过就行。
+    </div>
+    <div class="field" style="margin-top:18px">
+      <label class="lbl">这次填哪个方面</label>
+      <div class="tabs" id="area-tabs"></div>
+    </div>
+    <div class="btns">
+      <button id="start">开始填这一块</button>
+      <button id="clear" class="ghost">清空全部</button>
+    </div>
+  </div>
+
+  <div class="panel" id="q" style="display:none">
+    <h2 id="q-title"></h2>
+    <div id="q-body"></div>
+    <div class="btns">
+      <button id="compare">看看差异</button>
+      <button id="copy" class="ghost">复制成文本</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>差异在哪里</h2>
+    <div id="out-body"></div>
+  </div>
+
+  <div class="panel">
+    <h2>做这件事的几个前提</h2>
+    <ul class="plain">
+      <li><strong>各自填，别商量。</strong>坐在一起边填边讨论，很容易变成「你说得对，我也这么想」，差异就被抹平了。先独立写完，再交换。</li>
+      <li><strong>看差异，不看对错。</strong>想法不一样不等于谁有问题。工具只标出不同的地方，不评价哪一方更合理。</li>
+      <li><strong>差异分两种，处理方式不同。</strong>一种是「可以兼容」——你重视这个，我更在意那个，两边都能照顾到；另一种是「真的冲突」——比如一个想留在这座城市、一个想走。后者需要认真谈，可能谈好几次。</li>
+      <li><strong>先聊事实，再聊感受。</strong>「你今年加班多少天」是事实，「我觉得被冷落」是感受。混在一起说，容易变成互相指责。分开说，事情就清楚。</li>
+      <li><strong>不要求当场有结论。</strong>很多问题想一次就定下来是不现实的。能说清楚各自怎么想，已经是很大的进展。</li>
+      <li><strong>如果一谈就吵，先停。</strong>说明这个问题现在还不适合直接谈。可以先从不太敏感的部分开始，或者考虑找婚姻家庭咨询师帮忙搭个架子。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具只提供对话题目和差异对照，<strong>不评估你们的关系质量，也不给出「应该怎么办」的结论</strong>。
+      关系里的具体选择，只有你们两个人最清楚。
+      如果你们长期处于频繁冲突、冷战，或存在任何形式的暴力与胁迫，请优先寻求专业帮助，这比任何工具都重要。
+      所有输入数据只保存在你的浏览器里，不会上传，也不会同步到对方设备。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_couple_align";
+
+  var AREAS = [
+    {
+      k: "money",
+      name: "钱怎么花",
+      intro: "钱是最容易起分歧的地方，因为它背后是安全感、控制感和价值观。先把各自的想法摆出来。",
+      qs: [
+        ["每月能存下多少算满意", "填一个百分比或金额。比如「至少存 30%」。", "text"],
+        ["大额支出超过多少要先商量", "填一个金额门槛。比如「5000 元以上」。", "text"],
+        ["给双方父母的补贴，怎么定", "各填一句你的想法。", "text"],
+        ["家里谁管账", "填你的想法，比如「各管各的」「一个人统一管」。", "text"],
+        ["对借钱给亲友的态度", "填一句你的底线。", "text"]
+      ]
+    },
+    {
+      k: "chore",
+      name: "家务与带娃",
+      intro: "这一块的分歧往往不在「谁做得多」，而在「什么算做完」和「谁在操心」。",
+      qs: [
+        ["家务怎么分", "填你觉得合理的方式。", "text"],
+        ["「做完了」的标准是什么", "比如「厨房台面不能有东西」。这一项差异常常最大。", "text"],
+        ["谁负责记着家里的事", "比如交费、买药、孩子打疫苗。填你的观察。", "text"],
+        ["周末谁带娃", "填你希望的安排。", "text"],
+        ["如果一个人累了，怎么办", "填你们实际会怎么做，或你希望怎么做。", "text"]
+      ]
+    },
+    {
+      k: "family",
+      name: "和双方父母的距离",
+      intro: "这一块涉及边界，也涉及情感。先把各自的期待说清楚，比等到具体事件发生时再吵要好。",
+      qs: [
+        ["和父母住的理想距离", "比如「同一个城市但不同小区」「不同城市」。", "text"],
+        ["父母来住，最多住多久", "填一个你的舒适上限。", "text"],
+        ["过年去谁家", "填你的想法。", "text"],
+        ["父母对育儿提意见时，怎么回应", "填你的做法。", "text"],
+        ["需要父母帮忙时，怎么开口", "填你的习惯。", "text"]
+      ]
+    },
+    {
+      k: "time",
+      name: "时间和独处",
+      intro: "很多矛盾不是因为不够爱，而是因为两个人都太累、都没有自己的时间。",
+      qs: [
+        ["每周需要多少自己的时间", "填小时数，或「每周一个晚上」这种具体说法。", "text"],
+        ["两个人单独相处多久算够", "填你满意的频率，比如「每周一次，两小时」。", "text"],
+        ["对方加班时，你的感受", "填一句真话，不用修饰。", "text"],
+        ["手机在家的使用习惯", "比如「吃饭时不看」「睡前不看」。", "text"],
+        ["各自最想恢复的一件事", "填你最近很想重新捡起来做的事。", "text"]
+      ]
+    },
+    {
+      k: "future",
+      name: "未来三年",
+      intro: "方向性的问题，早说比晚说好。不需要现在就有答案，但需要知道对方在想什么。",
+      qs: [
+        ["三年内换城市吗", "填你的想法和理由。", "text"],
+        ["要不要二胎", "填你的想法。", "text"],
+        ["工作上的重心怎么排", "比如「先拼事业」「先稳两年」。", "text"],
+        ["理想的居住状态", "比如「有院子的房子」「离父母近」。", "text"],
+        ["最想一起完成的一件事", "填一件具体的事，不是「过得更好」这种。", "text"]
+      ]
+    }
+  ];
+
+  var curArea = AREAS[0].k;
+  var data = {};
+
+  try {
+    var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (raw && typeof raw === "object") data = raw;
+  } catch (e) {}
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
+  function areaOf(k) { for (var i = 0; i < AREAS.length; i++) if (AREAS[i].k === k) return AREAS[i]; return AREAS[0]; }
+
+  function renderTabs() {
+    var html = "";
+    for (var i = 0; i < AREAS.length; i++) {
+      html += '<button data-area="' + AREAS[i].k + '"' + (AREAS[i].k === curArea ? ' class="on"' : "") + '>' + esc(AREAS[i].name) + '</button>';
+    }
+    document.getElementById("area-tabs").innerHTML = html;
+    var bs = document.querySelectorAll("#area-tabs button");
+    for (var j = 0; j < bs.length; j++) {
+      bs[j].addEventListener("click", function () {
+        curArea = this.getAttribute("data-area");
+        renderTabs();
+      });
+    }
+  }
+
+  function inpStyle() {
+    return "width:100%;padding:8px 10px;border:1px solid #e6ded2;border-radius:6px;font-size:13.5px;font-family:inherit;box-sizing:border-box";
+  }
+
+  function startArea() {
+    var a = areaOf(curArea);
+    document.getElementById("q-title").textContent = a.name;
+
+    var html = '<div class="note" style="margin-bottom:18px">' + esc(a.intro) + '</div>';
+
+    for (var i = 0; i < a.qs.length; i++) {
+      var q = a.qs[i];
+      var id = a.k + "_" + i;
+      var mine = (data[id] && data[id].mine) || "";
+      var yours = (data[id] && data[id].yours) || "";
+      html += '<div class="field" style="padding-bottom:14px;border-bottom:1px solid #f4efe7">' +
+        '<label class="lbl" style="margin-bottom:8px">' + (i + 1) + '. ' + esc(q[0]) + '</label>' +
+        '<div class="hint" style="margin-bottom:8px">' + esc(q[1]) + '</div>' +
+        '<div style="display:grid;gap:8px;grid-template-columns:1fr 1fr">' +
+        '<input type="text" data-q="' + id + '" data-side="mine" value="' + esc(mine) + '" placeholder="我填：我的想法" style="' + inpStyle() + '" />' +
+        '<input type="text" data-q="' + id + '" data-side="yours" value="' + esc(yours) + '" placeholder="对方填：他的想法" style="' + inpStyle() + '" />' +
+        '</div></div>';
+    }
+
+    document.getElementById("q-body").innerHTML = html;
+    var ins = document.querySelectorAll("#q-body input[data-q]");
+    for (var k = 0; k < ins.length; k++) {
+      ins[k].addEventListener("input", function () {
+        var id = this.getAttribute("data-q");
+        var side = this.getAttribute("data-side");
+        if (!data[id]) data[id] = { mine: "", yours: "" };
+        data[id][side] = this.value;
+        save();
+      });
+    }
+
+    document.getElementById("q").style.display = "block";
+    document.getElementById("out").style.display = "none";
+  }
+
+  function compare() {
+    var a = areaOf(curArea);
+    var same = [], diff = [], empty = [];
+
+    for (var i = 0; i < a.qs.length; i++) {
+      var id = a.k + "_" + i;
+      var d = data[id] || { mine: "", yours: "" };
+      var m = String(d.mine || "").trim();
+      var y = String(d.yours || "").trim();
+      var item = { n: i + 1, q: a.qs[i][0], mine: m, yours: y };
+      if (!m && !y) empty.push(item);
+      else if (m && y && m === y) same.push(item);
+      else diff.push(item);
+    }
+
+    var html = '<div class="stat">' +
+      '<span>这一块共 <b>' + a.qs.length + '</b> 题</span>' +
+      '<span>不同 <b style="color:var(--accent)">' + diff.length + '</b> 题</span>' +
+      '<span>一致 <b>' + same.length + '</b> 题</span>' +
+      '<span>还没填 <b>' + empty.length + '</b> 题</span>' +
+      '</div>';
+
+    if (diff.length) {
+      html += '<div class="hint" style="margin:16px 0 8px"><strong>想法不同的地方（建议重点聊）</strong></div>';
+      for (var j = 0; j < diff.length; j++) {
+        var t = diff[j];
+        html += '<div class="chk" style="align-items:flex-start;flex-direction:column;gap:6px">' +
+          '<div class="nm" style="font-weight:600">' + t.n + '. ' + esc(t.q) + '</div>' +
+          '<div style="display:grid;gap:6px;grid-template-columns:1fr 1fr;width:100%">' +
+          '<div class="hint" style="margin:0;padding:8px 10px;background:#faf7f2;border-radius:6px">我：' + (t.mine ? esc(t.mine) : "（没填）") + '</div>' +
+          '<div class="hint" style="margin:0;padding:8px 10px;background:#faf7f2;border-radius:6px">对方：' + (t.yours ? esc(t.yours) : "（没填）") + '</div>' +
+          '</div></div>';
+      }
+    } else if (same.length) {
+      html += '<div class="note" style="margin-top:16px">这一块填过的题目想法都一致。可以换一个方面试试，或者找一找那些还没填的题。</div>';
+    } else {
+      html += '<div class="note" style="margin-top:16px">还没有填任何内容。两个人先各自填一遍，再回来看对照。</div>';
+    }
+
+    if (empty.length) {
+      html += '<div class="hint" style="margin:18px 0 8px"><strong>还没填的（可以下次再说）</strong></div>';
+      html += '<div class="hint" style="line-height:1.9">' +
+        empty.map(function (e) { return e.n + ". " + esc(e.q); }).join("<br>") + '</div>';
+    }
+
+    html += '<div class="note" style="margin-top:18px">' +
+      '差异不等于问题。<strong>可以聊聊这几个方向</strong>：这件事对你为什么重要？如果按对方说的来，你最担心什么？' +
+      '有没有一种做法，两边都能接受一部分？<br>' +
+      '如果某一条一谈就上火，先放一放，下次再碰。' +
+      '</div>';
+
+    document.getElementById("out-body").innerHTML = html;
+    document.getElementById("out").style.display = "block";
+  }
+
+  function copyText() {
+    var a = areaOf(curArea);
+    var lines = ["【" + a.name + "】对齐清单", ""];
+    for (var i = 0; i < a.qs.length; i++) {
+      var id = a.k + "_" + i;
+      var d = data[id] || { mine: "", yours: "" };
+      lines.push((i + 1) + ". " + a.qs[i][0]);
+      lines.push("　我：" + (d.mine || "（没填）"));
+      lines.push("　对方：" + (d.yours || "（没填）"));
+      lines.push("");
+    }
+    var txt = lines.join("\n");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(function () { alert("已复制到剪贴板。"); }, function () { alert(txt); });
+    } else {
+      alert(txt);
+    }
+  }
+
+  document.getElementById("start").addEventListener("click", startArea);
+  document.getElementById("compare").addEventListener("click", compare);
+  document.getElementById("copy").addEventListener("click", copyText);
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!confirm("确定清空全部填写内容吗？此操作不可恢复。")) return;
+    data = {};
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    document.getElementById("q").style.display = "none";
+    document.getElementById("out").style.display = "none";
+  });
+
+  renderTabs();
+})();
+</script>

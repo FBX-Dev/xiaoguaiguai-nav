@@ -1,0 +1,215 @@
+<div class="tool">
+  <div class="panel">
+    <h2>填一下基本情况</h2>
+    <div class="field">
+      <label class="lbl" for="start">预计开始休产假的日期</label>
+      <input type="date" id="start" />
+      <div class="hint">一般可以从预产期前 15 天开始休。具体能不能提前、提前多久，按你所在单位的规定。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="base">产假天数</label>
+      <input type="number" id="base" min="98" max="365" step="1" value="158" />
+      <div class="hint">
+        国家规定的基础产假是 98 天，各地另有奖励假，所以实际天数差别很大（常见 128 到 188 天不等）。
+        请按你所在省份的规定填写。如果遇到难产、多胞胎，还会有额外天数。
+      </div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="extra">额外增加的天数（可不填）</label>
+      <input type="number" id="extra" min="0" max="90" step="1" value="0" />
+      <div class="hint">难产通常加 15 天，多胞胎每多一个婴儿加 15 天。具体以当地规定为准。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="salary">本人上年度月平均工资（元）</label>
+      <input type="number" id="salary" min="0" step="100" placeholder="例如 6000" />
+      <div class="hint">用于估算生育津贴。填个大概数即可，看的是量级不是精确值。</div>
+    </div>
+    <div class="field">
+      <label class="lbl" for="avg">单位上年度职工月平均工资（元，可不填）</label>
+      <input type="number" id="avg" min="0" step="100" placeholder="例如 7000" />
+      <div class="hint">生育津贴通常按单位上年度职工月平均工资计算。不填就按你填的本人工资算。</div>
+    </div>
+    <div class="btns">
+      <button id="calc">开始估算</button>
+      <button id="clear" class="ghost">清空</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>假期与津贴的估算</h2>
+    <div class="kv" id="kv"></div>
+    <div id="range-wrap" style="margin-top:18px"></div>
+  </div>
+
+  <div class="panel" id="detail" style="display:none">
+    <h2>计算过程</h2>
+    <div id="detail-body"></div>
+  </div>
+
+  <div class="panel">
+    <h2>需要弄清楚的三件事</h2>
+    <ul class="plain">
+      <li><strong>产假天数是地方规定，不是全国统一。</strong>国家层面规定基础产假 98 天，各省在《人口与计划生育条例》里另有奖励假。同样是产假，不同省份能差 60 天以上。填之前先去查一下本省的最新规定，或者直接问单位人事。</li>
+      <li><strong>生育津贴和产假工资，通常「就高不就低」。</strong>生育津贴由生育保险基金支付，按单位上年度职工月平均工资计算。如果津贴低于你本人产假前的工资标准，差额一般由单位补足；如果津贴高于工资，多出的部分通常归个人。具体执行方式各地不同。</li>
+      <li><strong>津贴是按「天」发的，不是按「月」。</strong>常见算法是「单位上年度职工月平均工资 ÷ 30 × 产假天数」。所以天数算错，金额就跟着错。</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>几个容易被忽略的点</h2>
+    <ul class="plain">
+      <li><strong>男方的护理假（陪产假）是另一笔。</strong>多数省份规定男方有 7 到 30 天不等的护理假，一般需要单独申请，不包含在女方的产假里。</li>
+      <li><strong>哺乳时间不是假期。</strong>按规定，哺乳期内每天有 1 小时哺乳时间（多胞胎相应增加），这段时间是算在工作时间里的，工资照发，不需要额外扣假。</li>
+      <li><strong>产假期间的社保不能断。</strong>由单位继续缴纳，个人应缴部分通常从津贴里代扣。如果发现单位在产假期间停了你的社保，要立刻问清楚。</li>
+      <li><strong>生育保险要满足缴费时限。</strong>多数地方要求在生育前连续缴费满一定月数（常见是 12 个月，各地不同），否则可能无法享受津贴。备孕前最好确认一下自己的缴费情况。</li>
+      <li><strong>流产、终止妊娠也有相应假期。</strong>按规定可享受 15 到 42 天不等的产假（按孕周长短），这一点很多人不知道。</li>
+      <li><strong>产假结束后的安排要提前想。</strong>返岗时间、哺乳安排、孩子谁带——这些在休假期过半时就开始商量，比临到上班前几天才决定要从容得多。</li>
+    </ul>
+    <div class="note" style="margin-top:16px">
+      本工具只按通用算法做算术估算，<strong>不构成任何法律、劳动或社保方面的建议</strong>。
+      产假天数、津贴计算基数、发放方式在各省市差异很大，且政策会调整。
+      <strong>请以你所在省份的最新规定和当地社保经办机构的答复为准</strong>，涉及具体权益时建议咨询单位人事或拨打当地人社部门电话核实。
+      所有输入数据只保存在你的浏览器里，不上传。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_maternity";
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function money(n) {
+    if (!isFinite(n)) return "—";
+    return n.toLocaleString("zh-CN", { maximumFractionDigits: 0 });
+  }
+  function parseD(s) {
+    var a = String(s || "").split("-");
+    if (a.length !== 3) return null;
+    var d = new Date(parseInt(a[0], 10), parseInt(a[1], 10) - 1, parseInt(a[2], 10));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function addDays(d, n) { var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
+  function fmtD(d) { return d.getFullYear() + " 年 " + (d.getMonth() + 1) + " 月 " + d.getDate() + " 日"; }
+
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({
+        start: document.getElementById("start").value,
+        base: document.getElementById("base").value,
+        extra: document.getElementById("extra").value,
+        salary: document.getElementById("salary").value,
+        avg: document.getElementById("avg").value
+      }));
+    } catch (e) {}
+  }
+  function restore() {
+    try {
+      var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+      if (raw) {
+        for (var k in raw) { var el = document.getElementById(k); if (el && raw[k] !== "" && raw[k] != null) el.value = raw[k]; }
+      }
+    } catch (e) {}
+  }
+
+  function calc() {
+    var start = parseD(document.getElementById("start").value);
+    if (!start) { alert("请选择预计开始休产假的日期。"); return; }
+
+    var base = parseInt(document.getElementById("base").value, 10);
+    if (!isFinite(base) || base < 98) { alert("产假天数至少为 98 天。请按你所在省份的规定填写。"); return; }
+
+    var extra = parseInt(document.getElementById("extra").value, 10);
+    if (!isFinite(extra) || extra < 0) extra = 0;
+
+    var total = base + extra;
+    var end = addDays(start, total - 1);          // 含首日
+    var back = addDays(end, 1);                   // 返岗日
+
+    var salary = parseFloat(document.getElementById("salary").value);
+    var avg = parseFloat(document.getElementById("avg").value);
+    if (!isFinite(avg) || avg <= 0) avg = isFinite(salary) && salary > 0 ? salary : 0;
+
+    var cells =
+      '<div class="cell"><div class="k">产假总天数</div><div class="v">' + total + ' <small>天</small></div></div>' +
+      '<div class="cell"><div class="k">开始日期</div><div class="v" style="font-size:16px">' + fmtD(start) + '</div></div>' +
+      '<div class="cell"><div class="k">结束日期</div><div class="v" style="font-size:16px">' + fmtD(end) + '</div></div>' +
+      '<div class="cell"><div class="k">预计返岗日</div><div class="v" style="font-size:16px">' + fmtD(back) + '</div></div>';
+
+    var allowance = 0;
+    if (avg > 0) {
+      allowance = (avg / 30) * total;
+      cells +=
+        '<div class="cell"><div class="k">生育津贴估算</div><div class="v">' + money(allowance) + ' <small>元</small></div></div>' +
+        '<div class="cell"><div class="k">折算每月</div><div class="v">' + money(allowance / (total / 30)) + ' <small>元</small></div></div>';
+    }
+
+    document.getElementById("kv").innerHTML = cells;
+
+    // 时间轴：产假区间占一年的比例
+    var pct = Math.min(100, (total / 365) * 100);
+    document.getElementById("range-wrap").innerHTML =
+      '<div class="hint" style="margin-bottom:6px">产假时长（相对一年）</div>' +
+      '<div style="height:11px;background:#f2ece3;border-radius:99px;overflow:hidden">' +
+      '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:var(--accent)"></div></div>' +
+      '<div class="hint" style="margin-top:8px">' + total + ' 天，约占一年的 ' + pct.toFixed(0) + '%。</div>';
+
+    var d = '<table><thead><tr><th>项目</th><th style="width:150px">数值</th></tr></thead><tbody>' +
+      '<tr><td>基础产假（国家规定）</td><td>98 天</td></tr>' +
+      '<tr><td>你填写的产假天数</td><td style="color:var(--accent);font-weight:600">' + base + ' 天</td></tr>' +
+      '<tr><td>额外增加（难产 / 多胞胎等）</td><td>' + extra + ' 天</td></tr>' +
+      '<tr><td>合计</td><td style="color:var(--accent);font-weight:600">' + total + ' 天</td></tr>';
+
+    if (avg > 0) {
+      d += '<tr><td>津贴计算基数</td><td>' + money(avg) + ' 元/月' +
+        (isFinite(salary) && salary > 0 && Math.abs(avg - salary) > 1 ? '（按单位平均工资）' : '（按你填写的工资）') + '</td></tr>' +
+        '<tr><td>计算方式</td><td>' + money(avg) + ' ÷ 30 × ' + total + '</td></tr>' +
+        '<tr><td>生育津贴估算</td><td style="color:var(--accent);font-weight:600">' + money(allowance) + ' 元</td></tr>';
+
+      if (isFinite(salary) && salary > 0) {
+        var monthlyAllowance = allowance / (total / 30);
+        if (monthlyAllowance < salary) {
+          d += '<tr><td>与本人工资的差额</td><td>每月少约 ' + money(salary - monthlyAllowance) + ' 元，一般由单位补足</td></tr>';
+        } else if (monthlyAllowance > salary) {
+          d += '<tr><td>与本人工资的差额</td><td>每月多约 ' + money(monthlyAllowance - salary) + ' 元</td></tr>';
+        } else {
+          d += '<tr><td>与本人工资的差额</td><td>基本持平</td></tr>';
+        }
+      }
+    }
+    d += '</tbody></table>';
+
+    d += '<div class="note" style="margin-top:14px">' +
+      '上面的计算用的是「基数 ÷ 30 × 天数」这个常见算法。但各地在基数口径（有的按本人工资、有的按单位平均工资）、' +
+      '发放方式（先发工资后报津贴，还是直接发津贴）、封顶规则上都有差别。' +
+      '<strong>这里的金额只用来心里有个数，实际以社保经办机构核定为准。</strong>' +
+      '</div>';
+
+    document.getElementById("detail-body").innerHTML = d;
+    document.getElementById("out").style.display = "block";
+    document.getElementById("detail").style.display = "block";
+  }
+
+  document.getElementById("calc").addEventListener("click", function () { save(); calc(); });
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!confirm("确定清空已填的信息吗？")) return;
+    document.getElementById("start").value = "";
+    document.getElementById("base").value = "158";
+    document.getElementById("extra").value = "0";
+    document.getElementById("salary").value = "";
+    document.getElementById("avg").value = "";
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    document.getElementById("out").style.display = "none";
+    document.getElementById("detail").style.display = "none";
+  });
+
+  ["start", "base", "extra", "salary", "avg"].forEach(function (id) {
+    document.getElementById(id).addEventListener("change", save);
+  });
+
+  restore();
+})();
+</script>

@@ -1,0 +1,276 @@
+<div class="tool">
+  <div class="panel">
+    <h2>把这学期的班填进来</h2>
+    <div class="hint" style="margin-bottom:16px">
+      一行一个班。填完点下面的按钮，会算出每周占掉多少时间、每年花多少钱，
+      以及<strong>孩子还剩多少可以自己支配的时间</strong>。
+    </div>
+    <div id="rows"></div>
+    <div class="btns">
+      <button id="add" class="ghost">再加一行</button>
+      <button id="calc">开始算</button>
+      <button id="clear" class="ghost">全部清空</button>
+    </div>
+  </div>
+
+  <div class="panel" id="out" style="display:none">
+    <h2>总账</h2>
+    <div class="kv" id="kv"></div>
+  </div>
+
+  <div class="panel" id="week" style="display:none">
+    <h2>一周的时间都去哪了</h2>
+    <div id="week-body"></div>
+  </div>
+
+  <div class="panel" id="advice" style="display:none">
+    <h2>几个值得想一想的地方</h2>
+    <div id="advice-body"></div>
+  </div>
+
+  <div class="panel">
+    <h2>报班之前可以先问自己这几个问题</h2>
+    <ul class="plain">
+      <li><strong>是孩子想去，还是你觉得该去。</strong>这两种动机会导致完全不同的结果。孩子自己想学的，遇到困难更容易坚持；大人安排的，通常半年后就开始靠催促维持。</li>
+      <li><strong>算上往返时间了吗。</strong>上课一小时，路上来回一小时，实际占用是两小时。很多家庭的时间紧张，就紧张在这里。</li>
+      <li><strong>每周还剩多少自由时间。</strong>孩子需要有「什么也不干」的时间——发呆、瞎玩、自己找乐子。这些时间不是浪费，是他在学着和自己相处。</li>
+      <li><strong>有没有留出空白的周末。</strong>如果周六周日排得比上学还满，那就不叫周末了。留一天什么都不安排，对全家都好。</li>
+      <li><strong>费用算到年，别只算到月。</strong>按月交感觉不多，乘 12 之后往往是家里的大项支出。算清楚总额，再做取舍会容易些。</li>
+      <li><strong>「学了一阵不想学了」怎么处理。</strong>提前和孩子说好一个期限（比如先上完这学期），到点了再一起决定要不要继续。既避免一遇到困难就放弃，也避免硬撑到底。</li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>一句实在话</h2>
+    <div class="note" style="margin-bottom:0">
+      兴趣班不是越多越好，也不是越少越好，关键是<strong>总数不要超过这个家庭能从容承受的量</strong>——
+      包括时间、钱和接送的人力。如果每次上课都要全家动员、路上吵架、回家赶作业，那这个班的收益可能还不如不上。
+      少报两个、每个都上得踏实，通常比报满、个个都在应付要好。
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var KEY = "xgg_class_plan";
+
+  var ROWS = [];
+  try {
+    var raw = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (raw && Array.isArray(raw.rows) && raw.rows.length) ROWS = raw.rows;
+  } catch (e) {}
+  if (!ROWS.length) ROWS = [blank()];
+
+  function blank() {
+    return { name: "", times: "", mins: "", fee: "", period: "month", travel: "" };
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function money(n) {
+    if (!isFinite(n)) return "—";
+    return n.toLocaleString("zh-CN", { maximumFractionDigits: 0 });
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ rows: ROWS })); } catch (e) {}
+  }
+  function inpStyle() {
+    return "width:100%;padding:7px 9px;border:1px solid #e6ded2;border-radius:6px;font-size:13.5px;font-family:inherit;box-sizing:border-box";
+  }
+
+  function renderRows() {
+    var html = '<table><thead><tr>' +
+      '<th style="width:22%">班名</th>' +
+      '<th style="width:12%">每周几次</th>' +
+      '<th style="width:13%">每次分钟</th>' +
+      '<th style="width:14%">费用</th>' +
+      '<th style="width:15%">计费方式</th>' +
+      '<th style="width:12%">往返分钟</th>' +
+      '<th></th></tr></thead><tbody>';
+
+    for (var i = 0; i < ROWS.length; i++) {
+      var r = ROWS[i];
+      html += '<tr>' +
+        '<td><input type="text" data-f="name" data-i="' + i + '" value="' + esc(r.name) + '" placeholder="例如 钢琴" style="' + inpStyle() + '" /></td>' +
+        '<td><input type="number" data-f="times" data-i="' + i + '" value="' + esc(r.times) + '" min="0" step="1" placeholder="2" style="' + inpStyle() + '" /></td>' +
+        '<td><input type="number" data-f="mins" data-i="' + i + '" value="' + esc(r.mins) + '" min="0" step="5" placeholder="60" style="' + inpStyle() + '" /></td>' +
+        '<td><input type="number" data-f="fee" data-i="' + i + '" value="' + esc(r.fee) + '" min="0" step="10" placeholder="800" style="' + inpStyle() + '" /></td>' +
+        '<td><select data-f="period" data-i="' + i + '" style="' + inpStyle() + '">' +
+          '<option value="month"' + (r.period === "month" ? " selected" : "") + '>每月</option>' +
+          '<option value="term"' + (r.period === "term" ? " selected" : "") + '>每学期</option>' +
+          '<option value="year"' + (r.period === "year" ? " selected" : "") + '>每年</option>' +
+          '<option value="once"' + (r.period === "once" ? " selected" : "") + '>按次</option>' +
+        '</select></td>' +
+        '<td><input type="number" data-f="travel" data-i="' + i + '" value="' + esc(r.travel) + '" min="0" step="5" placeholder="30" style="' + inpStyle() + '" /></td>' +
+        '<td><button class="ghost" data-del="' + i + '" style="padding:5px 9px;font-size:12.5px">删</button></td>' +
+        '</tr>';
+    }
+    html += "</tbody></table>";
+    document.getElementById("rows").innerHTML = html;
+
+    var ins = document.querySelectorAll("#rows input, #rows select");
+    for (var j = 0; j < ins.length; j++) {
+      ins[j].addEventListener("input", function () {
+        var k = parseInt(this.getAttribute("data-i"), 10);
+        var f = this.getAttribute("data-f");
+        if (ROWS[k]) { ROWS[k][f] = this.value; save(); }
+      });
+      ins[j].addEventListener("change", function () {
+        var k = parseInt(this.getAttribute("data-i"), 10);
+        var f = this.getAttribute("data-f");
+        if (ROWS[k]) { ROWS[k][f] = this.value; save(); }
+      });
+    }
+    var dels = document.querySelectorAll("#rows [data-del]");
+    for (var d = 0; d < dels.length; d++) {
+      dels[d].addEventListener("click", function () {
+        var k = parseInt(this.getAttribute("data-del"), 10);
+        ROWS.splice(k, 1);
+        if (!ROWS.length) ROWS = [blank()];
+        save();
+        renderRows();
+      });
+    }
+  }
+
+  function yearFee(r) {
+    var fee = parseFloat(r.fee);
+    if (!isFinite(fee) || fee <= 0) return 0;
+    var times = parseFloat(r.times);
+    if (!isFinite(times) || times < 0) times = 0;
+    if (r.period === "month") return fee * 12;
+    if (r.period === "term") return fee * 2;         // 一学年两学期
+    if (r.period === "year") return fee;
+    if (r.period === "once") return fee * times * 40; // 按次：粗略按每年 40 周计
+    return 0;
+  }
+
+  function calc() {
+    var totalWeekMin = 0, totalTravelMin = 0, totalYear = 0, totalSessions = 0;
+    var items = [];
+
+    for (var i = 0; i < ROWS.length; i++) {
+      var r = ROWS[i];
+      var times = parseFloat(r.times);
+      if (!isFinite(times) || times <= 0) continue;
+      var mins = parseFloat(r.mins);
+      if (!isFinite(mins) || mins < 0) mins = 0;
+      var travel = parseFloat(r.travel);
+      if (!isFinite(travel) || travel < 0) travel = 0;
+
+      var classMin = times * mins;
+      var travelMin = times * travel;
+      var yFee = yearFee(r);
+
+      totalWeekMin += classMin;
+      totalTravelMin += travelMin;
+      totalYear += yFee;
+      totalSessions += times;
+
+      items.push({
+        name: r.name || "（未命名）",
+        times: times,
+        mins: mins,
+        travel: travel,
+        week: classMin + travelMin,
+        year: yFee
+      });
+    }
+
+    if (!items.length) { alert("请至少填写一个班的上课次数。"); return; }
+
+    var totalWeek = totalWeekMin + totalTravelMin;
+
+    var cells =
+      '<div class="cell"><div class="k">每周上课</div><div class="v">' + totalSessions + ' <small>次</small></div></div>' +
+      '<div class="cell"><div class="k">每周纯上课</div><div class="v">' + (totalWeekMin / 60).toFixed(1) + ' <small>小时</small></div></div>' +
+      '<div class="cell"><div class="k">每周含往返</div><div class="v">' + (totalWeek / 60).toFixed(1) + ' <small>小时</small></div></div>' +
+      '<div class="cell"><div class="k">每年费用合计</div><div class="v">' + money(totalYear) + ' <small>元</small></div></div>' +
+      '<div class="cell"><div class="k">每月均摊</div><div class="v">' + money(totalYear / 12) + ' <small>元</small></div></div>' +
+      '<div class="cell"><div class="k">共报了几个班</div><div class="v">' + items.length + ' <small>个</small></div></div>';
+    document.getElementById("kv").innerHTML = cells;
+
+    // 一周时间构成：上课 / 往返 / 上学 / 睡眠 / 剩余
+    var weekHours = 168;
+    var schoolH = 30;   // 上学含作业的粗略估计
+    var sleepH = 7 * 10; // 按每天 10 小时计
+    var freeH = weekHours - schoolH - sleepH - totalWeek / 60;
+
+    var bars = [
+      ["上课与往返", totalWeek / 60, "var(--accent)"],
+      ["上学与作业（估）", schoolH, "#c9b7a4"],
+      ["睡眠（按每天 10 小时）", sleepH, "#ded3c4"],
+      ["剩余可支配", Math.max(0, freeH), "#8fb59b"]
+    ];
+
+    var whtml = '<div class="stat"><span>一周共 <b>168</b> 小时</span>' +
+      '<span>已占用（不含兴趣班）约 <b>' + (schoolH + sleepH) + '</b> 小时</span></div>';
+
+    for (var b = 0; b < bars.length; b++) {
+      var pct = Math.max(0, Math.min(100, (bars[b][1] / weekHours) * 100));
+      whtml += '<div style="margin-bottom:12px">' +
+        '<div class="hint" style="margin-bottom:5px;display:flex;justify-content:space-between;font-size:13px">' +
+        '<span>' + esc(bars[b][0]) + '</span><span style="color:var(--ink-soft)">' + bars[b][1].toFixed(1) + ' 小时 · ' + pct.toFixed(0) + '%</span></div>' +
+        '<div style="height:9px;background:#f2ece3;border-radius:99px;overflow:hidden">' +
+        '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:' + bars[b][2] + '"></div></div></div>';
+    }
+
+    whtml += '<div class="hint" style="margin-top:14px">按每天 10 小时睡眠、每周 30 小时上学与作业粗估。' +
+      '剩下的时间里，还要减去吃饭、洗漱、通勤、家务的时间，真正能自己支配的比这个数字更少。</div>';
+    document.getElementById("week-body").innerHTML = whtml;
+
+    // 建议
+    var tips = [];
+    var freePerDay = Math.max(0, freeH) / 7;
+
+    if (totalSessions >= 8) tips.push("每周 <strong>" + totalSessions + " 次</strong>课，接近每天一次。孩子几乎没有整块的自由时间，容易疲惫，也容易对什么都提不起劲。");
+    else if (totalSessions >= 6) tips.push("每周 <strong>" + totalSessions + " 次</strong>课已经不算少。可以看看有没有哪两个是重复练习同一种能力，合并掉一个。");
+
+    if (totalWeek / 60 >= 12) tips.push("兴趣班每周占掉 <strong>" + (totalWeek / 60).toFixed(1) + " 小时</strong>（含往返）。这个量相当于多上了半天学，建议核对一下是不是每个都值得留。");
+    else if (totalWeek / 60 >= 8) tips.push("兴趣班每周占 <strong>" + (totalWeek / 60).toFixed(1) + " 小时</strong>，属于中等偏多。留意孩子的睡眠时间有没有被压缩。");
+
+    var travelShare = totalWeek > 0 ? (totalTravelMin / totalWeek) * 100 : 0;
+    if (travelShare >= 30) tips.push("往返时间占了兴趣班总时间的 <strong>" + travelShare.toFixed(0) + "%</strong>。如果某个班离得特别远，换个近一点的机构可能比换老师更划算。");
+
+    if (freePerDay < 2) tips.push("扣掉上课、上学、睡眠之后，平均每天只剩 <strong>" + freePerDay.toFixed(1) + " 小时</strong>。这还没算吃饭洗漱。建议至少砍掉一个班。");
+    else if (freePerDay < 3) tips.push("平均每天剩 <strong>" + freePerDay.toFixed(1) + " 小时</strong>可支配。留一点什么都不安排的时间，对孩子很重要。");
+
+    if (totalYear >= 30000) tips.push("全年兴趣班支出约 <strong>" + money(totalYear) + " 元</strong>，已经接近很多家庭一个月到两个月的收入。看看有没有可以停掉而不影响孩子的项目。");
+    else if (totalYear >= 15000) tips.push("全年支出约 <strong>" + money(totalYear) + " 元</strong>。建议列一下每个班「孩子真正收获了什么」，用这个来排序。");
+
+    if (items.length >= 5) tips.push("同时上 <strong>" + items.length + " 个班</strong>，接送本身就是一项全职工作。如果主要是某一个人在承担，记得把这部分算进家庭分工里。");
+
+    if (!tips.length) tips.push("目前的总量看起来还算从容。记得每学期重新算一次，孩子的兴趣和体力都会变。");
+
+    tips.push("提醒一句：这些数字只是把「看不见的负担」摆到台面上，方便你和家人商量。怎么安排，还是你们自己最清楚。");
+
+    document.getElementById("advice-body").innerHTML = '<div class="note" style="margin-bottom:0">' +
+      tips.map(function (t) { return "· " + t; }).join("<br>") + "</div>";
+
+    document.getElementById("out").style.display = "block";
+    document.getElementById("week").style.display = "block";
+    document.getElementById("advice").style.display = "block";
+  }
+
+  document.getElementById("add").addEventListener("click", function () {
+    ROWS.push(blank());
+    save();
+    renderRows();
+  });
+
+  document.getElementById("calc").addEventListener("click", calc);
+
+  document.getElementById("clear").addEventListener("click", function () {
+    if (!confirm("确定清空全部填写内容吗？")) return;
+    ROWS = [blank()];
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    renderRows();
+    document.getElementById("out").style.display = "none";
+    document.getElementById("week").style.display = "none";
+    document.getElementById("advice").style.display = "none";
+  });
+
+  renderRows();
+})();
+</script>
