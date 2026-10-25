@@ -355,23 +355,28 @@ const BASE_CSS = `
      sticky 顶部留 77px = 站头 61px + 16px 呼吸位，否则吸顶时会被站头压住。
      align-self: start 是 sticky 生效的前提（默认 stretch 会让它跟整栏等高而无法滚动）。
 
-     限高 + 内部滚动：三张卡实测总高约 1090px，比常见视口（900px）高，
-     不限高的话 sticky 会「卡住但底部看不全」，广告位反而滚出视野。
-     限高到视口内后，三张卡始终可见，超出部分在侧栏内部滚动。
-     窄屏（≤1032px）侧栏改为横排静态布局，届时取消限高，见下方断点。 */
+     为什么必须把三块压进视口：侧栏是 sticky 独立滚动区，一旦内容高于
+     「视口高 − 97px」，浏览器就会给侧栏加第二条滚动条，与页面滚动条并存，
+     观感上像两个不同步的滚动区。所以这里的目标是让总高 ≤ 常见视口可用高：
+       · 1080p（视口约 950px → 可用 853px）✅
+       · 1440×900（视口 900px → 可用 803px）✅
+     实测总高约 780px，两者都塞得下，因此正常桌面屏不会出现内部滚动条。
+     限高仍保留作兜底：极端窄高屏（如 1366×768 视口约 660px）下退化为内部滚动，
+     此时由下方 max-height 媒体查询把滚动条隐藏，视觉上仍只有页面一条。 */
   .post-side {
     align-self: start; position: sticky; top: 77px;
     max-height: calc(100vh - 97px); overflow-y: auto; overscroll-behavior: contain;
-    padding: 30px 0 10px; display: flex; flex-direction: column; gap: 18px;
-    scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+    padding: 16px 0 4px; display: flex; flex-direction: column; gap: 9px;
+    scrollbar-width: none;
   }
-  .post-side::-webkit-scrollbar { width: 6px; }
-  .post-side::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
-  .post-side::-webkit-scrollbar-track { background: transparent; }
+  /* 滚动条一律隐藏：侧栏已压到常见视口内，正常不滚动；
+     极端窄高屏下即使溢出，也不让第二条滚动条出现（滚轮照常可用），
+     避免与页面滚动条并排造成「两个不同步的滚动区」的观感。 */
+  .post-side::-webkit-scrollbar { width: 0; height: 0; }
   .post-side:empty { display: none; }
   .sb-card {
     background: var(--panel); border: 1px solid var(--line);
-    border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow);
+    border-radius: var(--radius); padding: 11px 12px; box-shadow: var(--shadow);
   }
   .sb-head {
     display: flex; align-items: center; justify-content: space-between;
@@ -387,30 +392,30 @@ const BASE_CSS = `
     border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px;
   }
 
-  /* 广告位：方图占满卡内宽（288 - 14×2 = 260，img 自适应） */
-  .sb-ad { padding: 12px; }
-  .sb-ad img { display: block; width: 100%; height: auto; border-radius: 7px; }
+  /* 广告位：方图居中，最大边长 170px。
+     广告卡是侧栏最高的一块，不缩的话整栏会超过视口可用高，
+     进而触发侧栏内部滚动 —— 那正是「两个滚动条」的来源。 */
+  .sb-ad { padding: 10px; }
+  .sb-ad img { display: block; width: 100%; max-width: 170px; height: auto; border-radius: 7px; margin: 0 auto; }
   .sb-ad-link { display: block; border-radius: 7px; overflow: hidden; }
   .sb-ad-code { min-height: 60px; }
   .sb-ad-code img, .sb-ad-code iframe { max-width: 100%; display: block; }
 
-  /* 本分类工具：图标 + 名称 + 一行描述 */
+  /* 本分类工具：图标 + 名称（紧凑单行）。
+     刻意不显示描述 —— 侧栏总高要能塞进视口，否则会出现第二个滚动条；
+     描述在工具页里是完整呈现的，侧栏只承担「快速进入」的导航职责。 */
   ul.sb-tools { list-style: none; margin: 0; padding: 0; }
   ul.sb-tools > li + li { border-top: 1px solid var(--line-soft); }
   ul.sb-tools a {
-    display: flex; gap: 9px; align-items: flex-start; text-decoration: none;
-    padding: 9px 4px; border-radius: 6px; transition: background .15s ease;
+    display: flex; gap: 8px; align-items: center; text-decoration: none;
+    padding: 5px 4px; border-radius: 6px; transition: background .15s ease;
   }
   ul.sb-tools a:hover { background: var(--accent-soft); }
-  ul.sb-tools .ic { font-size: 16px; line-height: 1.35; flex: none; }
-  ul.sb-tools .tx { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  ul.sb-tools .ic { font-size: 15px; line-height: 1.2; flex: none; }
+  ul.sb-tools .tx { min-width: 0; }
   ul.sb-tools .tx b {
     font-size: 13px; font-weight: 500; color: var(--ink); line-height: 1.45;
     display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  ul.sb-tools .tx i {
-    font-style: normal; font-size: 11.5px; color: var(--ink-mute); line-height: 1.5;
-    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
   }
   a.sb-more {
     display: block; margin-top: 10px; padding-top: 10px; font-size: 12.5px;
@@ -421,7 +426,7 @@ const BASE_CSS = `
   nav.sb-toc { display: flex; flex-direction: column; }
   nav.sb-toc a {
     font-size: 12.5px; color: var(--ink-soft); text-decoration: none;
-    padding: 6px 8px; border-left: 2px solid var(--line); line-height: 1.5;
+    padding: 3px 8px; border-left: 2px solid var(--line); line-height: 1.45;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     transition: color .15s ease, border-color .15s ease, background .15s ease;
   }
@@ -922,42 +927,54 @@ const FOOT_LINKS = [
  * 长文滚动时不会掉帧。fallback：无 IO 支持时不做高亮，锚点跳转照常可用。
  * 只在页面真的有目录（.sb-toc 存在）时才注入，其他页面零开销。
  */
+/**
+ * 目录滚动高亮脚本（仅文章页且含目录时注入）。
+ *
+ * 为什么不用 IntersectionObserver：
+ *   IO 只在交叉状态「变化」时回调。观察带是「站头下方 80px 起的 30% 视口高」，
+ *   而 h2 之间的间距常有 280px 以上，窄高屏（如 900px 视口 → 观察带仅 80~270px）
+ *   会出现「没有任何标题落在带内」的空档；此时状态无变化 → IO 不回调 →
+ *   高亮冻结在上一个标题上，滚动时看着像「不同步」。
+ *
+ * 改用 scroll + requestAnimationFrame：每帧最多算一次，取「最后一个已滚到
+ * 阈值线上方的 h2」。标题数 ≤8，遍历开销可忽略；且与页面滚动严格同步，
+ * 不存在空档导致的冻结。passive 监听不阻塞滚动，resize 时重算一次。
+ */
 const TOC_SCRIPT = `<script>
 (function () {
   var nav = document.querySelector("nav.sb-toc");
-  if (!nav || !("IntersectionObserver" in window)) return;
+  if (!nav) return;
   var links = [].slice.call(nav.querySelectorAll("a"));
-  var map = {};
+  var els = [];
   links.forEach(function (a) {
     var el = document.getElementById(a.getAttribute("href").slice(1));
-    if (el) map[el.id] = a;
+    if (el) els.push({ el: el, a: a });
   });
-  var ids = Object.keys(map);
-  if (!ids.length) return;
-  var visible = {};
-  var setOn = function (cur) {
-    links.forEach(function (a) { a.classList.toggle("on", a === map[cur]); });
+  if (!els.length) return;
+
+  var cur = null;
+  var apply = function () {
+    // 取最后一个「顶部已越过 120px 线」的标题；一个都没越过则取第一个。
+    // 120px 略大于站头（61px），保证标题刚被站头让出就切到它。
+    var next = els[0].a;
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].el.getBoundingClientRect().top <= 120) next = els[i].a;
+      else break;
+    }
+    if (next === cur) return;
+    cur = next;
+    links.forEach(function (a) { a.classList.toggle("on", a === next); });
   };
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) { visible[e.target.id] = e.isIntersecting; });
-    var cur = null;
-    for (var i = 0; i < ids.length; i++) {
-      if (visible[ids[i]]) { cur = ids[i]; break; }
-    }
-    if (!cur) {
-      // 没有任何标题在观察区内（在两个标题之间的长段落，或页面刚打开、
-      // 首个标题还卡在 rootMargin 上边界外）。此时取「最后一个已滚过去的标题」；
-      // 若一个都没滚过去（页面顶部），退回第一个 —— 否则目录会一项都不亮。
-      for (var j = ids.length - 1; j >= 0; j--) {
-        if (map[ids[j]].getBoundingClientRect().top < 120) { cur = ids[j]; break; }
-      }
-      if (!cur) cur = ids[0];
-    }
-    setOn(cur);
-  }, { rootMargin: "-80px 0px -70% 0px", threshold: 0 });
-  ids.forEach(function (id) { io.observe(document.getElementById(id)); });
-  // 初始态：首屏尚未触发 IO 回调时先点亮第一项，避免目录「开局全灭」
-  setOn(ids[0]);
+
+  var ticking = false;
+  var schedule = function () {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () { ticking = false; apply(); });
+  };
+  window.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("resize", schedule, { passive: true });
+  apply();
 })();
 </script>`;
 
@@ -1286,7 +1303,7 @@ ${list
   .map(
     (t) => `    <li><a href="/tools/${encodeURIComponent(t.slug)}/">
       <span class="ic" aria-hidden="true">${escapeHtml(t.icon || "🧰")}</span>
-      <span class="tx"><b>${escapeHtml(t.name)}</b><i>${escapeHtml(t.desc)}</i></span>
+      <span class="tx"><b>${escapeHtml(t.name)}</b></span>
     </a></li>`
   )
   .join("\n")}
