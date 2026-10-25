@@ -1,5 +1,5 @@
 {
-  "_readme": "本站自研小工具索引。构建时 build.mjs 读取本文件，生成 /tools/ 列表页与 /tools.json。每个 slug 需在同目录下存在同名 .html 片段文件（只写 .tool 区块与内联 script，外壳由构建脚本统一注入）。category 必须与 nav.json 的一级分类名完全一致（含 emoji 与空格）。guide 字段指向该工具的引导文章 slug（posts/<guide>.md），用于文章页与工具页双向互链。",
+  "_readme": "本站自研实用工具索引。构建时 build.mjs 读取本文件，生成 /tools/ 列表页与 /tools.json。每个 slug 需在同目录下存在同名 .html 片段文件（只写 .tool 区块与内联 script，外壳由构建脚本统一注入）。category 必须与 nav.json 的一级分类名完全一致（含 emoji 与空格）。guide 字段指向该工具的引导文章 slug（posts/<guide>.md），用于文章页与工具页双向互链。",
   "tools": [
     {
       "slug": "baby-age-calculator",

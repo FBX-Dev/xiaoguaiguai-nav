@@ -2,7 +2,7 @@
 /**
  * build.mjs · xiaoguaiguai.cn 静态构建
  * ------------------------------------------------------------
- * 站点定位：家庭与成长主题的**内容站**（原创文章 + 自研小工具），
+ * 站点定位：家庭与成长主题的**内容站**（原创文章 + 自研实用工具），
  *           不承载外部资源导航。
  *
  * 输入（仓库根，均入库）：
@@ -13,7 +13,7 @@
  *   favicon.svg / _headers
  *
  * 输出：_dist/（构建产物，不入库）
- *   index.html        首页（【生成】置顶精选 + 最新文章 + 分类入口 + 小工具）
+ *   index.html        首页（【生成】置顶精选 + 最新文章 + 分类入口 + 实用工具）
  *   posts.json        【生成】文章索引，按日期倒序（供站内检索/降级）
  *   posts/index.html  【生成】文章列表页
  *   posts/<slug>/index.html 【生成】文章详情页
@@ -48,13 +48,21 @@ const SITE = {
   // 元明以后才反过来变成「听话、顺从」。全站 60 篇里「乖」只出现 2 次，
   // 且两次都在反对它（反对用「你真乖」换孩子顺从、反对被「要懂事」绑架）。
   slogan: "小乖乖，不是要你听话",
+  // 首页品牌区已按用户要求移除（原区块与焦点图合占首屏、压缩了阅读空间）。
+  // 这段副标文案保留备用，当前不在任何页面渲染。
   sloganSub: "那些说不出口的话、忍下去的事、算不清的账，都可以一件件理清。",
   origin: "https://xiaoguaiguai.cn",
+  // 社交分享卡（og:image）：1200×630，由 _gen_og.py 生成后上传 R2。
+  // 为什么自己画而不用配图：ImageGen 固定 1536×1024 且右下角带水印，
+  // 裁到 1.91:1 会切掉画面；分享卡上的中文标题必须清晰可控，故用 PIL 精确排版。
+  ogImage: "https://xiaoguaiguai.cn/media/covers/og-brand.png",
+  ogImageW: 1200,
+  ogImageH: 630,
   email: "contact@xiaoguaiguai.cn",
   // <title> 后缀用于搜索引擎（需要关键词），品牌主张用于社交分享（需要传播力），
   // 两者需求不同，因此分开处理，不硬塞进同一句。
   seoSuffix: "家庭与成长实用内容站",
-  desc: "小乖乖是一个不劝你忍的家庭实用内容站。原创文章覆盖婴幼儿养育、儿童教育、女性成长、家庭关系与两性亲密成长，帮你把说不出口的话说出口、把算不清的账算清楚；并提供 20 个免费自研小工具，全部本地运行、不上传任何数据。",
+  desc: "小乖乖是一个不劝你忍的家庭实用内容站。原创文章覆盖婴幼儿养育、儿童教育、女性成长、家庭关系与两性亲密成长，帮你把说不出口的话说出口、把算不清的账算清楚；并提供 20 个免费实用工具，全部本地运行、不上传任何数据。",
   disclaimer:
     "本站内容仅为经验分享与知识科普，不提供医疗诊断、诊疗建议。" +
     "涉及健康、育儿、心理问题时请以专业人士意见为准。所有内容仅供学习参考。",
@@ -431,7 +439,7 @@ const BASE_CSS = `
   }
 
   /* ══════════════════════════════════════════════════════════
-   * 卡片网格（仅用于「小工具」，以及文章页的同类内容推荐）
+   * 卡片网格（仅用于「实用工具」，以及文章页的同类内容推荐）
    * ══════════════════════════════════════════════════════════ */
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); }
   a.card {
@@ -485,7 +493,7 @@ const BASE_CSS = `
   footer.meta .fnav { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; margin: 0 0 12px; }
   .backlink { display: inline-block; margin: 30px 0 0; font-size: 13.5px; }
 
-  /* ── 文章文末的「配套小工具」卡片 ──
+  /* ── 文章文末的「配套工具」卡片 ──
      引导类文章的价值是「讲清原理」，工具的价值是「当场能用」。
      把跳转做成卡片而不是一行链接，是为了让读者一眼看到「接下来能做什么」。 */
   .tool-link {
@@ -549,35 +557,15 @@ const BASE_CSS = `
   header.site nav.top a:hover { background: var(--accent-soft); color: var(--accent); }
   header.site nav.top a.on { background: var(--accent); color: #fff; font-weight: 500; }
 
-  /* ── 首页品牌区（第一屏：主张 + 副标 + 双入口）── */
-  .brand-hero { margin: 30px 0 0; padding: 34px 36px 32px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
-  .brand-hero .slogan {
-    margin: 0; font-size: 30px; font-weight: 700; line-height: 1.4;
-    letter-spacing: -.01em; color: var(--ink);
+  /* ── 仅屏幕阅读器可见（首页 h1 用：视觉上首屏直接进入内容，语义上仍有站点主标题）── */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
   }
-  .brand-hero .slogan em { font-style: normal; color: var(--accent); }
-  .brand-hero .slogan-sub {
-    margin: 14px 0 0; font-size: 14.5px; line-height: 1.85;
-    color: var(--ink-soft); max-width: 640px;
-  }
-  .brand-hero .acts { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
-  .brand-hero .acts a {
-    display: inline-block; padding: 10px 20px; border-radius: 999px;
-    font-size: 14px; font-weight: 500; text-decoration: none;
-    transition: background .18s ease, color .18s ease, border-color .18s ease;
-  }
-  .brand-hero .acts a.primary { background: var(--accent); color: #fff; }
-  .brand-hero .acts a.primary:hover { background: var(--accent-deep); }
-  .brand-hero .acts a.ghost { border: 1px solid var(--line); color: var(--ink-2); background: #fff; }
-  .brand-hero .acts a.ghost:hover { border-color: var(--accent); color: var(--accent); }
-  .brand-hero .marks {
-    margin: 22px 0 0; padding-top: 18px; border-top: 1px solid var(--line-soft);
-    display: flex; gap: 22px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-mute);
-  }
-  .brand-hero .marks span::before { content: "·"; margin-right: 7px; color: var(--accent); }
 
-  /* ── 首页焦点区（全站唯一使用大图的位置）── */
-  .hero-pick { display: block; margin: 26px 0 0; text-decoration: none; color: inherit; }
+  /* ── 首页焦点区（全站唯一使用大图的位置）──
+     品牌区已移除，焦点区升为首页第一屏；margin-top 补上原品牌区留下的呼吸空间。 */
+  .hero-pick { display: block; margin: 28px 0 0; text-decoration: none; color: inherit; }
   .hero-pick .inner {
     display: grid; grid-template-columns: 1.08fr 1fr; gap: 0;
     background: var(--panel); border: 1px solid var(--line);
@@ -652,8 +640,6 @@ const BASE_CSS = `
   section.home { margin: 44px 0 0; }
 
   @media (max-width: 860px) {
-    .brand-hero { padding: 26px 24px 24px; }
-    .brand-hero .slogan { font-size: 25px; }
     .hero-pick .inner { grid-template-columns: 1fr; }
     .hero-pick .cover { min-height: 190px; aspect-ratio: 16/9; }
     .hero-pick .txt { padding: 22px 24px; }
@@ -664,12 +650,6 @@ const BASE_CSS = `
   }
 
   @media (max-width: 560px) {
-    .brand-hero { margin-top: 20px; padding: 22px 18px 20px; }
-    .brand-hero .slogan { font-size: 22px; }
-    .brand-hero .slogan-sub { font-size: 13.5px; }
-    .brand-hero .acts { margin-top: 18px; }
-    .brand-hero .acts a { padding: 9px 17px; font-size: 13.5px; }
-    .brand-hero .marks { gap: 14px; }
     header.page { padding: 24px 0 16px; }
     header.page h1 { font-size: 24px; }
     header.page .meta { font-size: 12px; gap: 9px; }
@@ -771,7 +751,7 @@ function topbar(active) {
   const items = [
     { key: "home", text: "首页", href: "/" },
     ...CATS.map((c) => ({ key: c.slug, text: c.name.replace(/^\S+\s*/, ""), href: `/category/${c.slug}/` })),
-    { key: "tools", text: "小工具", href: "/tools/" },
+    { key: "tools", text: "实用工具", href: "/tools/" },
     { key: "about", text: "关于", href: "/about/" },
   ];
   return `<header class="site">
@@ -798,10 +778,10 @@ const FOOT_LINKS = [
   { text: "免责声明", href: "/disclaimer/" },
   { text: "使用条款", href: "/terms/" },
   { text: "全部内容", href: "/posts/" },
-  { text: "小工具", href: "/tools/" },
+  { text: "实用工具", href: "/tools/" },
 ];
 
-function shell({ title, desc, body, canonical, active, noindex, updated }) {
+function shell({ title, desc, body, canonical, active, noindex, updated, ogImageUrl }) {
   // 首页 <title> 兼顾两端：前半句是品牌主张（人味、可传播），
   // 后半句是搜索词（家庭与成长 / 实用 / 内容站），共 21 字，未被搜索结果截断。
   // 非首页用「页面名 ｜ 站名」，把标题权重让给页面本身的关键词。
@@ -811,6 +791,9 @@ function shell({ title, desc, body, canonical, active, noindex, updated }) {
       : `${title} ｜ ${SITE.title}`;
   // og:title 只给分享卡片用，不放搜索词 —— 卡片上关键词没有意义，传播力才有。
   const ogTitle = title === SITE.title ? `${SITE.title} · ${SITE.slogan.replace(`${SITE.title}，`, "")}` : title;
+  // 分享卡图片：优先用文章封面（每篇都有分类配图），否则回落站点品牌卡。
+  // twitter:card 随之从 summary 升为 summary_large_image —— 否则大图不会展开。
+  const ogImage = ogImageUrl || SITE.ogImage;
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -824,8 +807,13 @@ ${canonical ? `<link rel="canonical" href="${SITE.origin}${canonical}" />` : ""}
 <meta property="og:site_name" content="${escapeHtml(SITE.title)}" />
 <meta property="og:title" content="${escapeHtml(ogTitle)}" />
 <meta property="og:description" content="${escapeHtml(desc || SITE.desc)}" />
+<meta property="og:image" content="${escapeHtml(ogImage)}" />
+<meta property="og:image:width" content="${ogImageUrl ? 800 : SITE.ogImageW}" />
+<meta property="og:image:height" content="${ogImageUrl ? 450 : SITE.ogImageH}" />
+<meta property="og:image:alt" content="${escapeHtml(title === SITE.title ? SITE.slogan : `${title} · ${SITE.title}`)}" />
 ${canonical ? `<meta property="og:url" content="${SITE.origin}${canonical}" />` : ""}
-<meta name="twitter:card" content="summary" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="${escapeHtml(ogImage)}" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
 ${updated ? `<meta name="last-modified" content="${escapeHtml(updated)}" />` : ""}
@@ -884,8 +872,8 @@ function readPosts() {
       excerpt: data.excerpt || "",
       cover: data.cover || (cat ? `${SITE.origin}/media/covers/${cat.cover}.webp` : ""),
       tags: Array.isArray(data.tags) ? data.tags : [],
-      // 配套小工具 slug：引导类文章在 frontmatter 里用 tool: <slug> 声明，
-      // 构建时自动渲染成文末的「配套小工具」卡片，无需在正文里手写链接。
+      // 配套工具 slug：引导类文章在 frontmatter 里用 tool: <slug> 声明，
+      // 构建时自动渲染成文末的「配套工具」卡片，无需在正文里手写链接。
       tool: data.tool ? String(data.tool).trim() : "",
       body,
     });
@@ -964,7 +952,17 @@ function itemRow(p, opt = {}) {
 }
 
 /**
- * 文章文末的「配套小工具」卡片。
+ * 工具页的分享卡图片：按工具所属分类取该分类的工具配图。
+ * 分类名含 emoji 与空格，需经 CATS 映射到拼音 slug 才能拼出 R2 路径。
+ * @param {object} t 工具对象（含 category）
+ */
+function toolCoverOf(t) {
+  const c = CATS.find((x) => x.name === t.category);
+  return c ? `${SITE.origin}/media/covers/${c.slug}-tool.webp` : SITE.ogImage;
+}
+
+/**
+ * 文章文末的「配套工具」卡片。
  * 引导类文章负责讲清原理，工具负责当场能用——两者必须能互相走到，
  * 否则读者读完不知道该干什么，工具页也拿不到自然流量。
  * @param {object} t 工具对象
@@ -973,7 +971,7 @@ function toolCard(t) {
   if (!t) return "";
   return `<aside class="tool-link">
   <div class="tl-head">
-    <span class="tl-badge">配套小工具</span>
+    <span class="tl-badge">配套工具</span>
     <span class="tl-tip">纯前端运行 · 数据不上传 · 无需注册</span>
   </div>
   <a class="tl-card" href="/tools/${encodeURIComponent(t.slug)}/">
@@ -1042,7 +1040,7 @@ function build() {
     cover: p.cover,
     tags: p.tags,
     url: `/posts/${encodeURIComponent(p.slug)}/`,
-    // 配套小工具（引导类文章才有）——便于站内检索与验收核对双向互链
+    // 配套工具（引导类文章才有）——便于站内检索与验收核对双向互链
     tool: p.tool || "",
     toolUrl: p.tool && toolBySlug.has(p.tool) ? `/tools/${p.tool}/` : "",
   }));
@@ -1055,28 +1053,33 @@ function build() {
   const pick = posts[0]; // 焦点文章 = 最新一篇
   // 首页内容区改为「按分类分组」——每个方向取最近 3 篇，两列并排。
   // 分组标题本身就是分类入口，因此不再单列一排分类卡片（避免同一信息出现两次）。
-  const PER_CAT = 3;
+  // 「两性亲密成长」是末组，跨满整行后内部再分两列：3 条会排成「2+1」留出半格空位，
+  // 故该组取 4 条，正好两行对齐，不留空缺。
+  const HOME_PER_CAT = { qinmi: 4 };
+  const perCatOf = (slug) => HOME_PER_CAT[slug] || 3;
   const catGroups = CATS.map((c) => {
     const all = posts.filter((p) => p.catSlug === c.slug); // posts 已按日期倒序
     // 焦点文章已在顶部大图展示过，从分组里排除，避免同一篇在同一屏出现两次。
     const rest = pick ? all.filter((p) => p.slug !== pick.slug) : all;
-    return { ...c, total: all.length, list: rest.slice(0, PER_CAT) };
+    return { ...c, total: all.length, list: rest.slice(0, perCatOf(c.slug)) };
   });
+  // 首页工具区只列 12 个（全站 20 个，全列出来会让首页过长、冲淡内容权重）。
+  // 取法为「按分类轮流取」而非直接截取前 12 —— tools.json 是按分类顺序排列的，
+  // 直接 slice(0,12) 只会拿到前 3 个分类，其余 2 个分类一个都看不到。
+  const HOME_TOOLS = 12;
+  const homeTools = [];
+  for (let round = 0; homeTools.length < HOME_TOOLS; round++) {
+    let added = 0;
+    for (const c of CATS) {
+      if (homeTools.length >= HOME_TOOLS) break;
+      const t = tools.filter((x) => x.category === c.name)[round];
+      if (t) { homeTools.push(t); added++; }
+    }
+    if (!added) break; // 所有分类都已取完
+  }
   const homeBody = `
 <main>
-<section class="brand-hero">
-  <h1 class="slogan">小乖乖，不是要你<em>听话</em></h1>
-  <p class="slogan-sub">${escapeHtml(SITE.sloganSub)}</p>
-  <div class="acts">
-    <a class="primary" href="/posts/">看看这些内容 →</a>
-    <a class="ghost" href="/tools/">用用小工具</a>
-  </div>
-  <div class="marks">
-    <span>${posts.length} 篇原创内容</span>
-    <span>${tools.length} 个自研工具</span>
-    <span>纯本地运行，不上传数据</span>
-  </div>
-</section>
+<h1 class="sr-only">小乖乖，不是要你听话 ｜ 家庭与成长实用内容站</h1>
 ${
   pick
     ? `<a class="hero-pick" href="/posts/${encodeURIComponent(pick.slug)}/">
@@ -1115,12 +1118,12 @@ ${g.list.map((p) => itemRow(p)).join("\n")}
 </section>
 
 <section class="home">
-  <h2><span>本站小工具</span><a class="more" href="/tools/">全部 ${tools.length} 个 →</a></h2>
+  <h2><span>实用工具</span><a class="more" href="/tools/">全部 ${tools.length} 个 →</a></h2>
   <div class="lead">纯前端运行，数据不上传，全部在本站内使用</div>
   ${
-    tools.length
+    homeTools.length
       ? `<div class="grid" style="margin-top:16px">
-${tools
+${homeTools
   .map(
     (t) => `    <a class="card" href="/tools/${t.slug}/">
       <div class="row"><span class="badge tool">${escapeHtml(t.icon || "工具")}</span><span class="title">${escapeHtml(t.name)}</span></div>
@@ -1173,7 +1176,7 @@ ${related.map((r) => itemRow(r, { tagText: "同分类" })).join("\n")}
     : ""
 }
 <a class="backlink" href="/posts/">← 返回全部内容</a>`;
-    fs.writeFileSync(path.join(dir, "index.html"), shell({ title: p.title, desc: p.excerpt, body, canonical: `/posts/${encodeURIComponent(p.slug)}/`, active: p.catSlug }), "utf8");
+    fs.writeFileSync(path.join(dir, "index.html"), shell({ title: p.title, desc: p.excerpt, body, canonical: `/posts/${encodeURIComponent(p.slug)}/`, active: p.catSlug, ogImageUrl: p.cover }), "utf8");
   }
   log(`  文章页 ${posts.length} 个`);
 
@@ -1213,7 +1216,7 @@ ${g.items.map((p) => itemRow(p)).join("\n")}
 </section>`
   )
   .join("\n")}`;
-  fs.writeFileSync(path.join(OUT, "posts", "index.html"), shell({ title: "全部内容", desc: `小乖乖收录的家庭与成长相关内容，共 ${posts.length} 篇，按分类浏览。`, body: listBody, canonical: "/posts/", active: "posts" }), "utf8");
+  fs.writeFileSync(path.join(OUT, "posts", "index.html"), shell({ title: "全部内容", desc: `小乖乖收录的家庭与成长相关内容，共 ${posts.length} 篇，按分类浏览。`, body: listBody, canonical: "/posts/", active: "posts", ogImageUrl: `${SITE.origin}/media/covers/yuer-content.webp` }), "utf8");
   log("  文章列表页 /posts/");
 
   /* ---- 分类页 /category/<slug>/（顶部导航的 5 个分类入口）---- */
@@ -1258,7 +1261,7 @@ ${others
 </section>`;
     fs.writeFileSync(
       path.join(dir, "index.html"),
-      shell({ title: c.name, desc: `${c.name}：${c.brief}。小乖乖原创内容，共 ${items.length} 篇。`, body: catBody, canonical: `/category/${c.slug}/`, active: c.slug }),
+      shell({ title: c.name, desc: `${c.name}：${c.brief}。小乖乖原创内容，共 ${items.length} 篇。`, body: catBody, canonical: `/category/${c.slug}/`, active: c.slug, ogImageUrl: `${SITE.origin}/media/covers/${c.cover}.webp` }),
       "utf8"
     );
   }
@@ -1291,7 +1294,7 @@ ${others
     // 保证导航、面包屑、免责声明、样式变量与全站一致；改一次外壳全站生效。
     const frag = fs.readFileSync(srcFile, "utf8");
     const body = `
-${crumb([{ text: "首页", href: "/" }, { text: "小工具", href: "/tools/" }, { text: t.name }])}
+${crumb([{ text: "首页", href: "/" }, { text: "实用工具", href: "/tools/" }, { text: t.name }])}
 <header class="page">
   <div class="hd-main">
     <h1>${escapeHtml(t.name)}</h1>
@@ -1304,10 +1307,10 @@ ${crumb([{ text: "首页", href: "/" }, { text: "小工具", href: "/tools/" }, 
 </header>
 ${guideLink(t.guide ? postBySlug.get(t.guide) : null)}
 ${frag}
-<p class="backlink"><a href="/tools/">← 返回全部小工具</a></p>`;
+<p class="backlink"><a href="/tools/">← 返回全部实用工具</a></p>`;
     fs.writeFileSync(
       path.join(dir, "index.html"),
-      shell({ title: t.name, desc: t.desc, body, canonical: `/tools/${t.slug}/`, active: "tools" }),
+      shell({ title: t.name, desc: t.desc, body, canonical: `/tools/${t.slug}/`, active: "tools", ogImageUrl: toolCoverOf(t) }),
       "utf8"
     );
   }
@@ -1315,10 +1318,10 @@ ${frag}
 
   const byToolCat = CATS.map((c) => ({ cat: c, items: tools.filter((t) => t.category === c.name) }));
   const toolBody = `
-${crumb([{ text: "首页", href: "/" }, { text: "小工具" }])}
+${crumb([{ text: "首页", href: "/" }, { text: "实用工具" }])}
 <header class="page">
   <div class="hd-main">
-    <h1>自研小工具</h1>
+    <h1>实用工具</h1>
     <p class="sub">全部在本站内运行，不上传数据、不跳转外部网站、不需要注册。计算结果仅供参考。</p>
   </div>
   <div class="meta">
@@ -1343,7 +1346,7 @@ ${g.items
 </section>`
   )
   .join("\n")}`;
-  fs.writeFileSync(path.join(OUT, "tools", "index.html"), shell({ title: "自研小工具", desc: "小乖乖自研的家庭实用小工具，纯前端运行，不上传任何数据。", body: toolBody, canonical: "/tools/", active: "tools" }), "utf8");
+  fs.writeFileSync(path.join(OUT, "tools", "index.html"), shell({ title: "实用工具", desc: "小乖乖自研的家庭实用工具，纯前端运行，不上传任何数据。", body: toolBody, canonical: "/tools/", active: "tools", ogImageUrl: `${SITE.origin}/media/covers/yuer-tool.webp` }), "utf8");
   log("  工具列表页 /tools/");
 
   /* ---- 静态合规页 /about/ /privacy/ /disclaimer/ /terms/ /contact/ ---- */
@@ -1503,7 +1506,7 @@ Sitemap: ${SITE.origin}/sitemap.xml
   <ul class="index">
     <li><a class="item" href="/"><p class="ttl">回到首页</p><p class="sm">最新推荐与全部分类入口都在这里</p></a></li>
     <li><a class="item" href="/posts/"><p class="ttl">全部内容</p><p class="sm">按分类浏览 ${posts.length} 篇原创内容</p></a></li>
-    <li><a class="item" href="/tools/"><p class="ttl">自研小工具</p><p class="sm">共 ${tools.length} 个，纯前端运行、不上传数据</p></a></li>
+    <li><a class="item" href="/tools/"><p class="ttl">实用工具</p><p class="sm">共 ${tools.length} 个，纯前端运行、不上传数据</p></a></li>
     <li><a class="item" href="/about/"><p class="ttl">关于我们</p><p class="sm">了解本站的内容方向与写作原则</p></a></li>
   </ul>
 </section>`;

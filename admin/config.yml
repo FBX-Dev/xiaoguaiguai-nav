@@ -5,7 +5,7 @@
 # OAuth 代理：https://xiaoguaiguai.cn/oauth/*（Cloudflare Worker，绑定主域名）
 # 资源图片：Cloudflare R2 桶 xiaoguaiguai-media，cover 仅填 R2 公开 URL
 #
-# 站点定位：原创内容站（文章 + 自研小工具），不承载外部资源导航。
+# 站点定位：原创内容站（文章 + 自研实用工具），不承载外部资源导航。
 # ============================================================
 
 backend:

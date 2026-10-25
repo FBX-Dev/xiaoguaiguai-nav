@@ -62,13 +62,13 @@ jobs:
           echo "文章 $POSTS 篇 / 工具 $TOOLS 个"
           if [ "$POSTS" -lt 1 ]; then echo "::error::文章数为 0，疑似构建异常"; exit 1; fi
           if [ "$TOOLS" -lt 1 ]; then echo "::error::工具数为 0，疑似构建异常"; exit 1; fi
-          # 硬指标：每个分类文章 ≥4 篇、小工具 ≥4 个
+          # 硬指标：每个分类文章 ≥4 篇、实用工具 ≥4 个
           for cat in "🧸 婴幼儿养育" "📖 儿童教育" "🌷 女性成长" "🏠 家庭关系" "💞 两性亲密成长"; do
             PC=$(node -e "console.log(require('./_dist/posts.json').posts.filter(p=>p.category==='$cat').length)")
             TC=$(node -e "console.log(require('./_dist/tools.json').tools.filter(t=>t.category==='$cat').length)")
             echo "  $cat → 文章 $PC / 工具 $TC"
             if [ "$PC" -lt 4 ]; then echo "::error::$cat 文章不足 4 篇（实际 $PC）"; exit 1; fi
-            if [ "$TC" -lt 4 ]; then echo "::error::$cat 小工具不足 4 个（实际 $TC）"; exit 1; fi
+            if [ "$TC" -lt 4 ]; then echo "::error::$cat 实用工具不足 4 个（实际 $TC）"; exit 1; fi
           done
           for s in $(node -e "require('./_dist/posts.json').posts.forEach(p=>console.log(p.slug))"); do
             if [ ! -f "_dist/posts/$s/index.html" ]; then echo "::error::缺文章页 $s"; exit 1; fi
@@ -149,6 +149,27 @@ jobs:
           fi
           if grep -q 'class="thumb"' _dist/index.html; then
             echo "::error::首页列表仍残留配图"; exit 1
+          fi
+          # 首页品牌区已移除（用户要求：与焦点图合占首屏、压缩阅读空间）
+          if grep -q 'brand-hero' _dist/index.html; then
+            echo "::error::首页仍残留品牌区（brand-hero）"; exit 1
+          fi
+          # 品牌区移除后首页仍需有 h1（SEO/无障碍），以视觉隐藏方式保留
+          if ! grep -q 'class="sr-only"' _dist/index.html; then
+            echo "::error::首页缺视觉隐藏的 h1（语义主标题丢失）"; exit 1
+          fi
+          # 分享卡：og:image 必须是主域名绝对地址（相对地址在微信/微博不显示）
+          if ! grep -q 'property="og:image" content="https://xiaoguaiguai.cn/media/' _dist/index.html; then
+            echo "::error::首页 og:image 缺失或非绝对地址"; exit 1
+          fi
+          # 首页工具卡固定 12 个（全站 20 个，避免首页过长）
+          HCARD=$(grep -c '<a class="card" href="/tools/' _dist/index.html || true)
+          if [ "$HCARD" -ne 12 ]; then
+            echo "::error::首页工具卡应为 12 个（实际 $HCARD）"; exit 1
+          fi
+          # 术语统一：全站不应再出现「小工具」
+          if grep -rq '小工具' _dist --include='*.html'; then
+            echo "::error::产物中仍有「小工具」文案（应统一为「实用工具」）"; exit 1
           fi
           # 404 页必须带 noindex（缺它时未知路径回落成「200 + 首页」软 404）
           if ! grep -q 'name="robots" content="noindex"' _dist/404.html; then
