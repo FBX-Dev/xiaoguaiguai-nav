@@ -43,10 +43,18 @@ const OUT = path.join(ROOT, "_dist");
 
 const SITE = {
   title: "小乖乖",
-  subtitle: "家庭与成长",
+  subtitle: "不必事事都乖",
+  // 品牌主张：从站名本身长出来 ——「乖」本义为「相背、背离」（《说文》），
+  // 元明以后才反过来变成「听话、顺从」。全站 60 篇里「乖」只出现 2 次，
+  // 且两次都在反对它（反对用「你真乖」换孩子顺从、反对被「要懂事」绑架）。
+  slogan: "小乖乖，不是要你听话",
+  sloganSub: "那些说不出口的话、忍下去的事、算不清的账，都可以一件件理清。",
   origin: "https://xiaoguaiguai.cn",
   email: "contact@xiaoguaiguai.cn",
-  desc: "面向妈妈与家庭的内容站，原创文章覆盖婴幼儿养育、儿童教育、女性成长、家庭关系与两性亲密成长五个方向，并提供本站自研的实用小工具。",
+  // <title> 后缀用于搜索引擎（需要关键词），品牌主张用于社交分享（需要传播力），
+  // 两者需求不同，因此分开处理，不硬塞进同一句。
+  seoSuffix: "家庭与成长实用内容站",
+  desc: "小乖乖是一个不劝你忍的家庭实用内容站。原创文章覆盖婴幼儿养育、儿童教育、女性成长、家庭关系与两性亲密成长，帮你把说不出口的话说出口、把算不清的账算清楚；并提供 20 个免费自研小工具，全部本地运行、不上传任何数据。",
   disclaimer:
     "本站内容仅为经验分享与知识科普，不提供医疗诊断、诊疗建议。" +
     "涉及健康、育儿、心理问题时请以专业人士意见为准。所有内容仅供学习参考。",
@@ -541,6 +549,33 @@ const BASE_CSS = `
   header.site nav.top a:hover { background: var(--accent-soft); color: var(--accent); }
   header.site nav.top a.on { background: var(--accent); color: #fff; font-weight: 500; }
 
+  /* ── 首页品牌区（第一屏：主张 + 副标 + 双入口）── */
+  .brand-hero { margin: 30px 0 0; padding: 34px 36px 32px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
+  .brand-hero .slogan {
+    margin: 0; font-size: 30px; font-weight: 700; line-height: 1.4;
+    letter-spacing: -.01em; color: var(--ink);
+  }
+  .brand-hero .slogan em { font-style: normal; color: var(--accent); }
+  .brand-hero .slogan-sub {
+    margin: 14px 0 0; font-size: 14.5px; line-height: 1.85;
+    color: var(--ink-soft); max-width: 640px;
+  }
+  .brand-hero .acts { margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .brand-hero .acts a {
+    display: inline-block; padding: 10px 20px; border-radius: 999px;
+    font-size: 14px; font-weight: 500; text-decoration: none;
+    transition: background .18s ease, color .18s ease, border-color .18s ease;
+  }
+  .brand-hero .acts a.primary { background: var(--accent); color: #fff; }
+  .brand-hero .acts a.primary:hover { background: var(--accent-deep); }
+  .brand-hero .acts a.ghost { border: 1px solid var(--line); color: var(--ink-2); background: #fff; }
+  .brand-hero .acts a.ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .brand-hero .marks {
+    margin: 22px 0 0; padding-top: 18px; border-top: 1px solid var(--line-soft);
+    display: flex; gap: 22px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-mute);
+  }
+  .brand-hero .marks span::before { content: "·"; margin-right: 7px; color: var(--accent); }
+
   /* ── 首页焦点区（全站唯一使用大图的位置）── */
   .hero-pick { display: block; margin: 26px 0 0; text-decoration: none; color: inherit; }
   .hero-pick .inner {
@@ -577,6 +612,8 @@ const BASE_CSS = `
   section.home { margin: 44px 0 0; }
 
   @media (max-width: 860px) {
+    .brand-hero { padding: 26px 24px 24px; }
+    .brand-hero .slogan { font-size: 25px; }
     .hero-pick .inner { grid-template-columns: 1fr; }
     .hero-pick .cover { min-height: 190px; aspect-ratio: 16/9; }
     .hero-pick .txt { padding: 22px 24px; }
@@ -585,6 +622,12 @@ const BASE_CSS = `
   }
 
   @media (max-width: 560px) {
+    .brand-hero { margin-top: 20px; padding: 22px 18px 20px; }
+    .brand-hero .slogan { font-size: 22px; }
+    .brand-hero .slogan-sub { font-size: 13.5px; }
+    .brand-hero .acts { margin-top: 18px; }
+    .brand-hero .acts a { padding: 9px 17px; font-size: 13.5px; }
+    .brand-hero .marks { gap: 14px; }
     header.page { padding: 24px 0 16px; }
     header.page h1 { font-size: 24px; }
     header.page .meta { font-size: 12px; gap: 9px; }
@@ -717,7 +760,13 @@ const FOOT_LINKS = [
 ];
 
 function shell({ title, desc, body, canonical, active, noindex, updated }) {
-  const full = title === SITE.title ? `${SITE.title} · ${SITE.subtitle}` : `${title} ｜ ${SITE.title} · ${SITE.subtitle}`;
+  // 首页 title 保留「家庭与成长」这类搜索词，非首页用「页面名 ｜ 站名」。
+  const full =
+    title === SITE.title
+      ? `${SITE.title} · ${SITE.seoSuffix}`
+      : `${title} ｜ ${SITE.title}`;
+  // og:title 是给分享卡片用的，首页换成品牌主张，传播力强于罗列关键词。
+  const ogTitle = title === SITE.title ? `${SITE.title} · ${SITE.slogan.replace(`${SITE.title}，`, "")}` : title;
   return `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -729,7 +778,7 @@ ${noindex ? `<meta name="robots" content="noindex" />` : `<meta name="robots" co
 ${canonical ? `<link rel="canonical" href="${SITE.origin}${canonical}" />` : ""}
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="${escapeHtml(SITE.title)}" />
-<meta property="og:title" content="${escapeHtml(title === SITE.title ? SITE.title : title)}" />
+<meta property="og:title" content="${escapeHtml(ogTitle)}" />
 <meta property="og:description" content="${escapeHtml(desc || SITE.desc)}" />
 ${canonical ? `<meta property="og:url" content="${SITE.origin}${canonical}" />` : ""}
 <meta name="twitter:card" content="summary" />
@@ -963,13 +1012,26 @@ function build() {
   const latest = posts.slice(pick ? 1 : 0, pick ? 13 : 12); // 焦点区占 1 篇，合计首页呈现 13 篇
   const homeBody = `
 <main>
+<section class="brand-hero">
+  <h1 class="slogan">小乖乖，不是要你<em>听话</em></h1>
+  <p class="slogan-sub">${escapeHtml(SITE.sloganSub)}</p>
+  <div class="acts">
+    <a class="primary" href="/posts/">看看这些内容 →</a>
+    <a class="ghost" href="/tools/">用用小工具</a>
+  </div>
+  <div class="marks">
+    <span>${posts.length} 篇原创内容</span>
+    <span>${tools.length} 个自研工具</span>
+    <span>纯本地运行，不上传数据</span>
+  </div>
+</section>
 ${
   pick
     ? `<a class="hero-pick" href="/posts/${encodeURIComponent(pick.slug)}/">
   <div class="inner">
     ${pick.cover ? `<img class="cover" src="${escapeHtml(pick.cover)}" alt="${escapeHtml(pick.title)}" />` : ""}
     <div class="txt">
-      <div class="kicker">最新推荐</div>
+      <div class="kicker">最近更新</div>
       <h2>${escapeHtml(pick.title)}</h2>
       <p>${escapeHtml(pick.excerpt)}</p>
       <div class="meta"><span>${escapeHtml(pick.category)}</span><span>·</span><span>${escapeHtml(pick.date)}</span></div>
