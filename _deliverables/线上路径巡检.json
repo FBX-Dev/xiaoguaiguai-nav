@@ -1,89 +1,91 @@
 {
-  "checkedAt": "2026-10-24T14:28:17.672Z",
+  "checkedAt": "2026-10-25T05:41:31.186Z",
   "base": "https://xiaoguaiguai.cn",
+  "toolsCount": 30,
+  "sitemapUrls": 113,
   "rows": [
     {
       "p": "/",
       "status": 200,
-      "bytes": 33028,
+      "bytes": 42481,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/posts/",
       "status": 200,
-      "bytes": 43302,
+      "bytes": 65133,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/tools/",
       "status": 200,
-      "bytes": 25441,
+      "bytes": 37747,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/category/yuer/",
       "status": 200,
-      "bytes": 26850,
+      "bytes": 36265,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/category/jiaoyu/",
       "status": 200,
-      "bytes": 26781,
+      "bytes": 36110,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/category/nvxing/",
       "status": 200,
-      "bytes": 26631,
+      "bytes": 35980,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/category/jiating/",
       "status": 200,
-      "bytes": 26813,
+      "bytes": 36153,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/category/qinmi/",
       "status": 200,
-      "bytes": 26721,
+      "bytes": 36179,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/about/",
       "status": 200,
-      "bytes": 25655,
+      "bytes": 33445,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/privacy/",
       "status": 200,
-      "bytes": 30834,
+      "bytes": 36815,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/disclaimer/",
       "status": 200,
-      "bytes": 28024,
+      "bytes": 34002,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/terms/",
       "status": 200,
-      "bytes": 27527,
+      "bytes": 33514,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/contact/",
       "status": 200,
-      "bytes": 27016,
+      "bytes": 32991,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/sitemap.xml",
       "status": 200,
-      "bytes": 11605,
+      "bytes": 20949,
       "type": "application/xml; charset=utf-8"
     },
     {
@@ -99,63 +101,195 @@
       "type": "text/html; charset=utf-8"
     },
     {
+      "p": "/posts.json",
+      "status": 200,
+      "bytes": 43665,
+      "type": "application/json; charset=utf-8"
+    },
+    {
+      "p": "/tools.json",
+      "status": 200,
+      "bytes": 12778,
+      "type": "application/json; charset=utf-8"
+    },
+    {
       "p": "/tools/baby-age-calculator/",
       "status": 200,
-      "bytes": 28169,
+      "bytes": 34358,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/tools/complementary-food-guide/",
       "status": 200,
-      "bytes": 28993,
+      "bytes": 35181,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/yuer-growth-record/",
+      "status": 200,
+      "bytes": 38111,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/yuer-vaccine-plan/",
+      "status": 200,
+      "bytes": 34691,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/yuer-due-date-weeks/",
+      "status": 200,
+      "bytes": 37953,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/yuer-formula-guide/",
+      "status": 200,
+      "bytes": 38356,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/tools/jiaoyu-focus-timer/",
       "status": 200,
-      "bytes": 29922,
+      "bytes": 36108,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/tools/jiaoyu-reading-tracker/",
       "status": 200,
-      "bytes": 28654,
+      "bytes": 34847,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/jiaoyu-homework-coach/",
+      "status": 200,
+      "bytes": 34805,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/jiaoyu-praise-generator/",
+      "status": 200,
+      "bytes": 34005,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/jiaoyu-literacy-check/",
+      "status": 200,
+      "bytes": 41596,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/jiaoyu-class-planner/",
+      "status": 200,
+      "bytes": 42301,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/tools/nvxing-mood-journal/",
       "status": 200,
-      "bytes": 31269,
+      "bytes": 37447,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/tools/nvxing-quadrant-todo/",
       "status": 200,
-      "bytes": 29893,
+      "bytes": 36075,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/nvxing-period-tracker/",
+      "status": 200,
+      "bytes": 39586,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/nvxing-energy-audit/",
+      "status": 200,
+      "bytes": 36014,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/nvxing-bmi-fat/",
+      "status": 200,
+      "bytes": 40531,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/nvxing-bmr-calorie/",
+      "status": 200,
+      "bytes": 39187,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/tools/jiating-chore-split/",
       "status": 200,
-      "bytes": 29023,
+      "bytes": 35221,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/tools/jiating-budget-planner/",
       "status": 200,
-      "bytes": 30478,
+      "bytes": 36664,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/jiating-boundary-script/",
+      "status": 200,
+      "bytes": 36511,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/jiating-decide-map/",
+      "status": 200,
+      "bytes": 35988,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/jiating-maternity-leave/",
+      "status": 200,
+      "bytes": 39877,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/jiating-kinship-name/",
+      "status": 200,
+      "bytes": 40601,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/tools/qinmi-sentence-converter/",
       "status": 200,
-      "bytes": 32585,
+      "bytes": 38787,
       "type": "text/html; charset=utf-8"
     },
     {
       "p": "/tools/qinmi-anniversary/",
       "status": 200,
-      "bytes": 29593,
+      "bytes": 35776,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/qinmi-conflict-pause/",
+      "status": 200,
+      "bytes": 34705,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/qinmi-time-check/",
+      "status": 200,
+      "bytes": 34733,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/qinmi-date-idea/",
+      "status": 200,
+      "bytes": 40715,
+      "type": "text/html; charset=utf-8"
+    },
+    {
+      "p": "/tools/qinmi-year-align/",
+      "status": 200,
+      "bytes": 41551,
       "type": "text/html; charset=utf-8"
     }
   ]

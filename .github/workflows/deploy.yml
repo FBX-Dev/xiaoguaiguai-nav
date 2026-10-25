@@ -98,6 +98,51 @@ jobs:
               echo "::error::工具页 $s 未渲染顶部配套阅读入口"; exit 1
             fi
           done
+
+          # 文章页侧边栏：三块内容（广告位 / 本分类工具 / 本页目录）都由构建注入。
+          # 只校验「配置为开启时确实渲染出来了」——全关时侧栏整体不渲染是预期行为，
+          # 因此先读 data/sidebar.json 的开关，避免把合法的全关配置判成失败。
+          AD_ON=$(node -e "const c=require('./data/sidebar.json');console.log(c.ad&&c.ad.enabled===false?0:1)")
+          TL_ON=$(node -e "const c=require('./data/sidebar.json');console.log(c.tools&&c.tools.enabled===false?0:1)")
+          echo "  侧栏：广告位 $AD_ON / 本分类工具 $TL_ON"
+          if [ "$TL_ON" = "1" ]; then
+            # 逐篇核对：侧栏里列出的工具数，必须等于该文章所属分类的工具总数。
+            # 这是侧栏最容易出错的地方（分类映射断了就会列出别的分类的工具）。
+            SIDEBAR_BAD=$(node -e "
+              const fs=require('fs');
+              const posts=require('./_dist/posts.json').posts;
+              const tools=require('./_dist/tools.json').tools;
+              let bad=0;
+              for (const p of posts) {
+                const f='_dist/posts/'+p.slug+'/index.html';
+                if (!fs.existsSync(f)) continue;
+                const html=fs.readFileSync(f,'utf8');
+                const m=html.match(/<ul class=\"sb-tools\">([\s\S]*?)<\/ul>/);
+                if (!m) { bad++; continue; }
+                const n=(m[1].match(/<li>/g)||[]).length;
+                const want=tools.filter(t=>t.category===p.category).length;
+                if (n!==want) { bad++; }
+              }
+              console.log(bad);
+            ")
+            if [ "$SIDEBAR_BAD" != "0" ]; then
+              echo "::error::有 $SIDEBAR_BAD 篇文章的侧栏工具数与所属分类不匹配"; exit 1
+            fi
+            echo "  侧栏本分类工具：$POSTS 篇全部与分类匹配"
+          fi
+          if [ "$AD_ON" = "1" ]; then
+            # 注意：广告卡的 class 是「sb-card sb-ad」两个类名，不能用
+            # grep 'class="sb-ad"' 精确匹配，否则永远匹配不到、误报失败。
+            FIRST=$(node -e "console.log(require('./_dist/posts.json').posts[0].slug)")
+            if ! grep -qE 'class="[^"]*sb-ad' "_dist/posts/$FIRST/index.html"; then
+              echo "::error::广告位已开启但文章页未渲染广告卡片"; exit 1
+            fi
+            # 默认广告图必须是站内资源且实际存在于产物中（外部地址不做存在性校验）
+            ADIMG=$(node -e "const c=require('./data/sidebar.json');console.log((c.ad&&c.ad.image)||'')")
+            case "$ADIMG" in
+              /*) if [ ! -f "_dist$ADIMG" ]; then echo "::error::广告图 $ADIMG 不在构建产物中"; exit 1; fi ;;
+            esac
+          fi
           # 5 个固定分类页必须齐全（顶部导航直接指向它们）
           for s in yuer jiaoyu nvxing jiating qinmi; do
             if [ ! -f "_dist/category/$s/index.html" ]; then echo "::error::缺分类页 $s"; exit 1; fi

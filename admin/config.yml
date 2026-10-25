@@ -183,3 +183,99 @@ collections:
         label: 正文
         widget: markdown
         hint: 支持 Markdown，标题请从二级（##）写起
+
+# ============================================================
+# 侧边栏与广告位（singleton 单文件集合）
+#
+# 为什么用 singleton：全局只有一份配置，不存在「新增/删除」的概念，
+# singleton 会让它直接出现在内容库侧栏，点开即编辑，不用先进列表页。
+# 为什么存 JSON：构建脚本用 JSON.parse 直读，零依赖（本站构建只用 node: 内置模块，
+# 不引 yaml 解析库）；且 JSON 结构对「开关 + 值」这类配置最直观。
+#
+# 编辑后保存 → 提交 GitHub → 自动构建上线（约 1~2 分钟）。
+# 任一字段缺失或写错类型，构建时会自动回落内置默认值，不会导致发布失败。
+# ============================================================
+singletons:
+  - name: sidebar
+    label: 侧边栏与广告位
+    icon: ads_click
+    file: data/sidebar.json
+    format: json
+    description: >-
+      控制文章页右侧边栏。侧栏只在文章页出现，其他页面不受影响。
+      广告位在上、本分类工具居中、本页目录在下；三项可各自关闭，
+      全部关闭时文章页自动变回单栏，不会留下空白区域。
+    fields:
+      - label: 广告位
+        name: ad
+        widget: object
+        collapsed: false
+        fields:
+          - name: enabled
+            label: 显示广告位
+            widget: boolean
+            default: true
+            hint: 关掉后整个广告卡片不渲染，其余两项自动上移
+          - name: tag
+            label: 角标文案
+            widget: string
+            required: false
+            default: 广告
+            hint: 卡片左上角的小字。合规起见建议保留「广告」字样，便于识别
+          - name: image
+            label: 广告图片地址
+            widget: string
+            required: false
+            default: /assets/sidebar-ad.webp
+            hint: >-
+              默认是站内品牌图（/assets/sidebar-ad.webp，方形）。
+              换成自己的图时：把图片传到 R2 后填公开地址，
+              或填 https:// 开头的任意图片地址。建议用正方形，展示宽度约 262px
+          - name: link
+            label: 点击跳转地址
+            widget: string
+            required: false
+            hint: 留空则图片不可点击。填写后会在新标签页打开
+          - name: alt
+            label: 图片说明文字
+            widget: string
+            required: false
+            hint: 图片加载失败时显示，也供屏幕阅读器朗读，建议一句话写清内容
+          - name: code
+            label: 广告代码（填写后覆盖上面的图片）
+            widget: text
+            required: false
+            hint: >-
+              填了这里就只显示代码、不显示图片。用于粘贴 AdSense 等第三方广告代码。
+              注意：贴外部广告前必须先修改 _headers 里的 CSP 放行对应域名，
+              否则广告会被安全策略拦掉（_headers 内已有详细说明）。
+      - label: 本分类工具
+        name: tools
+        widget: object
+        collapsed: true
+        fields:
+          - name: enabled
+            label: 显示本分类工具
+            widget: boolean
+            default: true
+            hint: 自动列出当前文章所属分类下的全部实用工具，无需手工维护
+          - name: title
+            label: 模块标题
+            widget: string
+            required: false
+            default: 本分类工具
+      - label: 本页目录
+        name: toc
+        widget: object
+        collapsed: true
+        fields:
+          - name: enabled
+            label: 显示本页目录
+            widget: boolean
+            default: true
+            hint: 自动抓取正文里的二级标题。标题少于 3 个时不显示（太短没必要做目录）
+          - name: title
+            label: 模块标题
+            widget: string
+            required: false
+            default: 本页目录

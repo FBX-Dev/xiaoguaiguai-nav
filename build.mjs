@@ -39,6 +39,8 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const SRC_POSTS = path.join(ROOT, "posts");
 const SRC_TOOLS = path.join(ROOT, "tools");
 const SRC_PAGES = path.join(ROOT, "pages");
+const SRC_DATA = path.join(ROOT, "data");
+const SRC_ASSETS = path.join(ROOT, "assets");
 const OUT = path.join(ROOT, "_dist");
 
 const SITE = {
@@ -147,10 +149,16 @@ const BLOCK_START = /^(#{1,6}\s|>|```|\s*[-*]\s|\s*\d+\.\s|---|\*\*\*\s*$)/;
  * 从 ## 起的文档会被推到 h3，既造成 h1→h3 语义跳级，又让 CSS 里
  * article.body h2 的章节装饰完全失效。故先扫出最小层级 minLen，
  * 令 minLen 映射为 h2：lv = len - minLen + 2。
+ *
+ * 侧栏目录（TOC）需要 h2 的锚点，因此顶层调用时可传入 collect 数组收集标题：
+ * 只有「渲染成 h2」的标题才进目录（h3/h4 太细，塞进侧栏反而干扰扫读）。
+ * id 用序号 sec-N 而非标题文本：中文标题做 fragment 会被百分号编码成一长串，
+ * 且同名标题会撞 id；序号既短又不会重复，反正目录是构建时生成的。
  * @param {string} md
  * @param {number} [baseLv] 递归（引用块）时沿用外层基准，避免内层无标题时重算
+ * @param {Array<{id:string,text:string}>} [collect] 传入则收集 h2 标题
  */
-function renderMarkdown(md, baseLv) {
+function renderMarkdown(md, baseLv, collect) {
   const lines = String(md).replace(/\r\n/g, "\n").split("\n");
   const out = [];
   let li = null; // 当前列表类型
@@ -190,7 +198,14 @@ function renderMarkdown(md, baseLv) {
     if (m) {
       flushList();
       const lv = Math.min(6, Math.max(2, m[1].length - lvBase + 2));
-      out.push(`<h${lv}>${inline(m[2])}</h${lv}>`);
+      const inner = inline(m[2]);
+      if (lv === 2 && collect) {
+        const id = `sec-${collect.length + 1}`;
+        collect.push({ id, text: m[2].replace(/\*\*|`/g, "").trim() });
+        out.push(`<h2 id="${id}">${inner}</h2>`);
+      } else {
+        out.push(`<h${lv}>${inner}</h${lv}>`);
+      }
       i++;
       continue;
     }
@@ -327,6 +342,113 @@ const BASE_CSS = `
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 22px; }
   .narrow { max-width: 720px; }
 
+  /* ── 文章页三栏：正文 720 + 间距 36 + 侧栏 288 = 1044（容器内宽 1076）──
+     正文宽度保持不变 —— 中文最佳行长约 38 字/行，720px 正好；
+     收窄到 640 会挤，放宽到 900 又会掉行，所以填右侧留白而不动正文。
+     用 grid 而非 float：侧栏高度随内容变化，grid 能自动对齐且无需清除浮动。 */
+  .post-layout { display: grid; grid-template-columns: 720px 288px; gap: 0 36px; align-items: start; }
+  /* 三个模块全关时 build 不会渲染 .post-side，此时退回单栏（不留空列） */
+  .post-layout:not(:has(> .post-side)) { grid-template-columns: 720px; }
+  .post-main { min-width: 0; }
+
+  /* ── 侧边栏 ──
+     sticky 顶部留 77px = 站头 61px + 16px 呼吸位，否则吸顶时会被站头压住。
+     align-self: start 是 sticky 生效的前提（默认 stretch 会让它跟整栏等高而无法滚动）。
+
+     限高 + 内部滚动：三张卡实测总高约 1090px，比常见视口（900px）高，
+     不限高的话 sticky 会「卡住但底部看不全」，广告位反而滚出视野。
+     限高到视口内后，三张卡始终可见，超出部分在侧栏内部滚动。
+     窄屏（≤1032px）侧栏改为横排静态布局，届时取消限高，见下方断点。 */
+  .post-side {
+    align-self: start; position: sticky; top: 77px;
+    max-height: calc(100vh - 97px); overflow-y: auto; overscroll-behavior: contain;
+    padding: 30px 0 10px; display: flex; flex-direction: column; gap: 18px;
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+  }
+  .post-side::-webkit-scrollbar { width: 6px; }
+  .post-side::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+  .post-side::-webkit-scrollbar-track { background: transparent; }
+  .post-side:empty { display: none; }
+  .sb-card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow);
+  }
+  .sb-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; margin-bottom: 10px;
+  }
+  .sb-title { font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+  .sb-count {
+    font-size: 11.5px; color: var(--accent); background: var(--accent-soft);
+    padding: 1px 7px; border-radius: 20px; font-weight: 500;
+  }
+  .sb-tag {
+    font-size: 10.5px; color: var(--ink-mute); letter-spacing: .1em;
+    border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px;
+  }
+
+  /* 广告位：方图占满卡内宽（288 - 14×2 = 260，img 自适应） */
+  .sb-ad { padding: 12px; }
+  .sb-ad img { display: block; width: 100%; height: auto; border-radius: 7px; }
+  .sb-ad-link { display: block; border-radius: 7px; overflow: hidden; }
+  .sb-ad-code { min-height: 60px; }
+  .sb-ad-code img, .sb-ad-code iframe { max-width: 100%; display: block; }
+
+  /* 本分类工具：图标 + 名称 + 一行描述 */
+  ul.sb-tools { list-style: none; margin: 0; padding: 0; }
+  ul.sb-tools > li + li { border-top: 1px solid var(--line-soft); }
+  ul.sb-tools a {
+    display: flex; gap: 9px; align-items: flex-start; text-decoration: none;
+    padding: 9px 4px; border-radius: 6px; transition: background .15s ease;
+  }
+  ul.sb-tools a:hover { background: var(--accent-soft); }
+  ul.sb-tools .ic { font-size: 16px; line-height: 1.35; flex: none; }
+  ul.sb-tools .tx { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  ul.sb-tools .tx b {
+    font-size: 13px; font-weight: 500; color: var(--ink); line-height: 1.45;
+    display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  ul.sb-tools .tx i {
+    font-style: normal; font-size: 11.5px; color: var(--ink-mute); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  a.sb-more {
+    display: block; margin-top: 10px; padding-top: 10px; font-size: 12.5px;
+    border-top: 1px solid var(--line-soft); text-decoration: none; text-align: center;
+  }
+
+  /* 本页目录 */
+  nav.sb-toc { display: flex; flex-direction: column; }
+  nav.sb-toc a {
+    font-size: 12.5px; color: var(--ink-soft); text-decoration: none;
+    padding: 6px 8px; border-left: 2px solid var(--line); line-height: 1.5;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    transition: color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  nav.sb-toc a:hover { color: var(--accent); border-left-color: #e8c8b6; background: var(--accent-soft); }
+  /* 滚动高亮：由页面底部内联脚本切 .on，无脚本时退化为纯锚点跳转，不影响可用性 */
+  nav.sb-toc a.on { color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+
+  /* 断点依据（容器内宽 = 视口 - 44px 的左右内边距）：
+     · ≥1121px：720 + 288 + 36 = 1044，容器内宽 ≥1077 ✅
+     · 1033~1120px：720 + 240 + 28 = 988，容器内宽 989~1076 ✅ 侧栏收窄保住正文
+     · ≤1032px：两栏放不下 → 侧栏移到正文之后，整块限宽 720 与正文对齐 */
+  @media (max-width: 1120px) {
+    .post-layout { grid-template-columns: 720px 240px; gap: 0 28px; }
+  }
+  @media (max-width: 1032px) {
+    .post-layout { grid-template-columns: 1fr; gap: 0; max-width: 720px; }
+    .post-side {
+      position: static; padding: 0 0 10px;
+      max-height: none; overflow: visible;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: start;
+    }
+    .post-side:has(> .sb-card:only-child) { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .post-side { grid-template-columns: 1fr; }
+  }
+
   a { color: var(--accent); }
   .crumb { margin: 22px 0 0; font-size: 12.5px; color: var(--ink-mute); }
   .crumb a { color: var(--ink-mute); text-decoration: none; }
@@ -360,6 +482,9 @@ const BASE_CSS = `
   header.page .meta .stat b { color: var(--accent); font-size: 15px; font-weight: 600; }
 
   article.body { padding: 30px 0 10px; }
+  /* 带 id 的 h2 是被目录锚点指向的，跳转时会被 sticky 站头（61px）压住，
+     留 80px 上边距让它落在标题下方而不是被遮住。 */
+  article.body h2[id] { scroll-margin-top: 80px; }
   article.body h2 {
     font-size: 19.5px; font-weight: 700; margin: 36px 0 13px;
     padding-left: 12px; border-left: 3px solid var(--accent); color: var(--ink);
@@ -789,6 +914,53 @@ const FOOT_LINKS = [
   { text: "实用工具", href: "/tools/" },
 ];
 
+/**
+ * 文章页目录的滚动高亮脚本。
+ * 为什么内联而不是外链文件：CSP 已放行 'unsafe-inline'，内联省一次请求，
+ * 且这段代码只服务文章页，放进全局脚本文件反而让其他页面白下载。
+ * 用 IntersectionObserver 而非 scroll 事件：前者由浏览器合成器调度，不阻塞主线程，
+ * 长文滚动时不会掉帧。fallback：无 IO 支持时不做高亮，锚点跳转照常可用。
+ * 只在页面真的有目录（.sb-toc 存在）时才注入，其他页面零开销。
+ */
+const TOC_SCRIPT = `<script>
+(function () {
+  var nav = document.querySelector("nav.sb-toc");
+  if (!nav || !("IntersectionObserver" in window)) return;
+  var links = [].slice.call(nav.querySelectorAll("a"));
+  var map = {};
+  links.forEach(function (a) {
+    var el = document.getElementById(a.getAttribute("href").slice(1));
+    if (el) map[el.id] = a;
+  });
+  var ids = Object.keys(map);
+  if (!ids.length) return;
+  var visible = {};
+  var setOn = function (cur) {
+    links.forEach(function (a) { a.classList.toggle("on", a === map[cur]); });
+  };
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { visible[e.target.id] = e.isIntersecting; });
+    var cur = null;
+    for (var i = 0; i < ids.length; i++) {
+      if (visible[ids[i]]) { cur = ids[i]; break; }
+    }
+    if (!cur) {
+      // 没有任何标题在观察区内（在两个标题之间的长段落，或页面刚打开、
+      // 首个标题还卡在 rootMargin 上边界外）。此时取「最后一个已滚过去的标题」；
+      // 若一个都没滚过去（页面顶部），退回第一个 —— 否则目录会一项都不亮。
+      for (var j = ids.length - 1; j >= 0; j--) {
+        if (map[ids[j]].getBoundingClientRect().top < 120) { cur = ids[j]; break; }
+      }
+      if (!cur) cur = ids[0];
+    }
+    setOn(cur);
+  }, { rootMargin: "-80px 0px -70% 0px", threshold: 0 });
+  ids.forEach(function (id) { io.observe(document.getElementById(id)); });
+  // 初始态：首屏尚未触发 IO 回调时先点亮第一项，避免目录「开局全灭」
+  setOn(ids[0]);
+})();
+</script>`;
+
 function shell({ title, desc, body, canonical, active, noindex, updated, ogImageUrl }) {
   // 首页 <title> 兼顾两端：前半句是品牌主张（人味、可传播），
   // 后半句是搜索词（家庭与成长 / 实用 / 内容站），共 21 字，未被搜索结果截断。
@@ -1006,6 +1178,154 @@ function guideLink(p) {
 </aside>`;
 }
 
+/* ============================================================
+ * 四之二、文章页侧边栏
+ *
+ * 为什么加侧边栏：文章页正文固定 720px（中文最佳行长约 38 字/行，
+ * 再宽扫读会掉行），而容器内宽 1076px —— 1440px 视口下右侧实测空出 378px。
+ * 与其留白，不如放三块与正文互补的信息。
+ *
+ * 为什么是这三块、且只有这三块：
+ *   · 广告位  —— 用户指定的变现入口，置顶（位置固定才好按位报价）
+ *   · 本分类工具 —— 用户指定的核心功能。与文末「配套工具」不重复：
+ *                   文末那 1 个是本文专属，这里列的是该分类全景
+ *   · 本页目录 —— 文章平均 1643 字、h2 有 4~8 个，长文有跳转刚需
+ * 刻意不放「相关阅读」：页面底部已有「同类内容」区块，
+ * 再放一次会让同一屏出现两组相似链接，反而稀释点击。
+ * ========================================================== */
+
+/** 侧栏默认值 —— data/sidebar.json 缺字段时的兜底，保证构建永不因配置缺失而失败 */
+const SIDEBAR_DEFAULT = {
+  ad: { enabled: true, tag: "广告", image: "/assets/sidebar-ad.webp", link: "", alt: "小乖乖 · 家庭与成长实用内容站", code: "" },
+  tools: { enabled: true, title: "本分类工具" },
+  toc: { enabled: true, title: "本页目录" },
+};
+
+/**
+ * 读取 data/sidebar.json。
+ * 容错策略：文件缺失 / JSON 语法错误 / 字段类型不对，一律回落默认值并打日志，
+ * 绝不抛错中断构建 —— 后台编辑器写坏一个字段不该导致整站发布失败。
+ */
+function readSidebar() {
+  const f = path.join(SRC_DATA, "sidebar.json");
+  if (!fs.existsSync(f)) {
+    log("  ⚠️ 缺 data/sidebar.json，侧栏使用内置默认值");
+    return SIDEBAR_DEFAULT;
+  }
+  let raw;
+  try {
+    raw = JSON.parse(fs.readFileSync(f, "utf8"));
+  } catch (e) {
+    log(`  ⚠️ data/sidebar.json 解析失败（${e.message}），侧栏使用内置默认值`);
+    return SIDEBAR_DEFAULT;
+  }
+  const obj = (v) => (v && typeof v === "object" && !Array.isArray(v) ? v : {});
+  const str = (v, d) => (typeof v === "string" && v.trim() ? v.trim() : d);
+  const bool = (v, d) => (typeof v === "boolean" ? v : d);
+  const ad = obj(raw.ad), tl = obj(raw.tools), tc = obj(raw.toc);
+  return {
+    ad: {
+      enabled: bool(ad.enabled, SIDEBAR_DEFAULT.ad.enabled),
+      tag: str(ad.tag, SIDEBAR_DEFAULT.ad.tag),
+      image: str(ad.image, SIDEBAR_DEFAULT.ad.image),
+      link: str(ad.link, ""),
+      alt: str(ad.alt, SIDEBAR_DEFAULT.ad.alt),
+      code: str(ad.code, ""),
+    },
+    tools: { enabled: bool(tl.enabled, true), title: str(tl.title, "本分类工具") },
+    toc: { enabled: bool(tc.enabled, true), title: str(tc.title, "本页目录") },
+  };
+}
+
+/**
+ * 广告位。
+ * 优先级：自定义代码 > 图片 > 不渲染。
+ * 为什么代码优先：AdSense 这类第三方广告必须贴它给的 script，图片只是占位。
+ * 安全提醒：code 会被原样插入，仅站长本人可编辑（CMS 需 GitHub 权限），
+ * 属可信来源；若日后开放给他人编辑，这里必须改为白名单校验。
+ * @param {object} cfg readSidebar() 的 ad 段
+ */
+function adBlock(cfg) {
+  if (!cfg.enabled) return "";
+  if (cfg.code) {
+    return `<div class="sb-card sb-ad">
+  <div class="sb-head"><span class="sb-tag">${escapeHtml(cfg.tag)}</span></div>
+  <div class="sb-ad-code">${cfg.code}</div>
+</div>`;
+  }
+  if (!cfg.image) return "";
+  const img = `<img src="${escapeHtml(cfg.image)}" alt="${escapeHtml(cfg.alt)}" width="288" height="288" loading="lazy" decoding="async" />`;
+  const body = cfg.link
+    ? `<a class="sb-ad-link" href="${escapeHtml(cfg.link)}" target="_blank" rel="noopener nofollow sponsored">${img}</a>`
+    : img;
+  return `<div class="sb-card sb-ad">
+  <div class="sb-head"><span class="sb-tag">${escapeHtml(cfg.tag)}</span></div>
+  ${body}
+</div>`;
+}
+
+/**
+ * 本分类工具列表。
+ * 取该文章所属分类下的全部工具，按 tools.json 顺序（即分类内既定顺序）排列。
+ * 工具名与描述均来自 tools.json，不另设文案，避免两处维护不同步。
+ * @param {object} cat 分类对象（CATS 元素）
+ * @param {Array} tools 全部工具
+ * @param {object} cfg tools 段配置
+ */
+function toolsBlock(cat, tools, cfg) {
+  if (!cfg.enabled || !cat) return "";
+  const list = tools.filter((t) => t.category === cat.name);
+  if (!list.length) return "";
+  return `<div class="sb-card">
+  <div class="sb-head">
+    <span class="sb-title">${escapeHtml(cfg.title)}</span>
+    <span class="sb-count">${list.length}</span>
+  </div>
+  <ul class="sb-tools">
+${list
+  .map(
+    (t) => `    <li><a href="/tools/${encodeURIComponent(t.slug)}/">
+      <span class="ic" aria-hidden="true">${escapeHtml(t.icon || "🧰")}</span>
+      <span class="tx"><b>${escapeHtml(t.name)}</b><i>${escapeHtml(t.desc)}</i></span>
+    </a></li>`
+  )
+  .join("\n")}
+  </ul>
+  <a class="sb-more" href="/category/${cat.slug}/">看该分类全部内容 →</a>
+</div>`;
+}
+
+/**
+ * 本页目录（TOC）。
+ * 少于 3 个 h2 不渲染 —— 两个标题点一下不如直接滑两屏，目录反而添乱。
+ * @param {Array<{id:string,text:string}>} heads h2 列表
+ * @param {object} cfg toc 段配置
+ */
+function tocBlock(heads, cfg) {
+  if (!cfg.enabled || !heads || heads.length < 3) return "";
+  return `<div class="sb-card sb-toc-wrap">
+  <div class="sb-head">
+    <span class="sb-title">${escapeHtml(cfg.title)}</span>
+    <span class="sb-count">${heads.length}</span>
+  </div>
+  <nav class="sb-toc" aria-label="本页目录">
+${heads.map((h) => `    <a href="#${h.id}">${escapeHtml(h.text)}</a>`).join("\n")}
+  </nav>
+</div>`;
+}
+
+/**
+ * 组装完整侧栏。全部模块都关闭时返回空串，此时文章页自动回落单栏
+ * （模板层用 .post-layout:empty 判断，不需要额外的类名开关）。
+ * @param {{cat:object, tools:Array, heads:Array}} ctx
+ * @param {object} cfg
+ */
+function sidebarHtml(ctx, cfg) {
+  const inner = adBlock(cfg.ad) + toolsBlock(ctx.cat, ctx.tools, cfg.tools) + tocBlock(ctx.heads, cfg.toc);
+  if (!inner.trim()) return "";
+  return `<aside class="post-side" aria-label="侧边栏">\n${inner}\n</aside>`;
+}
+
 function build() {
   log("→ 读取源文件");
   const posts = readPosts();
@@ -1036,6 +1356,23 @@ function build() {
   for (const f of ["index.html", "config.yml"]) {
     const src = path.join(ROOT, "admin", f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(OUT, "admin", f));
+  }
+
+  /* ---- assets/ 原样拷贝到产物根 ----
+     侧栏默认广告图放这里（站内资源，不受 CSP 限制，也无需走 R2）。
+     递归拷贝，便于以后加图标等静态资源。 */
+  if (fs.existsSync(SRC_ASSETS)) {
+    const walk = (from, to) => {
+      ensure(to);
+      for (const name of fs.readdirSync(from)) {
+        const s = path.join(from, name);
+        const d = path.join(to, name);
+        if (fs.statSync(s).isDirectory()) walk(s, d);
+        else fs.copyFileSync(s, d);
+      }
+    };
+    walk(SRC_ASSETS, path.join(OUT, "assets"));
+    log(`  assets/ ${fs.readdirSync(SRC_ASSETS).length} 项`);
   }
 
   /* ---- posts.json（供站内检索/降级使用，首页已改为构建时静态渲染）---- */
@@ -1152,10 +1489,19 @@ ${homeTools
   log("  首页 /（静态生成）");
 
   /* ---- 文章详情页 ---- */
+  const sidebarCfg = readSidebar();
+  let sidebarPages = 0;
   for (const p of posts) {
     const dir = path.join(OUT, "posts", p.slug);
     ensure(dir);
     const related = posts.filter((x) => x.slug !== p.slug && x.catSlug === p.catSlug).slice(0, 3);
+    // 先渲染正文：侧栏目录要用到正文里的 h2，必须等渲染完才能拼侧栏。
+    // 收集只在顶层渲染时开启，引用块内的递归调用不传 collect，
+    // 避免把引用里的标题也塞进目录。
+    const heads = [];
+    const articleHtml = renderMarkdown(p.body, undefined, heads);
+    const side = sidebarHtml({ cat: catOf(p.category), tools, heads }, sidebarCfg);
+    if (side) sidebarPages++;
     const body = `
 ${crumb([{ text: "首页", href: "/" }, { text: "全部内容", href: "/posts/" }, { text: p.category || "内容" }])}
 <header class="page">
@@ -1168,14 +1514,16 @@ ${crumb([{ text: "首页", href: "/" }, { text: "全部内容", href: "/posts/" 
     <span>${escapeHtml(p.date)}</span>
   </div>
 </header>
-<article class="body narrow">
-${renderMarkdown(p.body)}
+<div class="post-layout">
+  <div class="post-main">
+<article class="body">
+${articleHtml}
 ${p.tags.length ? `<div class="tags">${p.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</div>` : ""}
 ${toolCard(toolBySlug.get(p.tool))}
 </article>
 ${
   related.length
-    ? `<section class="block narrow">
+    ? `<section class="block">
   <h2><span>同类内容</span><a class="more" href="/category/${p.catSlug}/">查看该分类 →</a></h2>
   <ul class="index">
 ${related.map((r) => itemRow(r, { tagText: "同分类" })).join("\n")}
@@ -1183,10 +1531,14 @@ ${related.map((r) => itemRow(r, { tagText: "同分类" })).join("\n")}
 </section>`
     : ""
 }
-<a class="backlink" href="/posts/">← 返回全部内容</a>`;
+<a class="backlink" href="/posts/">← 返回全部内容</a>
+  </div>
+${side}
+</div>
+${side.includes("sb-toc") ? TOC_SCRIPT : ""}`;
     fs.writeFileSync(path.join(dir, "index.html"), shell({ title: p.title, desc: p.excerpt, body, canonical: `/posts/${encodeURIComponent(p.slug)}/`, active: p.catSlug, ogImageUrl: p.cover }), "utf8");
   }
-  log(`  文章页 ${posts.length} 个`);
+  log(`  文章页 ${posts.length} 个（其中 ${sidebarPages} 个带侧边栏）`);
 
   /* ---- 文章列表页（CMS 式索引：全部分类顺序铺开，纯文字）---- */
   const byCat = CATS.map((c) => ({ cat: c, items: posts.filter((p) => p.catSlug === c.slug) }));
