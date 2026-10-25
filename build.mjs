@@ -608,6 +608,46 @@ const BASE_CSS = `
   a.cat-card .br { font-size: 12.5px; color: var(--ink-soft); line-height: 1.62; }
   a.cat-card .ct { margin-top: 12px; font-size: 12px; color: var(--accent); font-weight: 500; }
 
+  /* ── 首页：内容区按分类分组（两列，接近 CMS 首页）──
+     分组标题本身就是分类入口，因此不再单列一排分类卡片 —— 同一信息不重复出现。
+     5 个分组两列排布，末组跨满整行，底部形成完整矩形，不留下半格空白。 */
+  .cat-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 30px 38px; margin-top: 18px; }
+  .cat-group { min-width: 0; }
+  .cat-group:last-child { grid-column: 1 / -1; }
+  .cat-group:last-child ul.index { display: grid; grid-template-columns: 1fr 1fr; column-gap: 38px; }
+  .cg-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; padding-bottom: 9px;
+    border-bottom: 2px solid var(--line-soft);
+  }
+  .cg-name {
+    font-size: 16px; font-weight: 700; color: var(--ink);
+    text-decoration: none; letter-spacing: -.01em;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .cg-name::before {
+    content: ""; width: 3px; height: 15px; border-radius: 2px;
+    background: var(--accent); flex: none;
+  }
+  .cg-name:hover { color: var(--accent-deep); }
+  .cg-more {
+    flex: none; font-size: 12px; font-weight: 400; color: var(--accent);
+    text-decoration: none; white-space: nowrap;
+  }
+  .cg-more:hover { text-decoration: underline; }
+  .cg-brief { font-size: 12px; color: var(--ink-mute); margin: 8px 0 2px; }
+  /* 分组内的条目收紧一档，避免两列后行高过高、扫读变慢 */
+  .cat-group ul.index > li { border-bottom: 0; }
+  .cat-group ul.index > li + li { border-top: 1px solid var(--line-soft); }
+  .cat-group a.item { padding: 13px 4px 13px 14px; }
+  .cat-group a.item::before { top: 16px; bottom: 16px; }
+  .cat-group a.item .ttl { font-size: 15px; margin-bottom: 5px; }
+  .cat-group a.item .sm {
+    font-size: 12.5px; line-height: 1.68;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .cat-group a.item .mt { margin-top: 7px; gap: 8px; font-size: 11.5px; }
+
   /* ── 首页区块 ── */
   section.home { margin: 44px 0 0; }
 
@@ -619,6 +659,8 @@ const BASE_CSS = `
     .hero-pick .txt { padding: 22px 24px; }
     .hero-pick h2 { font-size: 21px; }
     ul.index.two { grid-template-columns: 1fr; column-gap: 0; }
+    .cat-groups { grid-template-columns: 1fr; gap: 26px; }
+    .cat-group:last-child ul.index { grid-template-columns: 1fr; column-gap: 0; }
   }
 
   @media (max-width: 560px) {
@@ -760,12 +802,14 @@ const FOOT_LINKS = [
 ];
 
 function shell({ title, desc, body, canonical, active, noindex, updated }) {
-  // 首页 title 保留「家庭与成长」这类搜索词，非首页用「页面名 ｜ 站名」。
+  // 首页 <title> 兼顾两端：前半句是品牌主张（人味、可传播），
+  // 后半句是搜索词（家庭与成长 / 实用 / 内容站），共 21 字，未被搜索结果截断。
+  // 非首页用「页面名 ｜ 站名」，把标题权重让给页面本身的关键词。
   const full =
     title === SITE.title
-      ? `${SITE.title} · ${SITE.seoSuffix}`
+      ? `${SITE.slogan}｜${SITE.seoSuffix}`
       : `${title} ｜ ${SITE.title}`;
-  // og:title 是给分享卡片用的，首页换成品牌主张，传播力强于罗列关键词。
+  // og:title 只给分享卡片用，不放搜索词 —— 卡片上关键词没有意义，传播力才有。
   const ogTitle = title === SITE.title ? `${SITE.title} · ${SITE.slogan.replace(`${SITE.title}，`, "")}` : title;
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -1009,7 +1053,15 @@ function build() {
   // 排版取舍：首页只在「焦点区」保留一张大图（全站唯一），
   // 其余列表一律用纯文字索引 —— 大图压文字在列表里既不好看也伤扫读效率。
   const pick = posts[0]; // 焦点文章 = 最新一篇
-  const latest = posts.slice(pick ? 1 : 0, pick ? 13 : 12); // 焦点区占 1 篇，合计首页呈现 13 篇
+  // 首页内容区改为「按分类分组」——每个方向取最近 3 篇，两列并排。
+  // 分组标题本身就是分类入口，因此不再单列一排分类卡片（避免同一信息出现两次）。
+  const PER_CAT = 3;
+  const catGroups = CATS.map((c) => {
+    const all = posts.filter((p) => p.catSlug === c.slug); // posts 已按日期倒序
+    // 焦点文章已在顶部大图展示过，从分组里排除，避免同一篇在同一屏出现两次。
+    const rest = pick ? all.filter((p) => p.slug !== pick.slug) : all;
+    return { ...c, total: all.length, list: rest.slice(0, PER_CAT) };
+  });
   const homeBody = `
 <main>
 <section class="brand-hero">
@@ -1043,28 +1095,22 @@ ${
 
 <section class="home">
   <h2><span>最新内容</span><a class="more" href="/posts/">查看全部 ${posts.length} 篇 →</a></h2>
-  <div class="lead">按发布时间倒序</div>
-  ${
-    latest.length
-      ? `<ul class="index">
-${latest.map((p) => itemRow(p, { withCat: true })).join("\n")}
-  </ul>`
-      : `<div class="empty-note">内容正在整理中，敬请期待。</div>`
-  }
-</section>
-
-<section class="home">
-  <h2><span>按分类浏览</span></h2>
-  <div class="lead">五个固定方向，每个方向持续更新</div>
-  <div class="cat-cards" style="margin-top:16px">
-${CATS.map((c) => {
-  const n = posts.filter((p) => p.catSlug === c.slug).length;
-  return `    <a class="cat-card" href="/category/${c.slug}/">
-      <div class="nm">${escapeHtml(c.name)}</div>
-      <div class="br">${escapeHtml(c.brief)}</div>
-      <div class="ct">${n} 篇内容 →</div>
-    </a>`;
-}).join("\n")}
+  <div class="lead">按分类浏览，每个方向列出最近更新</div>
+  <div class="cat-groups">
+${catGroups
+  .map(
+    (g) => `    <div class="cat-group">
+      <div class="cg-head">
+        <a class="cg-name" href="/category/${g.slug}/">${escapeHtml(g.name)}</a>
+        <a class="cg-more" href="/category/${g.slug}/">全部 ${g.total} 篇 →</a>
+      </div>
+      <div class="cg-brief">${escapeHtml(g.brief)}</div>
+      <ul class="index">
+${g.list.map((p) => itemRow(p)).join("\n")}
+      </ul>
+    </div>`
+  )
+  .join("\n")}
   </div>
 </section>
 
