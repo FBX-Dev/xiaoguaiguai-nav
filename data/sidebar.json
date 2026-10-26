@@ -1,6 +1,6 @@
 {
   "ad": {
-    "enabled": true,
+    "enabled": false,
     "tag": "品牌",
     "image": "/assets/sidebar-ad.webp",
     "link": "",
