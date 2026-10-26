@@ -8,4 +8,11 @@
 # 原 nav.json（40 条第三方外链）已从仓库与产物中删除。
 # 为清理仍可能被索引 / 缓存的旧地址，这里做 301 收口到首页。
 
+# ① 搜索引擎站长验证文件（2026-10-26 加）
+#    为什么需要这条：CF Pages 的 html_handling 会把 /xxx.html **308 跳到 /xxx**，
+#    而百度站长验证**不跟随跳转**，直接访问 .html 会拿到 308 → 验证失败。
+#    这条 200 改写让 /xxx.html 原样返回内容且不改 URL，绕开 html_handling。
+#    ⚠️ 必须放第一条。新增验证文件（如 google 系列）时在此加同名行。
+/baidu_verify_codeva-0jr1ba01AP.html  /baidu_verify_codeva-0jr1ba01AP  200
+
 /nav.json  /  301

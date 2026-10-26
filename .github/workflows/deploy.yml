@@ -225,6 +225,20 @@ jobs:
           if ! grep -q 'name="robots" content="noindex"' _dist/404.html; then
             echo "::error::404.html 缺 noindex"; exit 1
           fi
+          # 搜索引擎站长验证文件（百度 baidu_verify_*.html / Google google*.html）：
+          # ① 必须按原名落在产物根；② 必须在 _redirects 里有 200 改写 ——
+          #    CF Pages 会把 /xxx.html 308 跳到 /xxx，而百度不跟随跳转，
+          #    只放文件不配改写 = 白放。缺一即失败。
+          VFOUND=0
+          for vf in _dist/baidu_verify_*.html _dist/google*.html; do
+            [ -e "$vf" ] || continue
+            VFOUND=$((VFOUND + 1))
+            VBASE=$(basename "$vf")
+            if ! grep -q "/$VBASE" _dist/_redirects; then
+              echo "::error::验证文件 $VBASE 缺 _redirects 200 改写（会被 308 跳走）"; exit 1
+            fi
+            echo "  站长验证文件 $VBASE ✅"
+          done
           echo "✅ 产物完整性校验通过"
 
       # 凭据前置检查：把「部署失败」翻译成「你需要做什么」。

@@ -147,6 +147,7 @@
 ├─ assets/
 │  └─ sidebar-ad.webp  # 侧栏默认方形广告图（576×576，2 倍图）
 ├─ favicon.svg         # 站点图标
+├─ baidu_verify_*.html # 百度站长验证文件（按原名落产物根，另需 _redirects 200 改写）
 ├─ _headers            # 安全头与缓存策略（含 CSP）
 ├─ README.md           # 本文件
 ├─ .github/workflows/
@@ -173,6 +174,7 @@ node build.mjs
 |---|---|
 | `index.html` | **【生成】** 首页：焦点区(1 张大图，首屏第一块) + 「最新内容」按分类分组（4 组 × 3 条 + 末组 4 条，两列纯文字）+ 「实用工具」12 个 |
 | `favicon.svg` / `_headers` / `admin/` | 原样拷贝 |
+| `baidu_verify_*.html` | 原样拷贝（百度站长验证；**另需 `_redirects` 里的 200 改写**，见「十一之三」） |
 | `posts.json` | 文章索引，按日期倒序（供站内检索/降级） |
 | `posts/index.html` | 全部内容页：门户式页头 + 分类快捷锚点 + 5 个分类区块（纯文字索引，共 70 篇） |
 | `posts/<slug>/index.html` | 文章详情页（含「同类内容」推荐；引导文另含文末工具卡片；**右侧侧边栏**：广告位 + 本分类工具 + 本页目录） |
@@ -477,6 +479,23 @@ CSP 的作用是拦掉 CF 边缘自动注入的 RUM 信标（`static.cloudflarei
 | OG 标签 | 分享卡片 | `og:type/site_name/title/description/url` + `twitter:card` |
 
 提交入口：Google Search Console → 添加资源 `xiaoguaiguai.cn` → 提交 `https://xiaoguaiguai.cn/sitemap.xml`。
+
+### 站长验证文件（2026-10-26 新增）
+
+百度搜索资源平台 / Google Search Console 的「文件验证」要求把一个**指定文件名**的文件放到站点根目录。
+本项目已接入百度：`baidu_verify_codeva-0jr1ba01AP.html`（内容为 32 字节验证码）。
+
+⚠️ **光把文件放上去是不够的**，必须两处同时改，缺一即验证失败：
+
+| 位置 | 做什么 | 为什么 |
+|---|---|---|
+| 仓库根目录 | 放 `baidu_verify_*.html` 原件（**文件名一字不改**） | 平台按文件名逐字校验 |
+| `_redirects` | 加一条 `200` 改写：`/xxx.html  /xxx  200` | **CF Pages 的 `html_handling` 会把 `/xxx.html` 308 跳到 `/xxx`，而百度不跟随跳转** → 拿到 308 即判定失败 |
+
+- `build.mjs` 会自动把根目录下所有 `baidu_verify_*.html` / `google*.html` 拷进产物根（无需改代码）。
+- CI（`deploy.yml`）与 `_selfcheck.py` 各有一道门禁：产物里存在验证文件、但 `_redirects` 没有对应 200 改写时**直接失败**。
+- 该 `200` 规则**必须放在 `_redirects` 第一条**，跑在 `html_handling` 之前。
+- 新增验证文件（如 Google 的 `googleXXXX.html`）时：放原件 → `_redirects` 加一行 → 提交，其余自动。
 
 ## 十二、待人工处理项
 

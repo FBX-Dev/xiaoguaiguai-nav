@@ -1369,6 +1369,17 @@ function build() {
     const src = path.join(ROOT, f);
     if (fs.existsSync(src)) fs.copyFileSync(src, path.join(OUT, f));
   }
+  /* ---- 搜索引擎站长验证文件 ----
+     百度（baidu_verify_*.html）等平台要求「URL 与文件名逐字一致」，
+     因此必须按原名落在产物根，不能改名、不能进子目录。
+     ⚠️ 光放文件还不够：CF Pages 的 html_handling 会把 /xxx.html 308 跳到 /xxx，
+        而百度不跟随跳转 → 验证失败。必须在 _redirects 里配一条 200 改写
+        （见该文件顶部第 ① 条）。新增验证文件时两处都要加。 */
+  const verifyFiles = fs.readdirSync(ROOT).filter((f) => /^(baidu_verify_|google)[A-Za-z0-9_-]*\.html$/.test(f));
+  for (const f of verifyFiles) {
+    fs.copyFileSync(path.join(ROOT, f), path.join(OUT, f));
+  }
+  if (verifyFiles.length) log(`  站长验证文件 ${verifyFiles.length} 个：${verifyFiles.join(", ")}`);
   ensure(path.join(OUT, "admin"));
   for (const f of ["index.html", "config.yml"]) {
     const src = path.join(ROOT, "admin", f);
